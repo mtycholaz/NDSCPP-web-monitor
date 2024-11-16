@@ -1,7 +1,7 @@
 SHELL:=/bin/bash
 
 CC=clang++
-CFLAGS=-std=c++20 -g3 -O3
+CFLAGS=-std=c++2a -g3 -O3
 LDFLAGS=
 LIBS=-lcurl -lpthread -lmicrohttpd
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d

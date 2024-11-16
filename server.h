@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <thread>
-
+#include "global.h"
 class WebServer
 {
         

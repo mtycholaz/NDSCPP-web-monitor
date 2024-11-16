@@ -11,6 +11,9 @@
 //#include <format>
 #include <iomanip>
 
+#include "pixeltypes.h"
+#include "utilities.h"
+
 using namespace std;
 using namespace chrono;
 

@@ -1,0 +1,3 @@
+// NOTE: Copy this file to secrets.h and enter your actual values there, NOT here!
+
+#define API_KEY "Your AV API key"

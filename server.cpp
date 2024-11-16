@@ -1,6 +1,6 @@
 #include "server.h"
 
-#define PORT 8888
+#define PORT 7777
 
 // Function to handle incoming HTTP requests
 #include <microhttpd.h>

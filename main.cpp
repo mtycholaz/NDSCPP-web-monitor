@@ -5,6 +5,8 @@
 #include <thread>
 #include "global.h"
 #include "server.h"
+#include "canvas.h"
+#include "nightdriverclient.h"
 
 using namespace std;
 
