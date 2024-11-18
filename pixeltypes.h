@@ -445,6 +445,29 @@ struct CRGB {
         return *this;
     }
 
+    static CRGB HSV2RGB(double h, double s = 1.0, double v = 1.0)
+    {
+        h = fmod(h, 360.0); // Ensure h is in the range [0, 360)
+        if (h < 0) h += 360.0;
+
+        uint8_t hi = static_cast<uint8_t>(h / 60.0) % 6;
+        double f = (h / 60.0) - hi;
+        uint8_t p = static_cast<uint8_t>(v * (1.0 - s) * 255);
+        uint8_t q = static_cast<uint8_t>(v * (1.0 - f * s) * 255);
+        uint8_t t = static_cast<uint8_t>(v * (1.0 - (1.0 - f) * s) * 255);
+        uint8_t vByte = static_cast<uint8_t>(v * 255);
+
+        switch (hi)
+        {
+        case 0: return CRGB(vByte, t, p);
+        case 1: return CRGB(q, vByte, p);
+        case 2: return CRGB(p, vByte, t);
+        case 3: return CRGB(p, q, vByte);
+        case 4: return CRGB(t, p, vByte);
+        case 5: return CRGB(vByte, p, q);
+        default: return CRGB(0, 0, 0); // Should never reach here
+        }
+    }
 
     /// Add one CRGB to another, saturating at 0xFF for each channel
     constexpr CRGB& operator+= (const CRGB& rhs )

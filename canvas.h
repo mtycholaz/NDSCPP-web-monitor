@@ -1,98 +1,118 @@
-// Canvas.h
-//
-// A canvas represents a 2D grid of pixels that can be drawn to and displayed.  It is comprised 
-// of attributes like overall width and height in pixels, and a collection of pixel colors.  The
-// pixel colors are rendered by a worker thread that periodically updates the pixel colors by 
-// calling the render methods of the individual strips that comprise the canvas. 
-//
-// So, if you had a strip that was made up of four 1000-pixel strips, it would be a 4000x1 canvas
-// and it would have for LEDFeature objects, each of which would be responsible for rendering its
-// own portion of the canvas.
-
+#pragma once
 
 #include <string>
 #include <vector>
-#include <thread>
-#include <atomic>
+#include <map>
+#include <memory>
 #include <mutex>
-#include <chrono>
-#include <iostream>
+#include "interfaces.h"
+#include "utilities.h"
+#include "pixeltypes.h"
 
-class Canvas
+class Canvas : public ICanvas, public ILEDGraphics
 {
-protected:
-    std::string Name;
-    uint32_t Width;
-    uint32_t Height;
-    std::vector<CRGB> LEDs;
-    std::atomic<bool> Enabled{true};
-    std::atomic<uint32_t> SpareTime{1000};
-    std::mutex LEDMutex;
-    std::thread WorkerThread;
-
 public:
-    Canvas(const std::string &name, uint32_t width, uint32_t height, bool enabled)
-        : Name(name), Width(width), Height(height), Enabled(enabled)
+    Canvas(const std::string& name, uint32_t width, uint32_t height)
+        : _name(name), _width(width), _height(height), _leds(width * height, CRGB::Black) {}
+
+    // ICanvas overrides
+    const std::string& Name() const override { return _name; }
+    uint32_t Width() const override { return _width; }
+    uint32_t Height() const override { return _height; }
+    void AddFeature(std::shared_ptr<ILEDFeature> feature, uint32_t x, uint32_t y) override
     {
-        LEDs.resize(Width * Height, CRGB::Black);
+        std::lock_guard<std::mutex> lock(_mutex);
+        _features[feature] = {x, y};
+    }
+    void RemoveFeature(std::shared_ptr<ILEDFeature> feature) override
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _features.erase(feature);
+    }
+    const std::map<std::shared_ptr<ILEDFeature>, std::pair<uint32_t, uint32_t>>& Features() const override
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        return _features;
     }
 
-    virtual ~Canvas()
+    // ILEDGraphics overrides
+    void DrawPixel(uint32_t x, uint32_t y, const CRGB& color) override
     {
-        StopWorkerThread();
-    }
-
-    void StartWorkerThread()
-    {
-        if (!WorkerThread.joinable())
-        {
-            Enabled.store(true);
-            WorkerThread = std::thread(&Canvas::WorkerDrawAndSendLoop, this);
+        if (x < _width && y < _height) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _leds[y * _width + x] = color;
         }
     }
-
-    void StopWorkerThread()
+    void DrawPixel(uint32_t index, const CRGB& color) override
     {
-        if (WorkerThread.joinable())
-        {
-            Enabled.store(false);  // Signal the thread to exit
-            WorkerThread.join();   // Wait for the thread to finish
+        if (index < _leds.size()) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _leds[index] = color;
         }
     }
-
-    uint32_t GetPixelIndex(uint32_t x, uint32_t y) const
+    CRGB GetPixel(uint32_t x, uint32_t y) const override
     {
-        return (y * Width) + x;
-    }
-
-    void SetPixel(uint32_t x, uint32_t y, const CRGB &color)
-    {
-        std::lock_guard<std::mutex> lock(LEDMutex);
-        if (x < Width && y < Height)
-            LEDs[GetPixelIndex(x, y)] = color;
-    }
-
-    CRGB GetPixel(uint32_t x, uint32_t y) const
-    {
-        if (x < Width && y < Height)
-            return LEDs[GetPixelIndex(x, y)];
+        if (x < _width && y < _height) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _leds[y * _width + x];
+        }
         return CRGB::Black;
     }
-
-protected:
-    void WorkerDrawAndSendLoop()
+    CRGB GetPixel(uint32_t index) const override
     {
-        while (Enabled.load())
-        {
-            {
-                std::lock_guard<std::mutex> lock(LEDMutex);
-                // Example drawing logic: Set all pixels to blue
-                for (auto &pixel : LEDs)
-                    pixel = CRGB(0, 0, 255);
-            }
-
-            // Simulate a frame rate of 30 FPS
-            std::this_thread::sleep_for(std::chrono::milliseconds(33));
+        if (index < _leds.size()) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _leds[index];
+        }
+        return CRGB::Black;
+    }
+    void BlendPixel(uint32_t x, uint32_t y, const CRGB& color) override
+    {
+        if (x < _width && y < _height) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            uint32_t index = y * _width + x;
+            _leds[index] = _leds[index] + color;
         }
     }
+    void DrawFastVLine(uint32_t x, uint32_t y, uint32_t h, const CRGB& color) override
+    {
+        for (uint32_t i = 0; i < h; ++i)
+            DrawPixel(x, y + i, color);
+    }
+    void DrawFastHLine(uint32_t x, uint32_t y, uint32_t w, const CRGB& color) override
+    {
+        for (uint32_t i = 0; i < w; ++i)
+            DrawPixel(x + i, y, color);
+    }
+    void DrawRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const CRGB& color) override
+    {
+        DrawFastHLine(x, y, w, color);
+        DrawFastHLine(x, y + h - 1, w, color);
+        DrawFastVLine(x, y, h, color);
+        DrawFastVLine(x + w - 1, y, h, color);
+    }
+    void FillSolid(const CRGB& color) override
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        for (auto& led : _leds)
+            led = color;
+    }
+    void FillRainbow(double startHue = 0.0, double deltaHue = 5.0) override
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        double hue = startHue;
+        for (auto& led : _leds) {
+            led = CRGB::HSV2RGB(hue, 1.0, 1.0);
+            hue += deltaHue;
+            if (hue > 360.0) hue -= 360.0;
+        }
+    }
+
+private:
+    std::string _name;
+    uint32_t _width;
+    uint32_t _height;
+    mutable std::mutex _mutex;
+    std::vector<CRGB> _leds;
+    std::map<std::shared_ptr<ILEDFeature>, std::pair<uint32_t, uint32_t>> _features;
 };

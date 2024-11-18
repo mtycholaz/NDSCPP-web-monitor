@@ -13,6 +13,7 @@
 
 #include "pixeltypes.h"
 #include "utilities.h"
+#include "interfaces.h"
 
 using namespace std;
 using namespace chrono;

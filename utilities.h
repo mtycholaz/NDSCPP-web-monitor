@@ -40,15 +40,15 @@ public:
     }
 
     // Combines multiple byte arrays into one
+    
     static std::vector<uint8_t> CombineByteArrays(std::initializer_list<std::vector<uint8_t>> arrays)
     {
         std::vector<uint8_t> combined;
-        for (const auto &array : arrays)
-        {
+        for (const auto& array : arrays)
             combined.insert(combined.end(), array.begin(), array.end());
-        }
         return combined;
     }
+
 
     // Gets color bytes at a specific offset, handling reversing and RGB swapping
     static std::vector<uint8_t> GetColorBytesAtOffset(const std::vector<CRGB> &LEDs, uint32_t offset, uint32_t count, bool reversed, bool redGreenSwap)
