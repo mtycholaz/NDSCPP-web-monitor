@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-class Canvas : public ICanvas, public ILEDGraphics
+class Canvas : public ICanvas
 {
 public:
     Canvas(uint32_t width, uint32_t height)

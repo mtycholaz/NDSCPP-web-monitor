@@ -2,7 +2,7 @@
 
 #include "../interfaces.h"
 #include "../ledeffectbase.h"
-#include "../pixeltypes.h"
+#include "pixeltypes.h"
 
 class GreenFillEffect : public LEDEffectBase
 {

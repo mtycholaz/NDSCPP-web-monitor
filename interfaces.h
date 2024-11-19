@@ -46,7 +46,7 @@ public:
 };
 
 
-class ICanvas 
+class ICanvas : public ILEDGraphics
 {
 public:
     virtual ~ICanvas() = default;
