@@ -28,23 +28,31 @@ public:
 };
 
 // ILEDFeature interface represents a 2D set of CRGB objects
-class ILEDFeature : public ILEDGraphics
+class ILEDFeature
 {
 public:
     virtual ~ILEDFeature() = default;
 
-    virtual const std::string& HostName() const = 0;
-    virtual const std::string& FriendlyName() const = 0;
-    virtual bool CompressData() const = 0;
+    // Accessor methods
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
+    virtual const std::string &HostName() const = 0;
+    virtual const std::string &FriendlyName() const = 0;
     virtual uint32_t Offset() const = 0;
     virtual bool Reversed() const = 0;
     virtual uint8_t Channel() const = 0;
     virtual bool RedGreenSwap() const = 0;
     virtual uint32_t BatchSize() const = 0;
-};
 
+    // Data retrieval
+    virtual std::vector<uint8_t> GetPixelData() const = 0;
+
+    // Effect handling
+    virtual void ApplyEffect(ILEDEffect &effect, std::chrono::milliseconds deltaTime) = 0;
+
+    // State handling
+    virtual void Clear() = 0; // Resets the feature state
+};
 
 class ICanvas : public ILEDGraphics
 {

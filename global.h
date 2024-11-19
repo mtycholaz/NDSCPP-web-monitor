@@ -20,78 +20,11 @@ using namespace chrono;
 
 using string = string;
 template<class T>
-using optional = optional<T>;
 using Clock = chrono::system_clock;
-using TimePoint = Clock::time_point;
-
 #include "secrets.h"
-
-// Make it possible to disable ignoring cache (including per command-line define),
-// to prevent abuse in production scenarios. To be on the safe side, we default to false.
-// That means this program must be built with ALLOW_IGNORE_CACHE explicitly set to true
-// for cached=no to work.
-#ifndef ALLOW_IGNORE_CACHE
-    #define ALLOW_IGNORE_CACHE false
-#endif
 
 #define STR(x) #x
 
-// createTimePoint
-//
-// Create a TimePoint for a given year, day... second.
-
-inline chrono::system_clock::time_point createTimePoint(int y, unsigned int m, unsigned int d, unsigned int h, unsigned int min, unsigned int sec)
-{
-    using namespace chrono;
-
-    // Create a year_month_day object using the provided year, month, and day
-    year_month_day ymd = year{y}/month{m}/day{d};
-
-    // Create a time of day from hours, minutes, and seconds
-    hh_mm_ss time_of_day{hours{h} + minutes{min} + seconds{sec}};
-
-    // Combine the year_month_day and time_of_day to create a sys_time<seconds>
-    sys_time<seconds> tp = sys_days{ymd} + time_of_day.to_duration();
-
-    // Return the time_point
-    return chrono::system_clock::time_point{tp};
-}
-
-static inline string to_date_string(const chrono::system_clock::time_point& tp)
-{
-        using namespace chrono;
-        auto dp = floor<days>(tp); // Truncate to the nearest day
-        year_month_day ymd = year_month_day{dp}; // Convert to year/month/day
-
-        ostringstream oss;
-        oss << int(ymd.year()) << '-'
-            << setw(2) << setfill('0') << unsigned(ymd.month()) << '-'
-            << setw(2) << setfill('0') << unsigned(ymd.day());
-        return oss.str();
-    }
-
-static inline string to_date_time_string(const chrono::system_clock::time_point& tp)
-{
-    auto dp = floor<days>(tp); // Truncate to the nearest day
-    year_month_day ymd = year_month_day{dp}; // Convert to year/month/day
-
-    // Inline expansion of make_time
-    auto tod = tp - dp;
-    auto hp = duration_cast<hours>(tod);
-    tod -= hp;
-    auto mp = duration_cast<minutes>(tod);
-    tod -= mp;
-    auto sp = duration_cast<seconds>(tod);
-
-    ostringstream oss;
-    oss << int(ymd.year()) << '-'
-        << setw(2) << setfill('0') << unsigned(ymd.month()) << '-'
-        << setw(2) << setfill('0') << unsigned(ymd.day()) << ' '
-        << setw(2) << setfill('0') << hp.count() << ':'
-        << setw(2) << setfill('0') << mp.count() << ':'
-        << setw(2) << setfill('0') << sp.count();
-    return oss.str();
-}
 
 // arraysize
 //
