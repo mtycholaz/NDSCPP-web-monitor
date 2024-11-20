@@ -10,7 +10,8 @@ protected:
     int _height;
     std::vector<CRGB> _pixels;
 
-    int _index(int x, int y) const {
+    int _index(int x, int y) const 
+    {
         return y * _width + x;
     }
 

@@ -11,7 +11,8 @@
 class LEDFeature : public ILEDFeature
 {
 public:
-    LEDFeature(const std::string &hostName,
+    LEDFeature(std::shared_ptr<ICanvas> canvas,
+               const std::string &hostName,
                const std::string &friendlyName,
                uint32_t width,
                uint32_t height = 1,
@@ -21,7 +22,8 @@ public:
                uint8_t channel = 0,
                bool redGreenSwap = false,
                uint32_t batchSize = 1)
-        : _hostName(hostName),
+        : _canvas(canvas),
+          _hostName(hostName),
           _friendlyName(friendlyName),
           _width(width),
           _height(height),
@@ -30,8 +32,9 @@ public:
           _reversed(reversed),
           _channel(channel),
           _redGreenSwap(redGreenSwap),
-          _batchSize(batchSize),
-          _canvas(nullptr) {}
+          _batchSize(batchSize)
+    {
+    }
 
     // Accessor methods
     uint32_t Width() const override { return _width; }
@@ -108,6 +111,5 @@ private:
     uint8_t _channel;
     bool _redGreenSwap;
     uint32_t _batchSize;
-
     std::shared_ptr<ICanvas> _canvas; // Associated canvas
 };
