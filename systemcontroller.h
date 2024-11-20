@@ -68,13 +68,6 @@ public:
         _socketController->RemoveChannel(hostName);
     }
 
-    // Gets the total bytes per second across all channels
-    uint32_t GetTotalBytesPerSecond() const
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        return _socketController->TotalBytesPerSecond();
-    }
-
     // Provides access to the canvas
     std::shared_ptr<Canvas> GetCanvas() const
     {
