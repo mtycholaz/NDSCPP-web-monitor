@@ -7,6 +7,11 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <stdexcept>
+#include <cstring>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include "interfaces.h"
 #include "utilities.h"
 #include "pixeltypes.h"
@@ -14,28 +19,33 @@
 class SocketChannel : public ISocketChannel
 {
 public:
-    SocketChannel(const std::string& hostName, const std::string& friendlyName, uint32_t width, uint32_t height,
-                  uint32_t offset, uint16_t channel, bool redGreenSwap, uint16_t port = 49152)
+    SocketChannel(const std::string &hostName, const std::string &friendlyName, uint16_t port = 49152)
         : _hostName(hostName),
           _friendlyName(friendlyName),
-          _width(width),
-          _height(height),
-          _offset(offset),
-          _channel(channel),
-          _redGreenSwap(redGreenSwap),
           _port(port),
           _isConnected(false),
-          _bytesPerSecond(0),
-          _running(false)
-    {}
+          _running(false),
+          _socketFd(-1)
+    {
+    }
 
-    ~SocketChannel() override { Stop(); }
+    ~SocketChannel() override
+    {
+        Stop();
+        CloseSocket();
+    }
+
+    virtual uint16_t Port() const override
+    {
+        return _port;
+    }
 
     // Override methods from ISocketChannel
     void Start() override
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        if (!_running) {
+        if (!_running)
+        {
             _running = true;
             _workerThread = std::thread(&SocketChannel::WorkerLoop, this);
         }
@@ -50,6 +60,8 @@ public:
 
         if (_workerThread.joinable())
             _workerThread.join();
+
+        CloseSocket();
     }
 
     bool IsConnected() const override
@@ -57,26 +69,10 @@ public:
         std::lock_guard<std::mutex> lock(_mutex);
         return _isConnected;
     }
+    const std::string &HostName() const override { return _hostName; }
+    const std::string &FriendlyName() const override { return _friendlyName; }
 
-    uint32_t BytesPerSecond() const override
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        return _bytesPerSecond;
-    }
-
-    void ResetBytesPerSecond() override
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _bytesPerSecond = 0;
-    }
-
-    virtual const std::string& HostName() const override { return _hostName; };
-    virtual const std::string& FriendlyName() const override { return _friendlyName; };
-    virtual uint32_t Width() const override { return _width; };
-    virtual uint32_t Height() const override { return _height; };
-    uint16_t Port() const override { return _port; }
-
-    bool EnqueueFrame(const std::vector<uint8_t>& frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) override
+    bool EnqueueFrame(const std::vector<uint8_t> &frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) override
     {
         {
             std::lock_guard<std::mutex> lock(_queueMutex);
@@ -87,16 +83,16 @@ public:
         return true; // Successfully enqueued
     }
 
-
 private:
-    // Worker thread method
     void WorkerLoop()
     {
-        while (_running) {
+        while (_running)
+        {
             std::vector<uint8_t> frame;
             {
                 std::lock_guard<std::mutex> lock(_queueMutex);
-                if (!_frameQueue.empty()) {
+                if (!_frameQueue.empty())
+                {
                     frame = _frameQueue.front();
                     _frameQueue.pop();
                 }
@@ -109,36 +105,61 @@ private:
         }
     }
 
-    void SendFrame(const std::vector<uint8_t>& frame)
+    void SendFrame(const std::vector<uint8_t> &frame)
     {
-        // Simulate sending data and updating the connection state
-        try {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _isConnected = true;
-            _bytesPerSecond += frame.size();
-        } catch (...) {
+        if (_socketFd == -1)
+        {
+            if (!ConnectSocket())
+            {
+                std::lock_guard<std::mutex> lock(_mutex);
+                _isConnected = false;
+                return;
+            }
+        }
+
+        ssize_t sentBytes = send(_socketFd, frame.data(), frame.size(), 0);
+        if (sentBytes == -1)
+        {
+            CloseSocket();
             std::lock_guard<std::mutex> lock(_mutex);
             _isConnected = false;
+            return;
         }
+
+        std::lock_guard<std::mutex> lock(_mutex);
+        _isConnected = true;
     }
 
-    std::vector<uint8_t> GetFrameData(const std::vector<CRGB>& leds, std::chrono::time_point<std::chrono::system_clock> timestamp) const
+    bool ConnectSocket()
     {
-        auto pixelData = Utilities::GetColorBytesAtOffset(leds, _offset, _width * _height, false, _redGreenSwap);
+        struct sockaddr_in serverAddr;
+        memset(&serverAddr, 0, sizeof(serverAddr));
+        serverAddr.sin_family = AF_INET;
+        serverAddr.sin_port = htons(_port);
 
-        // Calculate epoch time from timestamp
-        auto epoch = std::chrono::duration_cast<std::chrono::microseconds>(timestamp.time_since_epoch()).count();
-        uint64_t seconds = epoch / 1'000'000;
-        uint64_t microseconds = epoch % 1'000'000;
+        if (inet_pton(AF_INET, _hostName.c_str(), &serverAddr.sin_addr) <= 0)
+            return false;
 
-        return Utilities::CombineByteArrays({
-            Utilities::WORDToBytes(CommandPixelData),
-            Utilities::WORDToBytes(_channel),
-            Utilities::DWORDToBytes(static_cast<uint32_t>(pixelData.size() / 3)),
-            Utilities::ULONGToBytes(seconds),
-            Utilities::ULONGToBytes(microseconds),
-            pixelData
-        });
+        _socketFd = socket(AF_INET, SOCK_STREAM, 0);
+        if (_socketFd == -1)
+            return false;
+
+        if (connect(_socketFd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+        {
+            CloseSocket();
+            return false;
+        }
+
+        return true;
+    }
+
+    void CloseSocket()
+    {
+        if (_socketFd != -1)
+        {
+            close(_socketFd);
+            _socketFd = -1;
+        }
     }
 
 private:
@@ -149,20 +170,16 @@ private:
     // Member variables
     std::string _hostName;
     std::string _friendlyName;
-    uint32_t _width;
-    uint32_t _height;
-    uint32_t _offset;
-    uint16_t _channel;
-    bool _redGreenSwap;
     uint16_t _port;
 
-    mutable std::mutex _mutex;       // Protects connection state
+    mutable std::mutex _mutex; // Protects connection state
     std::atomic<bool> _isConnected;
-    std::atomic<uint32_t> _bytesPerSecond;
     std::atomic<bool> _running;
 
-    std::mutex _queueMutex;          // Protects the frame queue
+    std::mutex _queueMutex; // Protects the frame queue
     std::queue<std::vector<uint8_t>> _frameQueue;
 
     std::thread _workerThread;
+
+    int _socketFd; // File descriptor for the socket
 };
