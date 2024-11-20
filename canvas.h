@@ -5,6 +5,7 @@
 #include <memory>
 #include <algorithm>
 #include <stdexcept>
+#include <numeric>
 
 class Canvas : public ICanvas
 {
@@ -70,7 +71,6 @@ public:
 
     void DrawLine(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1, CRGB color) override
     {
-        // Bresenham's line algorithm
         int dx = abs((int)x1 - (int)x0), sx = x0 < x1 ? 1 : -1;
         int dy = -abs((int)y1 - (int)y0), sy = y0 < y1 ? 1 : -1;
         int err = dx + dy, e2;
@@ -160,13 +160,4 @@ private:
     uint32_t _height;
     std::vector<CRGB> _leds;
     std::vector<std::shared_ptr<ILEDFeature>> _features;
-
-    /*
-    CRGB GetPixel(int index, int) const
-    {
-        if (index < 0 || static_cast<size_t>(index) >= _leds.size())
-            return CRGB::Black;
-        return _leds[index];
-    }
-    */
 };

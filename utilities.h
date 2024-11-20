@@ -9,6 +9,52 @@
 class Utilities
 {
 public:
+
+    static std::vector<uint8_t> ConvertToByteArray(const std::vector<CRGB>& pixels, bool reversed, bool redGreenSwap)
+    {
+        std::vector<uint8_t> byteArray;
+        byteArray.reserve(pixels.size() * 3); // Each CRGB has 3 components: R, G, B
+
+        if (reversed)
+        {
+            for (auto it = pixels.rbegin(); it != pixels.rend(); ++it)
+            {
+                if (redGreenSwap)
+                {
+                    byteArray.push_back(it->g);
+                    byteArray.push_back(it->r);
+                    byteArray.push_back(it->b);
+                }
+                else
+                {
+                    byteArray.push_back(it->r);
+                    byteArray.push_back(it->g);
+                    byteArray.push_back(it->b);
+                }
+            }
+        }
+        else
+        {
+            for (const auto& pixel : pixels)
+            {
+                if (redGreenSwap)
+                {
+                    byteArray.push_back(pixel.g);
+                    byteArray.push_back(pixel.r);
+                    byteArray.push_back(pixel.b);
+                }
+                else
+                {
+                    byteArray.push_back(pixel.r);
+                    byteArray.push_back(pixel.g);
+                    byteArray.push_back(pixel.b);
+                }
+            }
+        }
+
+        return byteArray;
+    }
+
     // Converts a uint16_t to a vector of bytes (little-endian)
     static std::vector<uint8_t> WORDToBytes(uint16_t value)
     {

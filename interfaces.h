@@ -38,7 +38,8 @@ public:
     virtual uint32_t Height() const = 0;
     virtual const std::string &HostName() const = 0;
     virtual const std::string &FriendlyName() const = 0;
-    virtual uint32_t Offset() const = 0;
+    virtual uint32_t OffsetX() const = 0;
+    virtual uint32_t OffsetY() const = 0;
     virtual bool Reversed() const = 0;
     virtual uint8_t Channel() const = 0;
     virtual bool RedGreenSwap() const = 0;
@@ -46,9 +47,6 @@ public:
 
     // Data retrieval
     virtual std::vector<uint8_t> GetPixelData() const = 0;
-
-    // Effect handling
-    virtual void ApplyEffect(ILEDEffect &effect, std::chrono::milliseconds deltaTime) = 0;
 
     // State handling
     virtual void Clear() = 0; // Resets the feature state
@@ -73,6 +71,7 @@ public:
 };
 
 
+
 // ILEDEffect interface for effects applied to LED features or canvases
 class ILEDEffect
 {
@@ -89,7 +88,6 @@ public:
     virtual void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) = 0;
 
 };
-
 class ISocketChannel
 {
 public:
@@ -103,7 +101,7 @@ public:
     virtual uint16_t Port() const = 0;
 
     // Data transfer methods
-    virtual bool EnqueueFrame(const std::vector<CRGB>& frame, std::chrono::time_point<std::chrono::system_clock> timestamp) = 0;
+    virtual bool EnqueueFrame(const std::vector<uint8_t>& frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) = 0;
 
     // Connection status
     virtual bool IsConnected() const = 0;

@@ -76,9 +76,8 @@ public:
     virtual uint32_t Height() const override { return _height; };
     uint16_t Port() const override { return _port; }
 
-    bool EnqueueFrame(const std::vector<CRGB>& frame, std::chrono::time_point<std::chrono::system_clock> timestamp) override
+    bool EnqueueFrame(const std::vector<uint8_t>& frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) override
     {
-        auto frameData = GetFrameData(frame, timestamp);
         {
             std::lock_guard<std::mutex> lock(_queueMutex);
             if (_frameQueue.size() >= MaxQueueDepth)
@@ -87,6 +86,7 @@ public:
         }
         return true; // Successfully enqueued
     }
+
 
 private:
     // Worker thread method
