@@ -18,6 +18,6 @@ public:
 
     void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) override
     {
-        canvas.FillSolid(CRGB::Green);
+        canvas.Graphics().Clear(CRGB::Green);
     }
 };

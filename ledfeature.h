@@ -67,8 +67,8 @@ public:
                 uint32_t canvasY = y + _offsetY;
 
                 // Ensure we don't exceed canvas boundaries
-                if (canvasX < _canvas->Width() && canvasY < _canvas->Height())
-                    featurePixels.push_back(_canvas->GetPixel(canvasX, canvasY));
+                if (canvasX < _canvas->Graphics().Width() && canvasY < _canvas->Graphics().Height())
+                    featurePixels.push_back(_canvas->Graphics().GetPixel(canvasX, canvasY));
                 else
                     featurePixels.push_back(CRGB::Magenta);           // Out-of-bounds pixels are defaulted to Magenta
             }
@@ -78,23 +78,23 @@ public:
         return Utilities::ConvertToByteArray(featurePixels, _reversed, _redGreenSwap);
     }
 
-    // State handling
-    void Clear() override
+    std::vector<uint8_t> GetDataFrame()
     {
-        if (!_canvas)
-            throw std::runtime_error("LEDFeature must be associated with a canvas to clear.");
+        // Calculate epoch time
+        auto now = std::chrono::system_clock::now();
+        auto epoch = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+        uint64_t seconds = epoch / 1'000'000;
+        uint64_t microseconds = epoch % 1'000'000;
 
-        for (uint32_t y = 0; y < _height; ++y)
-        {
-            for (uint32_t x = 0; x < _width; ++x)
-            {
-                uint32_t canvasX = x + _offsetX;
-                uint32_t canvasY = y + _offsetY;
+        auto pixelData = GetPixelData();
 
-                if (canvasX < _canvas->Width() && canvasY < _canvas->Height())
-                    _canvas->DrawPixel(canvasX, canvasY, CRGB::Black);
-            }
-        }
+        return Utilities::CombineByteArrays( { Utilities::WORDToBytes(3),
+                                               Utilities::WORDToBytes(_channel),
+                                               Utilities::WORDToBytes(_width * _height),
+                                               Utilities::ULONGToBytes(seconds),
+                                               Utilities::ULONGToBytes(microseconds)
+                                             });
+
     }
 
 private:
