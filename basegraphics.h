@@ -1,4 +1,10 @@
 #pragma once
+
+// BaseGraphics
+//
+// A class that can do all the basic drawing functions (pixel, line, circle, etc) of the ILEDGraphics 
+// interface to its own internal buffer of pixels
+
 #include <vector>
 #include "pixeltypes.h" // Assuming this defines the CRGB structure
 #include "interfaces.h"
