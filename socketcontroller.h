@@ -39,6 +39,18 @@ public:
         _channels.erase(it, _channels.end());
     }
 
+    // Finds a channel by host name
+    std::shared_ptr<SocketChannel> FindChannelByHost(const std::string& hostName) const
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        for (const auto& channel : _channels)
+        {
+            if (channel->HostName() == hostName)
+                return channel;
+        }
+        return nullptr; // Return null if no matching channel is found
+    }
+    
     // Starts all channels
     void StartAll()
     {

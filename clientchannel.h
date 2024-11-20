@@ -61,20 +61,17 @@ public:
             _worker.join();
     }
 
-    virtual bool EnqueueFrame(const std::vector<CRGB>& frame, std::chrono::time_point<std::chrono::system_clock> timestamp) override
+    virtual bool EnqueueFrame(const std::vector<uint8_t>& frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) override
     {
         std::lock_guard<std::mutex> lock(_queueMutex);
 
-        auto data = GetFrameData(frame);
         if (_queue.size() >= MaxQueueDepth)
             _queue.pop(); // Discard the oldest frame
 
-        _queue.push(data);
+        _queue.push(frameData);
         _condition.notify_one();
         return true;
     }
-
-
 
 private:
     std::vector<uint8_t> GetFrameData(const std::vector<CRGB>& leds) const
