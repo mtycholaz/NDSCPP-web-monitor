@@ -7,24 +7,22 @@
 
 // ILEDGraphics interface for 2D drawing primitives
 
-class ILEDGraphics
+// Interface ILEDGraphics
+class ILEDGraphics 
 {
 public:
     virtual ~ILEDGraphics() = default;
 
-    // Accessors for individual pixels
-    virtual CRGB GetPixel(uint32_t x, uint32_t y) const = 0;
-    virtual void DrawPixel(uint32_t x, uint32_t y, CRGB color) = 0;
-
-    // Drawing methods
-    virtual void DrawPixels(double position, double count, CRGB color) = 0;
-    virtual void DrawLine(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1, CRGB color) = 0;
-    virtual void DrawRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h, CRGB color) = 0;
-    virtual void DrawCircle(uint32_t x0, uint32_t y0, uint32_t radius, CRGB color) = 0;
-
-    // Fill and effect methods
-    virtual void FillSolid(CRGB color) = 0;
-    virtual void FillRainbow(double startHue, double deltaHue) = 0;
+    virtual uint32_t Width() const = 0;
+    virtual uint32_t Height() const = 0;
+    virtual void SetPixel(int x, int y, const CRGB& color) = 0;
+    virtual CRGB GetPixel(int x, int y) const = 0;
+    virtual void Clear(const CRGB& color) = 0;
+    virtual void FillRectangle(int x, int y, int width, int height, const CRGB& color) = 0;
+    virtual void DrawLine(int x1, int y1, int x2, int y2, const CRGB& color) = 0;
+    virtual void DrawCircle(int x, int y, int radius, const CRGB& color) = 0;
+    virtual void FillCircle(int x, int y, int radius, const CRGB& color) = 0;
+    virtual void DrawRectangle(int x, int y, int width, int height, const CRGB& color) = 0;
 };
 
 // ILEDFeature interface represents a 2D set of CRGB objects
@@ -47,20 +45,12 @@ public:
 
     // Data retrieval
     virtual std::vector<uint8_t> GetPixelData() const = 0;
-
-    // State handling
-    virtual void Clear() = 0; // Resets the feature state
 };
 
-class ICanvas : public ILEDGraphics
+class ICanvas 
 {
 public:
     virtual ~ICanvas() = default;
-
-    // Accessors for canvas dimensions
-    virtual uint32_t Width() const = 0;
-    virtual uint32_t Height() const = 0;
-
     // Accessors for features
     virtual std::vector<std::shared_ptr<ILEDFeature>>& Features() = 0;
     virtual const std::vector<std::shared_ptr<ILEDFeature>>& Features() const = 0;
@@ -68,6 +58,8 @@ public:
     // Add or remove features
     virtual void AddFeature(std::shared_ptr<ILEDFeature> feature) = 0;
     virtual void RemoveFeature(std::shared_ptr<ILEDFeature> feature) = 0;
+
+    virtual ILEDGraphics & Graphics() = 0;
 };
 
 
