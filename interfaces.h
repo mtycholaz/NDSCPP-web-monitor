@@ -88,8 +88,6 @@ public:
     // Accessors for channel details
     virtual const std::string& HostName() const = 0;
     virtual const std::string& FriendlyName() const = 0;
-    virtual uint32_t Width() const = 0;
-    virtual uint32_t Height() const = 0;
     virtual uint16_t Port() const = 0;
 
     // Data transfer methods
@@ -97,10 +95,6 @@ public:
 
     // Connection status
     virtual bool IsConnected() const = 0;
-
-    // Performance tracking
-    virtual uint32_t BytesPerSecond() const = 0;
-    virtual void ResetBytesPerSecond() = 0;
 
     // Start and stop operations
     virtual void Start() = 0;

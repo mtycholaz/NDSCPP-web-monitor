@@ -19,18 +19,11 @@
 class SocketChannel : public ISocketChannel
 {
 public:
-    SocketChannel(const std::string &hostName, const std::string &friendlyName, uint32_t width, uint32_t height,
-                  uint32_t offset, uint16_t channel, bool redGreenSwap, uint16_t port = 49152)
+    SocketChannel(const std::string &hostName, const std::string &friendlyName, uint16_t port = 49152)
         : _hostName(hostName),
           _friendlyName(friendlyName),
-          _width(width),
-          _height(height),
-          _offset(offset),
-          _channel(channel),
-          _redGreenSwap(redGreenSwap),
           _port(port),
           _isConnected(false),
-          _bytesPerSecond(0),
           _running(false),
           _socketFd(-1)
     {
@@ -40,6 +33,11 @@ public:
     {
         Stop();
         CloseSocket();
+    }
+
+    virtual uint16_t Port() const override
+    {
+        return _port;
     }
 
     // Override methods from ISocketChannel
@@ -71,24 +69,8 @@ public:
         std::lock_guard<std::mutex> lock(_mutex);
         return _isConnected;
     }
-
-    uint32_t BytesPerSecond() const override
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        return _bytesPerSecond;
-    }
-
-    void ResetBytesPerSecond() override
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _bytesPerSecond = 0;
-    }
-
     const std::string &HostName() const override { return _hostName; }
     const std::string &FriendlyName() const override { return _friendlyName; }
-    uint32_t Width() const override { return _width; }
-    uint32_t Height() const override { return _height; }
-    uint16_t Port() const override { return _port; }
 
     bool EnqueueFrame(const std::vector<uint8_t> &frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) override
     {
@@ -146,7 +128,6 @@ private:
 
         std::lock_guard<std::mutex> lock(_mutex);
         _isConnected = true;
-        _bytesPerSecond += static_cast<uint32_t>(sentBytes);
     }
 
     bool ConnectSocket()
@@ -189,16 +170,10 @@ private:
     // Member variables
     std::string _hostName;
     std::string _friendlyName;
-    uint32_t _width;
-    uint32_t _height;
-    uint32_t _offset;
-    uint16_t _channel;
-    bool _redGreenSwap;
     uint16_t _port;
 
     mutable std::mutex _mutex; // Protects connection state
     std::atomic<bool> _isConnected;
-    std::atomic<uint32_t> _bytesPerSecond;
     std::atomic<bool> _running;
 
     std::mutex _queueMutex; // Protects the frame queue

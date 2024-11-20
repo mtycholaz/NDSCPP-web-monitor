@@ -17,10 +17,9 @@ public:
     ~SocketController() { StopAll(); }
 
     // Adds a new SocketChannel to the controller
-    void AddChannel(const std::string& hostName, const std::string& friendlyName, uint32_t width, uint32_t height,
-                    uint32_t offset, uint16_t channelIndex, bool redGreenSwap, uint16_t port = 49152)
+    void AddChannel(const std::string& hostName, const std::string& friendlyName, uint16_t port = 49152)
     {
-        auto newChannel = std::make_shared<SocketChannel>(hostName, friendlyName, width, height, offset, channelIndex, redGreenSwap, port);
+        auto newChannel = std::make_shared<SocketChannel>(hostName, friendlyName, port);
         {
             std::lock_guard<std::mutex> lock(_mutex);
             _channels.push_back(newChannel);
@@ -66,15 +65,5 @@ public:
         for (auto& channel : _channels)
             channel->Stop();
         _channels.clear();
-    }
-
-    // Gets the total bytes per second across all channels
-    uint32_t TotalBytesPerSecond() const
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        uint32_t total = 0;
-        for (const auto& channel : _channels)
-            total += channel->BytesPerSecond();
-        return total;
     }
 };
