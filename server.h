@@ -1,3 +1,12 @@
+#pragma once
+
+// WebServer
+//
+// This class is responsible for starting and stopping the web server.  It uses the
+// MicroHTTPD library to create a simple web server that listens on the port.  The
+// server is started on a separate thread, and the main thread can signal the server
+// to stop by calling the Stop method.  The server will then stop and the thread will
+// exit.
 
 #include <stdio.h>
 #include <stdlib.h>

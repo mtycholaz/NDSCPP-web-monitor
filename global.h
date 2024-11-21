@@ -1,6 +1,10 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+// Globals
+//
+// This file contains global definitions and includes that are used throughout the project.
+
 #include <microhttpd.h>
 #include <optional>
 #include <thread>
@@ -8,7 +12,6 @@
 #include <string>
 #include <chrono>
 #include <iostream>
-//#include <format>
 #include <iomanip>
 
 #include "pixeltypes.h"
@@ -26,6 +29,9 @@ using namespace chrono;
 
 #define arraysize(x) (sizeof(x)/sizeof(x[0]))
 
+// str_snprintf
+//
+// A safe version of snprintf that returns a string
 
 inline string str_snprintf(const char *fmt, size_t len, ...)
 {

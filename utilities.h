@@ -1,5 +1,11 @@
-#ifndef UTILITIES_H
-#define UTILITIES_H
+#pragma once
+
+// Utilities
+//
+// This class provides a number of utility functions that are used by the various
+// classes in the project.  Most of them relate to managing the data that is sent
+// to the ESP32.  The ESP32 expects a specific format for the data that is sent to
+// it, and this class provides functions to convert the data into that format.
 
 #include <vector>
 #include <cstdint>
@@ -245,4 +251,3 @@ private:
     }
 };
 
-#endif // UTILITIES_H

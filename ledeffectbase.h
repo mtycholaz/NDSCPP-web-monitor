@@ -1,5 +1,9 @@
 #pragma once
 
+// LEDEffectBase
+// 
+// A helper class that implements the ILEDEffect interface.  
+
 #include "interfaces.h"
 #include <vector>
 #include "pixeltypes.h"

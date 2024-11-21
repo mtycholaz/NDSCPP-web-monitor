@@ -2,7 +2,9 @@
 
 // SocketController
 //
-// Manages the list of active SocketChannels
+// Manages the list of active SocketChannels.  This class is responsible for creating
+// and destroying SocketChannels, and for starting and stopping them.  It also provides
+// a method to find a SocketChannel by host name.
 
 #include <vector>
 #include <memory>
