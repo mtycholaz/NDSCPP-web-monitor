@@ -68,7 +68,7 @@ int main(int, char *[])
             canvas,             // Canvas to get pixels from
             "192.168.8.176",    // Hostname
             "Workbench Matrix", // Friendly Name
-            8, 8,               // Width, Height
+            512, 32,            // Width, Height
             0, 0,               // Offset X, Offset Y
             false,              // Reversed
             0,                  // Channel
@@ -81,12 +81,7 @@ int main(int, char *[])
         // Add features to the SocketController
         socketController.AddChannel(
             feature1->HostName(),
-            feature1->FriendlyName(),
-            feature1->Width(),
-            feature1->Height(),
-            feature1->OffsetX(),
-            feature1->Channel(),
-            feature1->RedGreenSwap()
+            feature1->FriendlyName()
         );
 
         // Add the effect to the EffectsManager
