@@ -72,7 +72,25 @@ public:
     const std::string &HostName() const override { return _hostName; }
     const std::string &FriendlyName() const override { return _friendlyName; }
 
-    bool EnqueueFrame(const std::vector<uint8_t> &frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) override
+    virtual std::vector<uint8_t> CompressFrame(const std::vector<uint8_t>& data) override
+    {
+        constexpr uint32_t COMPRESSED_HEADER_TAG = 0x44415645; // Magic "DAVE" tag
+        constexpr uint32_t CUSTOM_TAG = 0x12345678;
+
+        // Compress the data
+        auto compressedData = Utilities::Compress(data);
+
+        // Create the compressed frame
+        return Utilities::CombineByteArrays(
+            Utilities::DWORDToBytes(COMPRESSED_HEADER_TAG),
+            Utilities::DWORDToBytes(static_cast<uint32_t>(compressedData.size())),
+            Utilities::DWORDToBytes(static_cast<uint32_t>(data.size())),
+            Utilities::DWORDToBytes(CUSTOM_TAG),
+            compressedData
+        );
+    }
+
+    bool EnqueueFrame(const std::vector<uint8_t> &frameData) override
     {
         {
             std::lock_guard<std::mutex> lock(_queueMutex);
@@ -117,15 +135,22 @@ private:
             }
         }
 
-        ssize_t sentBytes = send(_socketFd, frame.data(), frame.size(), 0);
-        if (sentBytes == -1)
+        try
         {
-            CloseSocket();
-            std::lock_guard<std::mutex> lock(_mutex);
-            _isConnected = false;
-            return;
+            ssize_t sentBytes = send(_socketFd, frame.data(), frame.size(), MSG_NOSIGNAL);
+            if (sentBytes == -1)
+            {
+                CloseSocket();
+                std::lock_guard<std::mutex> lock(_mutex);
+                _isConnected = false;
+                return;
+            }
         }
-
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        
         std::lock_guard<std::mutex> lock(_mutex);
         _isConnected = true;
     }

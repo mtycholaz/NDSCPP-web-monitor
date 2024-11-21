@@ -1,5 +1,10 @@
 #pragma once
 
+// LEDFeature
+//
+// Represents one rectangular section of the canvas and is responsiible for producing the
+// color data frames for that section of the canvas.
+
 #include "interfaces.h"
 #include "utilities.h"
 #include "canvas.h"
@@ -73,15 +78,15 @@ public:
                 if (canvasX < _canvas->Graphics().Width() && canvasY < _canvas->Graphics().Height())
                     featurePixels.push_back(_canvas->Graphics().GetPixel(canvasX, canvasY));
                 else
-                    featurePixels.push_back(CRGB::Magenta);           // Out-of-bounds pixels are defaulted to Magenta
+                    featurePixels.push_back(CRGB::Magenta); // Out-of-bounds pixels are defaulted to Magenta
             }
         }
 
         // Convert to the desired byte array format (e.g., RGB)
-        return Utilities::ConvertToByteArray(featurePixels, _reversed, _redGreenSwap);
+        return Utilities::ConvertPixelsToByteArray(featurePixels, _reversed, _redGreenSwap);
     }
 
-    std::vector<uint8_t> GetDataFrame()
+    std::vector<uint8_t> GetDataFrame() const override
     {
         // Calculate epoch time
         auto now = std::chrono::system_clock::now();
@@ -91,13 +96,12 @@ public:
 
         auto pixelData = GetPixelData();
 
-        return Utilities::CombineByteArrays( { Utilities::WORDToBytes(3),
-                                               Utilities::WORDToBytes(_channel),
-                                               Utilities::WORDToBytes(_width * _height),
-                                               Utilities::ULONGToBytes(seconds),
-                                               Utilities::ULONGToBytes(microseconds)
-                                             });
-
+        return Utilities::CombineByteArrays(Utilities::WORDToBytes(3),
+                                            Utilities::WORDToBytes(_channel),
+                                            Utilities::DWORDToBytes(_width * _height),
+                                            Utilities::ULONGToBytes(seconds),
+                                            Utilities::ULONGToBytes(microseconds),
+                                            pixelData);
     }
 
 private:

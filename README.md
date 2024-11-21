@@ -29,9 +29,6 @@ Implements ISocketController to manage a collection of SocketChannel instances, 
 ### Canvas  
 Implements ICanvas and ILEDGraphics, representing a 2D drawing surface with support for multiple LED features.
 
-### ClientChannel  
-Represents a logical LED client, capable of managing and sending LED data frames to a remote server.
-
 ### WebServer  
 Hosts a REST API for interacting with and controlling LED canvases and their features.
 

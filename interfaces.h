@@ -45,6 +45,8 @@ public:
 
     // Data retrieval
     virtual std::vector<uint8_t> GetPixelData() const = 0;
+    virtual std::vector<uint8_t> GetDataFrame() const = 0;    
+
 };
 
 class ICanvas 
@@ -91,7 +93,8 @@ public:
     virtual uint16_t Port() const = 0;
 
     // Data transfer methods
-    virtual bool EnqueueFrame(const std::vector<uint8_t>& frameData, std::chrono::time_point<std::chrono::system_clock> timestamp) = 0;
+    virtual bool EnqueueFrame(const std::vector<uint8_t>& frameData) = 0;
+    virtual std::vector<uint8_t> CompressFrame(const std::vector<uint8_t>& data) = 0;
 
     // Connection status
     virtual bool IsConnected() const = 0;

@@ -1,5 +1,9 @@
 #pragma once
 
+// Canvas
+//
+// Represents the larger drawing surface that is made up from one or more LEDFeatures
+
 #include "interfaces.h"
 #include "basegraphics.h"
 #include <vector>

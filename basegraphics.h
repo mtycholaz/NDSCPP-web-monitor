@@ -3,7 +3,7 @@
 // BaseGraphics
 //
 // A class that can do all the basic drawing functions (pixel, line, circle, etc) of the ILEDGraphics 
-// interface to its own internal buffer of pixels
+// interface to its own internal buffer of pixels.  It manipulates the buffer only through SetPixel and Clear
 
 #include <vector>
 #include "pixeltypes.h" // Assuming this defines the CRGB structure

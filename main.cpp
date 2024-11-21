@@ -3,10 +3,12 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
+
+// TODO: Rationalize which headers are needed here - right now I'm including everything to make sure it all compiles...
+
 #include "global.h"
 #include "canvas.h"
 #include "canvascontroller.h"
-#include "clientchannel.h"
 #include "interfaces.h"
 #include "socketchannel.h"
 #include "socketcontroller.h"
@@ -32,6 +34,10 @@ void handle_signal(int signal)
     {
         running = false;
         cerr << "Received SIGINT, exiting...\n" << flush;
+    }
+    else if (signal == SIGPIPE)
+    {
+        cerr << "Received SIGPIPE, ignoring...\n" << flush;
     }
 }
 
@@ -94,19 +100,19 @@ int main(int, char *[])
         // Main application loop
         while (running)
         {
-            // Get the current time
-            auto startTime = chrono::system_clock::now();
-
             // Render the current effect to the canvas
             effectsManager.UpdateCurrentEffect(*canvas, 16ms); // Assume ~60 FPS (delta time = 1/60)
 
             // Send the data to each feature's SocketChannel
             for (const auto &feature : canvas->Features())
             {
-                auto pixelData = feature->GetPixelData();
+                auto frame = feature->GetDataFrame();
+
                 auto channel = socketController.FindChannelByHost(feature->HostName());
+                auto compressedFrame = channel->CompressFrame(frame);
+
                 if (channel)
-                    channel->EnqueueFrame(pixelData, startTime);
+                    channel->EnqueueFrame(compressedFrame);
             }
 
             // Wait to simulate ~60 FPS
