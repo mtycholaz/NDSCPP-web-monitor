@@ -25,14 +25,14 @@ public:
 
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
-    virtual void SetPixel(int x, int y, const CRGB& color) = 0;
-    virtual CRGB GetPixel(int x, int y) const = 0;
+    virtual void SetPixel(uint32_t x, uint32_t y, const CRGB& color) = 0;
+    virtual CRGB GetPixel(uint32_t x, uint32_t y) const = 0;
     virtual void Clear(const CRGB& color) = 0;
-    virtual void FillRectangle(int x, int y, int width, int height, const CRGB& color) = 0;
-    virtual void DrawLine(int x1, int y1, int x2, int y2, const CRGB& color) = 0;
-    virtual void DrawCircle(int x, int y, int radius, const CRGB& color) = 0;
-    virtual void FillCircle(int x, int y, int radius, const CRGB& color) = 0;
-    virtual void DrawRectangle(int x, int y, int width, int height, const CRGB& color) = 0;
+    virtual void FillRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) = 0;
+    virtual void DrawLine(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, const CRGB& color) = 0;
+    virtual void DrawCircle(uint32_t x, uint32_t y, uint32_t radius, const CRGB& color) = 0;
+    virtual void FillCircle(uint32_t x, uint32_t y, uint32_t radius, const CRGB& color) = 0;
+    virtual void DrawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) = 0;
 };
 
 // ILEDFeature
