@@ -1,5 +1,11 @@
 #pragma once
 
+// EffectsManager
+//
+// Manages a collection of ILEDEffect objects.  The EffectsManager is responsible for
+// starting and stopping the effects, and for switching between them.  The EffectsManager
+// can also be used to clear all effects.
+
 #include "interfaces.h"
 #include <vector>
 #include <memory>

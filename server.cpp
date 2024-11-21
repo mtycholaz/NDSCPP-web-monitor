@@ -1,5 +1,9 @@
 #include "server.h"
 
+//
+// WebServer class implementation
+//
+
 #define PORT 7777
 
 // Function to handle incoming HTTP requests

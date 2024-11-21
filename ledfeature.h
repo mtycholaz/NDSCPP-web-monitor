@@ -3,7 +3,10 @@
 // LEDFeature
 //
 // Represents one rectangular section of the canvas and is responsiible for producing the
-// color data frames for that section of the canvas.
+// color data frames for that section of the canvas.  The LEDFeature is associated with a
+// specific Canvas object, and it retrieves the pixel data from the Canvas to produce the
+// data frame.  The LEDFeature is also responsible for producing the data frame in the
+// format that the ESP32 expects.
 
 #include "interfaces.h"
 #include "utilities.h"

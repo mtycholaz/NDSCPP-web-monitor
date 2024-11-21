@@ -1,5 +1,13 @@
 #pragma once
 
+// Interfaces
+// 
+// This file contains the interfaces for the various classes in the project.  The interfaces
+// are used to define the methods that must be implemented by the classes that use them.  This
+// allows the classes to be decoupled from each other, and allows for easier testing and
+// maintenance of the code.  It also presumably makes it easier in the future to interop
+// with other languages, etc.
+
 #include <string>
 #include <vector>
 #include <cstdint>

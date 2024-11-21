@@ -3,7 +3,9 @@
 // SocketChannel
 //
 // Represents a socket connection to a NightDriverStrip client.  Keeps a queue of frames and 
-// pops them off the queue and sends them on a worker thread.
+// pops them off the queue and sends them on a worker thread.  The worker thread will attempt
+// to connect to the client if it is not already connected.  The worker thread will also
+// attempt to reconnect if the connection is lost.
  
 #include <string>
 #include <vector>

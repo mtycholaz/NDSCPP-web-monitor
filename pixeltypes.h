@@ -1,4 +1,4 @@
-// FastLED Code that we need to compile.
+// FastLED-derived Code that we need to compile.
 
 /*
 The MIT License (MIT)
