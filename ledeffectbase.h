@@ -21,8 +21,12 @@ public:
     const std::string& Name() const override { return _name; }
 
     // Default implementation for Start does nothing
-    virtual void Start(ICanvas& canvas) override {}
+    virtual void Start(ICanvas& canvas) override 
+    {
+    }
 
     // Default implementation for Update does nothing
-    void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) override {}
+    void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) override 
+    {
+    }
 };
