@@ -18,13 +18,7 @@
 using namespace std;
 using namespace chrono;
 
-using string = string;
-template<class T>
-using Clock = chrono::system_clock;
 #include "secrets.h"
-
-#define STR(x) #x
-
 
 // arraysize
 //

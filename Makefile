@@ -3,7 +3,7 @@ SHELL:=/bin/bash
 CC=clang++
 CFLAGS=-std=c++2a -g3 -O3
 LDFLAGS=
-LIBS=-lcurl -lpthread -lmicrohttpd
+LIBS=-lcurl -lpthread -lmicrohttpd -lz
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 
 SOURCES=main.cpp server.cpp
