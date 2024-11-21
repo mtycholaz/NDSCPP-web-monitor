@@ -52,11 +52,6 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
         response_code = MHD_HTTP_OK;
         response_text = "Stats";
     } 
-    else if (parameters.find("ticker") != parameters.end())
-    {
-        response_code = MHD_HTTP_OK;
-        response_text = "Ticker";
-    }
     else
     {
         response_code = MHD_HTTP_BAD_REQUEST;

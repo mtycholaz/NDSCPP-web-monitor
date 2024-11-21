@@ -1,5 +1,9 @@
 #pragma once
 
+// SocketController
+//
+// Manages the list of active SocketChannels
+
 #include <vector>
 #include <memory>
 #include <string>
