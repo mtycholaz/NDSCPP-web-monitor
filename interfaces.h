@@ -13,9 +13,11 @@
 #include <cstdint>
 #include <map>
 
-// ILEDGraphics interface for 2D drawing primitives
+// ILEDGraphics 
+//
+// Represents a 2D drawing surface that can be used to render pixel data.  Provides methods for
+// setting and getting pixel values, drawing shapes, and clearing the surface.
 
-// Interface ILEDGraphics
 class ILEDGraphics 
 {
 public:
@@ -33,7 +35,11 @@ public:
     virtual void DrawRectangle(int x, int y, int width, int height, const CRGB& color) = 0;
 };
 
-// ILEDFeature interface represents a 2D set of CRGB objects
+// ILEDFeature
+//
+// Represents a 2D collection of LEDs with positioning, rendering, and configuration capabilities.  
+// Provides APIs for interacting with its parent canvas and retrieving its assigned color data.
+
 class ILEDFeature
 {
 public:
@@ -57,6 +63,11 @@ public:
 
 };
 
+// ICanvas
+//
+// Represents a 2D drawing surface that manages LED features and provides rendering capabilities.  
+// Can contain multiple `ILEDFeature` instances, with features mapped to specific regions of the canvas
+
 class ICanvas 
 {
 public:
@@ -74,7 +85,10 @@ public:
 
 
 
-// ILEDEffect interface for effects applied to LED features or canvases
+// ILEDEffect
+//
+// Defines lifecycle hooks (`Start` and `Update`) for applying visual effects on LED canvases.  
+
 class ILEDEffect
 {
 public:
@@ -90,6 +104,12 @@ public:
     virtual void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) = 0;
 
 };
+
+// ISocketChannel
+//
+// Defines a communication protocol for managing socket connections and sending data to a server.  
+// Provides methods for enqueuing frames, retrieving connection status, and tracking performance metrics.
+
 class ISocketChannel
 {
 public:

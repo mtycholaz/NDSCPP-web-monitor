@@ -3,7 +3,7 @@
 // BaseGraphics
 //
 // A class that can do all the basic drawing functions (pixel, line, circle, etc) of the ILEDGraphics 
-// interface to its own internal buffer of pixels.  It manipulates the buffer only through SetPixel and Clear
+// interface to its own internal buffer of pixels.  It manipulates the buffer only through SetPixel
 
 #include <vector>
 #include "pixeltypes.h" // Assuming this defines the CRGB structure
@@ -16,7 +16,7 @@ protected:
     int _height;
     std::vector<CRGB> _pixels;
 
-    int _index(int x, int y) const 
+    virtual int _index(int x, int y) const 
     {
         return y * _width + x;
     }
@@ -29,36 +29,35 @@ public:
     }
 
     // ICanvas methods
-    uint32_t Width()  const override { return _width; }
-    uint32_t Height() const override { return _height; }
+    virtual uint32_t Width()  const override { return _width; }
+    virtual uint32_t Height() const override { return _height; }
 
-    void SetPixel(int x, int y, const CRGB& color) override
+    virtual void SetPixel(int x, int y, const CRGB& color) override
     {
         if (x >= 0 && x < _width && y >= 0 && y < _height)
             _pixels[_index(x, y)] = color;
     }
 
-    CRGB GetPixel(int x, int y) const override 
+    virtual CRGB GetPixel(int x, int y) const override 
     {
         if (x >= 0 && x < _width && y >= 0 && y < _height)
             return _pixels[_index(x, y)];
         return CRGB(0, 0, 0); // Default to black for out-of-bounds
     }
 
-    void Clear(const CRGB& color = CRGB::Black) override
+    virtual void Clear(const CRGB& color = CRGB::Black) override
     {
-        for (int i = 0; i < _width * _height; ++i)
-            _pixels[i] = color;
+        FillRectangle(0, 0, _width, _height, color);
     }
 
-    void FillRectangle(int x, int y, int width, int height, const CRGB& color) override
+    virtual void FillRectangle(int x, int y, int width, int height, const CRGB& color) override
     {
         for (int j = y; j < y + height; ++j)
             for (int i = x; i < x + width; ++i)
                 SetPixel(i, j, color);
     }
 
-    void DrawLine(int x1, int y1, int x2, int y2, const CRGB& color) override
+    virtual void DrawLine(int x1, int y1, int x2, int y2, const CRGB& color) override
     {
         int dx = abs(x2 - x1), dy = abs(y2 - y1);
         int sx = (x1 < x2) ? 1 : -1, sy = (y1 < y2) ? 1 : -1;
@@ -79,7 +78,7 @@ public:
         }
     }
 
-    void DrawCircle(int x, int y, int radius, const CRGB& color) override
+    virtual void DrawCircle(int x, int y, int radius, const CRGB& color) override
     {
         int cx = 0, cy = radius, d = 1 - radius;
 
@@ -103,7 +102,7 @@ public:
         }
     }
 
-    void FillCircle(int x, int y, int radius, const CRGB& color) override
+    virtual void FillCircle(int x, int y, int radius, const CRGB& color) override
     {
         for (int cy = -radius; cy <= radius; ++cy)
             for (int cx = -radius; cx <= radius; ++cx)
@@ -111,7 +110,7 @@ public:
                     SetPixel(x + cx, y + cy, color);
     }
 
-    void DrawRectangle(int x, int y, int width, int height, const CRGB& color) override
+    virtual void DrawRectangle(int x, int y, int width, int height, const CRGB& color) override
     {
         DrawLine(x, y, x + width - 1, y, color);             // Top
         DrawLine(x, y, x, y + height - 1, color);            // Left
