@@ -1,3 +1,25 @@
+# NightDriver Server - Overview
+
+NightDriver Server is a C++ project designed to manage LED displays by organizing them into canvases, applying effects, and transmitting data to remote LED controllers. The code is modular and leverages interfaces to separate concerns, making it extensible and straightforward to maintain.
+
+Key concepts for programmers:
+
+- **Canvas**: Represents a 2D grid of LEDs where drawing operations and effects are applied. A canvas can contain multiple LED features.
+- **LEDFeature**: A specific section of the canvas, associated with a remote LED controller. Each feature defines properties such as dimensions, offsets, and communication parameters.
+- **SocketChannel**: Manages the network connection to a remote LED controller, transmitting the pixel data for a feature.
+- **Effects**: Visual animations or patterns applied to a canvas, implemented using the `ILEDEffect` interface.
+- **Utilities**: Contains helper functions for tasks like byte manipulation, data compression, and color conversion.
+
+### Getting Started
+1. **Define Features**: Create LED features, specifying dimensions, offsets, and the associated socket connections.
+2. **Configure a Canvas**: Combine one or more features into a canvas to organize the drawing surface.
+3. **Apply Effects**: Use the `EffectsManager` to apply visual effects to the canvas.
+4. **Transmit Data**: Socket channels handle sending the rendered canvas data to the remote LED controllers.
+
+The project includes a REST API via the `WebServer` class to control and configure canvases dynamically. For detailed interface descriptions and class diagrams, refer to the sections below.
+
+This repository is designed for programmers familiar with modern C++ (C++17 and later) and concepts like interfaces, threading, and network communication. Jump into the code, and start by exploring the interfaces and their implementing classes to understand the system's structure.
+
 ## Interfaces Overview
 
 ### ISocketChannel  
