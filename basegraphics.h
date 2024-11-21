@@ -32,13 +32,13 @@ public:
     virtual uint32_t Width()  const override { return _width; }
     virtual uint32_t Height() const override { return _height; }
 
-    virtual void SetPixel(int x, int y, const CRGB& color) override
+    virtual void SetPixel(uint32_t x, uint32_t y, const CRGB& color) override
     {
         if (x >= 0 && x < _width && y >= 0 && y < _height)
             _pixels[_index(x, y)] = color;
     }
 
-    virtual CRGB GetPixel(int x, int y) const override 
+    virtual CRGB GetPixel(uint32_t x, uint32_t y) const override 
     {
         if (x >= 0 && x < _width && y >= 0 && y < _height)
             return _pixels[_index(x, y)];
@@ -50,37 +50,41 @@ public:
         FillRectangle(0, 0, _width, _height, color);
     }
 
-    virtual void FillRectangle(int x, int y, int width, int height, const CRGB& color) override
+    virtual void FillRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) override
     {
         for (int j = y; j < y + height; ++j)
             for (int i = x; i < x + width; ++i)
                 SetPixel(i, j, color);
     }
 
-    virtual void DrawLine(int x1, int y1, int x2, int y2, const CRGB& color) override
+    virtual void DrawLine(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, const CRGB& color) override
     {
-        int dx = abs(x2 - x1), dy = abs(y2 - y1);
-        int sx = (x1 < x2) ? 1 : -1, sy = (y1 < y2) ? 1 : -1;
-        int err = dx - dy;
+        int32_t dx = abs((int32_t)x2 - (int32_t)x1), dy = abs((int32_t)y2 - (int32_t)y1);
+        int32_t sx = (x1 < x2) ? 1 : -1, sy = (y1 < y2) ? 1 : -1;
+        int32_t err = dx - dy;
 
-        while (true) {
+        while (true) 
+        {
             SetPixel(x1, y1, color);
             if (x1 == x2 && y1 == y2) break;
             int e2 = 2 * err;
-            if (e2 > -dy) {
+            if (e2 > -dy) 
+            {
                 err -= dy;
                 x1 += sx;
             }
-            if (e2 < dx) {
+            if (e2 < dx) 
+            {
                 err += dx;
                 y1 += sy;
             }
         }
     }
 
-    virtual void DrawCircle(int x, int y, int radius, const CRGB& color) override
+    virtual void DrawCircle(uint32_t x, uint32_t y, uint32_t radius, const CRGB& color) override
     {
-        int cx = 0, cy = radius, d = 1 - radius;
+        uint32_t cx = 0, cy = radius;
+        int32_t  d = 1 - radius;
 
         while (cy >= cx) {
             SetPixel(x + cx, y + cy, color);
@@ -102,15 +106,15 @@ public:
         }
     }
 
-    virtual void FillCircle(int x, int y, int radius, const CRGB& color) override
+    virtual void FillCircle(uint32_t x, uint32_t y, uint32_t radius, const CRGB& color) override
     {
-        for (int cy = -radius; cy <= radius; ++cy)
-            for (int cx = -radius; cx <= radius; ++cx)
+        for (int32_t cy = -radius; cy <= radius; ++cy)
+            for (int32_t cx = -radius; cx <= radius; ++cx)
                 if (cx * cx + cy * cy <= radius * radius)
                     SetPixel(x + cx, y + cy, color);
     }
 
-    virtual void DrawRectangle(int x, int y, int width, int height, const CRGB& color) override
+    virtual void DrawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) override
     {
         DrawLine(x, y, x + width - 1, y, color);             // Top
         DrawLine(x, y, x, y + height - 1, color);            // Left
