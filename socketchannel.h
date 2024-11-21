@@ -1,5 +1,10 @@
 #pragma once
 
+// SocketChannel
+//
+// Represents a socket connection to a NightDriverStrip client.  Keeps a queue of frames and 
+// pops them off the queue and sends them on a worker thread.
+ 
 #include <string>
 #include <vector>
 #include <atomic>
@@ -148,7 +153,11 @@ private:
         }
         catch(const std::exception& e)
         {
+
             std::cerr << e.what() << '\n';
+            CloseSocket();
+            std::lock_guard<std::mutex> lock(_mutex);
+            _isConnected = false;
         }
         
         std::lock_guard<std::mutex> lock(_mutex);

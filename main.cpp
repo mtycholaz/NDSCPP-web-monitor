@@ -44,8 +44,9 @@ void handle_signal(int signal)
 SocketController socketController;
 EffectsManager effectsManager;
 
-// Main program entry point. Runs the webServer and updates the known symbols list every hour.
+// Main program entry point. Runs the webServer and starts up the LED processing.
 // When SIGINT is received, exits gracefully.
+
 int main(int, char *[])
 {
     // Register signal handler for SIGINT
@@ -58,11 +59,12 @@ int main(int, char *[])
         cerr << "Failed to start the server thread\n";
         return 1;
     }
+
     cout << "Started server, waiting..." << endl;
 
     try
     {
-        // Define a Canvas with dimensions 16x16
+        // Define a Canvas with dimensions matching the sign
         auto canvas = make_shared<Canvas>(512, 32);
 
         // Define a GreenFillEffect
@@ -97,7 +99,8 @@ int main(int, char *[])
         // Start the SocketController
         socketController.StartAll();
 
-        // Main application loop
+        // Main application loop.  Draws frames, compresses them, queues them up for transmit
+        
         while (running)
         {
             // Render the current effect to the canvas

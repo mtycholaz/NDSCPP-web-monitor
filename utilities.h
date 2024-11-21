@@ -10,13 +10,12 @@
 class Utilities
 {
 public:
-
-    static std::vector<uint8_t> ConvertPixelsToByteArray(const std::vector<CRGB>& pixels, bool reversed, bool redGreenSwap)
+    static std::vector<uint8_t> ConvertPixelsToByteArray(const std::vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
     {
         std::vector<uint8_t> byteArray;
-        byteArray.reserve(pixels.size() * sizeof(CRGB));        // Each CRGB has 3 components: R, G, B
-        
-        // This code makes all kinds of assumptions that CRGB is three RGB bytes, so let's assert that fact 
+        byteArray.reserve(pixels.size() * sizeof(CRGB)); // Each CRGB has 3 components: R, G, B
+
+        // This code makes all kinds of assumptions that CRGB is three RGB bytes, so let's assert that fact
         static_assert(sizeof(CRGB) == 3);
 
         if (reversed)
@@ -39,7 +38,7 @@ public:
         }
         else
         {
-            for (const auto& pixel : pixels)
+            for (const auto &pixel : pixels)
             {
                 if (redGreenSwap)
                 {
@@ -69,15 +68,13 @@ public:
         {
             return {
                 static_cast<uint8_t>(value & 0xFF),
-                static_cast<uint8_t>((value >> 8) & 0xFF)
-            };
+                static_cast<uint8_t>((value >> 8) & 0xFF)};
         }
         else
         {
             return {
                 static_cast<uint8_t>(__builtin_bswap16(value) & 0xFF),
-                static_cast<uint8_t>((__builtin_bswap16(value) >> 8) & 0xFF)
-            };
+                static_cast<uint8_t>((__builtin_bswap16(value) >> 8) & 0xFF)};
         }
     }
 
@@ -90,8 +87,7 @@ public:
                 static_cast<uint8_t>(value & 0xFF),
                 static_cast<uint8_t>((value >> 8) & 0xFF),
                 static_cast<uint8_t>((value >> 16) & 0xFF),
-                static_cast<uint8_t>((value >> 24) & 0xFF)
-            };
+                static_cast<uint8_t>((value >> 24) & 0xFF)};
         }
         else
         {
@@ -100,8 +96,7 @@ public:
                 static_cast<uint8_t>(swapped & 0xFF),
                 static_cast<uint8_t>((swapped >> 8) & 0xFF),
                 static_cast<uint8_t>((swapped >> 16) & 0xFF),
-                static_cast<uint8_t>((swapped >> 24) & 0xFF)
-            };
+                static_cast<uint8_t>((swapped >> 24) & 0xFF)};
         }
     }
 
@@ -118,8 +113,7 @@ public:
                 static_cast<uint8_t>((value >> 32) & 0xFF),
                 static_cast<uint8_t>((value >> 40) & 0xFF),
                 static_cast<uint8_t>((value >> 48) & 0xFF),
-                static_cast<uint8_t>((value >> 56) & 0xFF)
-            };
+                static_cast<uint8_t>((value >> 56) & 0xFF)};
         }
         else
         {
@@ -132,18 +126,17 @@ public:
                 static_cast<uint8_t>((swapped >> 32) & 0xFF),
                 static_cast<uint8_t>((swapped >> 40) & 0xFF),
                 static_cast<uint8_t>((swapped >> 48) & 0xFF),
-                static_cast<uint8_t>((swapped >> 56) & 0xFF)
-            };
+                static_cast<uint8_t>((swapped >> 56) & 0xFF)};
         }
     }
 
     // Combines multiple byte arrays into one.  My masterpiece for the day :-)
-    
+
     template <typename... Arrays>
-    static std::vector<uint8_t> CombineByteArrays(const Arrays&... arrays)
+    static std::vector<uint8_t> CombineByteArrays(const Arrays &...arrays)
     {
         std::vector<uint8_t> combined;
-        
+
         // Calculate the total size of the combined array.  Remember you
         // saw it here first!  It's a fold expression.  New to me too.
 
@@ -157,7 +150,7 @@ public:
     }
 
     // Gets color bytes at a specific offset, handling reversing and RGB swapping
-    static std::vector<uint8_t> GetColorBytesAtOffset(const std::vector<CRGB> & LEDs, uint32_t offset, uint32_t count, bool reversed, bool redGreenSwap)
+    static std::vector<uint8_t> GetColorBytesAtOffset(const std::vector<CRGB> &LEDs, uint32_t offset, uint32_t count, bool reversed, bool redGreenSwap)
     {
         std::vector<uint8_t> colorBytes;
         if (offset >= LEDs.size())
@@ -183,7 +176,7 @@ public:
         return colorBytes;
     }
 
-    static std::vector<uint8_t> Compress(const std::vector<uint8_t> & data)
+    static std::vector<uint8_t> Compress(const std::vector<uint8_t> &data)
     {
         // Allocate initial buffer size
         constexpr size_t bufferIncrement = 1024;
@@ -196,19 +189,20 @@ public:
         stream.opaque = Z_NULL;
 
         // Set input data
-        stream.next_in = const_cast<Bytef*>(data.data());
+        stream.next_in = const_cast<Bytef *>(data.data());
         stream.avail_in = static_cast<uInt>(data.size());
 
         // Initialize deflate process with optimal compression level
-        if (deflateInit(&stream, Z_BEST_COMPRESSION) != Z_OK) {
+        if (deflateInit(&stream, Z_BEST_COMPRESSION) != Z_OK)
+        {
             throw std::runtime_error("Failed to initialize zlib compression");
         }
 
         // Compress the data
         int result;
-        do 
-        {   // Ensure the output buffer is large enough
-            if (stream.total_out >= compressedData.size()) 
+        do
+        { // Ensure the output buffer is large enough
+            if (stream.total_out >= compressedData.size())
                 compressedData.resize(compressedData.size() + bufferIncrement);
 
             // Set the output buffer
@@ -217,7 +211,8 @@ public:
 
             // Perform the compression
             result = deflate(&stream, Z_FINISH);
-            if (result == Z_STREAM_ERROR) {
+            if (result == Z_STREAM_ERROR)
+            {
                 deflateEnd(&stream);
                 throw std::runtime_error("Error during zlib compression");
             }
@@ -232,10 +227,9 @@ public:
         return compressedData;
     }
 
-
 private:
     // Helper to append color bytes to a vector
-    static void AppendColorBytes(std::vector<uint8_t> & bytes, const CRGB &color, bool redGreenSwap)
+    static void AppendColorBytes(std::vector<uint8_t> &bytes, const CRGB &color, bool redGreenSwap)
     {
         if (redGreenSwap)
         {
