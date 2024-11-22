@@ -5,7 +5,6 @@
 // renders the effect to the canvas, compresses the data, and sends it to the LED
 // matrix via a SocketChannel.  The program will continue to run until it receives
 // a SIGINT signal (Ctrl-C).
-
 #include <csignal>
 #include <iostream>
 #include <atomic>
@@ -16,6 +15,7 @@
 
 #include "global.h"
 #include "canvas.h"
+#include "canvascontroller.h"
 #include "interfaces.h"
 #include "socketchannel.h"
 #include "socketcontroller.h"

@@ -52,9 +52,9 @@ public:
     virtual const std::string &FriendlyName() const = 0;
     virtual uint32_t OffsetX() const = 0;
     virtual uint32_t OffsetY() const = 0;
-    virtual bool Reversed() const = 0;
-    virtual uint8_t Channel() const = 0;
-    virtual bool RedGreenSwap() const = 0;
+    virtual bool     Reversed() const = 0;
+    virtual uint8_t  Channel() const = 0;
+    virtual bool     RedGreenSwap() const = 0;
     virtual uint32_t BatchSize() const = 0;
 
     // Data retrieval

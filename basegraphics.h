@@ -12,17 +12,17 @@
 class BaseGraphics : public ILEDGraphics
 {
 protected:
-    int _width;
-    int _height;
+    uint32_t _width;
+    uint32_t _height;
     std::vector<CRGB> _pixels;
 
-    virtual int _index(int x, int y) const 
+    virtual uint32_t _index(uint32_t x, uint32_t y) const 
     {
         return y * _width + x;
     }
 
 public:
-    explicit BaseGraphics(int width, int height) 
+    explicit BaseGraphics(uint32_t width, uint32_t height) 
         : _width(width), _height(height), _pixels(width * height) 
     {
 
@@ -86,7 +86,8 @@ public:
         uint32_t cx = 0, cy = radius;
         int32_t  d = 1 - radius;
 
-        while (cy >= cx) {
+        while (cy >= cx) 
+        {
             SetPixel(x + cx, y + cy, color);
             SetPixel(x - cx, y + cy, color);
             SetPixel(x + cx, y - cy, color);
@@ -98,8 +99,11 @@ public:
 
             ++cx;
             if (d < 0)
+            {
                 d += 2 * cx + 1;
-            else {
+            }
+            else 
+            {
                 --cy;
                 d += 2 * (cx - cy) + 1;
             }
@@ -108,6 +112,8 @@ public:
 
     virtual void FillCircle(uint32_t x, uint32_t y, uint32_t radius, const CRGB& color) override
     {
+        // Fill within the bounding box, but only those pixels within radius of the center
+
         for (int32_t cy = -radius; cy <= radius; ++cy)
             for (int32_t cx = -radius; cx <= radius; ++cx)
                 if (cx * cx + cy * cy <= radius * radius)
@@ -116,9 +122,9 @@ public:
 
     virtual void DrawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) override
     {
-        DrawLine(x, y, x + width - 1, y, color);             // Top
-        DrawLine(x, y, x, y + height - 1, color);            // Left
-        DrawLine(x + width - 1, y, x + width - 1, y + height - 1, color); // Right
-        DrawLine(x, y + height - 1, x + width - 1, y + height - 1, color); // Bottom
+        DrawLine(x, y, x + width - 1, y, color);                            // Top
+        DrawLine(x, y, x, y + height - 1, color);                           // Left
+        DrawLine(x + width - 1, y, x + width - 1, y + height - 1, color);   // Right
+        DrawLine(x, y + height - 1, x + width - 1, y + height - 1, color);  // Bottom
     }
 };
