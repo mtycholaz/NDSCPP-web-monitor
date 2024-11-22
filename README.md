@@ -20,7 +20,9 @@ The project includes a REST API via the `WebServer` class to control and configu
 
 This repository is designed for programmers familiar with modern C++ (C++20 and later) and concepts like interfaces, threading, and network communication. Jump into the code, and start by exploring the interfaces and their implementing classes to understand the system's structure.
 
-This project is dependent on the libraries for libmicrohttpd, lpthreads, and lz.
+This project is dependent on the libraries for libmicrohttpd, lpthreads, and lz.  You will also need the json library from homebrew (at least on the Mac):
+brew install libmicrohttpd
+brew install nlohmann-json
 
 ## Interfaces Overview
 
