@@ -16,7 +16,12 @@ class SocketController
 {
 private:
     std::vector<std::shared_ptr<SocketChannel>> _channels;
-    mutable std::mutex _mutex; // Ensure this is not const
+    
+    // The mutex is used to protect the list of channels and it is marked as mutable
+    // so that it can be locked in const methods.  It doesn't change the object's 
+    // state beyond acquiring a lock, so it is semantically const.
+
+    mutable std::mutex _mutex; 
 
 public:
     SocketController() = default;
@@ -49,7 +54,7 @@ public:
         std::lock_guard<std::mutex> lock(_mutex);
         _channels.clear();
     }
-    
+
     // Finds a channel by host name
     std::shared_ptr<SocketChannel> FindChannelByHost(const std::string& hostName) const
     {
