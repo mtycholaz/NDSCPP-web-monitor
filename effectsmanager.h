@@ -11,15 +11,20 @@
 #include <memory>
 #include <stdexcept>
 #include <chrono>
+#include <thread>
+#include <atomic>
 
 class EffectsManager
 {
 public:
     EffectsManager()
-        : _currentEffectIndex(-1) // No effect selected initially
+        : _currentEffectIndex(-1), _running(false) // No effect selected initially
     {}
 
-    ~EffectsManager() = default;
+    ~EffectsManager()
+    {
+        Stop(); // Ensure the worker thread is stopped when the manager is destroyed
+    }
 
     // Add an effect to the manager
     void AddEffect(std::shared_ptr<ILEDEffect> effect)
@@ -108,9 +113,43 @@ public:
         _currentEffectIndex = -1;
     }
 
+    // Start the worker thread to update effects
+    void Start(ICanvas& canvas)
+    {
+        if (_running.exchange(true))
+            return; // Already running
+
+        _workerThread = std::thread([this, &canvas]() 
+        {
+            auto lastTime = std::chrono::steady_clock::now();
+            while (_running)
+            {
+                auto now = std::chrono::steady_clock::now();
+                auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime);
+                lastTime = now;
+
+                UpdateCurrentEffect(canvas, deltaTime);
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30 FPS
+            }
+        });
+    }
+
+    // Stop the worker thread
+    void Stop()
+    {
+        if (!_running.exchange(false))
+            return; // Not running
+
+        if (_workerThread.joinable())
+            _workerThread.join();
+    }
+
 private:
     std::vector<std::shared_ptr<ILEDEffect>> _effects;
     int _currentEffectIndex; // Index of the current effect
+    std::thread _workerThread;
+    std::atomic<bool> _running;
 
     bool IsEffectSelected() const
     {
