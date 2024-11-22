@@ -40,6 +40,10 @@ Exposes APIs for pixel manipulation and advanced rendering techniques.
 Defines lifecycle hooks (`Start` and `Update`) for applying visual effects on LED canvases.  
 Encourages modular effect design, allowing dynamic assignment and switching of effects.
 
+### IEffectManager
+Each canvas has an EffectsManager that does the actual drawing of effects to it, and that EffectsManager
+manages a set of ILEDEffect objects.
+
 ### ILEDFeature  
 Represents a 2D collection of LEDs with positioning, rendering, and configuration capabilities.  
 Provides APIs for interacting with its parent canvas and retrieving its assigned color data.

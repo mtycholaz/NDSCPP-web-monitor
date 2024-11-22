@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 // LEDFeature
 //
 // Represents one rectangular section of the canvas and is responsiible for producing the
@@ -110,13 +112,13 @@ public:
 private:
     std::string _hostName;
     std::string _friendlyName;
-    uint32_t _width;
-    uint32_t _height;
-    uint32_t _offsetX;
-    uint32_t _offsetY;
-    bool _reversed;
-    uint8_t _channel;
-    bool _redGreenSwap;
-    uint32_t _batchSize;
+    uint32_t    _width;
+    uint32_t    _height;
+    uint32_t    _offsetX;
+    uint32_t    _offsetY;
+    bool        _reversed;
+    uint8_t     _channel;
+    bool        _redGreenSwap;
+    uint32_t    _batchSize;
     std::shared_ptr<ICanvas> _canvas; // Associated canvas
 };
