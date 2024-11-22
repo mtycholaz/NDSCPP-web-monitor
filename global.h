@@ -79,9 +79,9 @@ inline double millis()
    return (double)clock() / CLOCKS_PER_SEC * 1000;
 }
 
-inline void delay(int milliseconds)
+inline void delay(int ms)
 {
-    this_thread::sleep_for(chrono::milliseconds(milliseconds));
+    this_thread::sleep_for((milliseconds)ms);
 }
 
 #endif

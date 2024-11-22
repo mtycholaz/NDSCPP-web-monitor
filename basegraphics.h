@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 // BaseGraphics
 //
@@ -14,7 +15,7 @@ class BaseGraphics : public ILEDGraphics
 protected:
     uint32_t _width;
     uint32_t _height;
-    std::vector<CRGB> _pixels;
+    vector<CRGB> _pixels;
 
     virtual uint32_t _index(uint32_t x, uint32_t y) const 
     {
@@ -32,7 +33,7 @@ public:
     uint32_t Width()  const override { return _width; }
     uint32_t Height() const override { return _height; }
 
-    const std::vector<CRGB>& GetPixels() const override
+    const vector<CRGB>& GetPixels() const override
     {
         return _pixels;
     }

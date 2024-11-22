@@ -1,4 +1,6 @@
 #pragma once
+using namespace std;
+using namespace std::chrono;
 
 #include <nlohmann/json.hpp>
 
@@ -21,52 +23,52 @@
 class LEDFeature : public ILEDFeature
 {
 public:
-    LEDFeature(std::shared_ptr<ICanvas> canvas,
-               const std::string &hostName,
-               const std::string &friendlyName,
+    LEDFeature(shared_ptr<ICanvas> canvas,
+               const string &hostName,
+               const string &friendlyName,
+               uint16_t port,
                uint32_t width,
                uint32_t height = 1,
                uint32_t offsetX = 0,
                uint32_t offsetY = 0,
                bool reversed = false,
                uint8_t channel = 0,
-               bool redGreenSwap = false,
-               uint32_t batchSize = 1)
+               bool redGreenSwap = false)
         : _canvas(canvas),
           _hostName(hostName),
           _friendlyName(friendlyName),
+          _port(port),
           _width(width),
           _height(height),
           _offsetX(offsetX),
           _offsetY(offsetY),
           _reversed(reversed),
           _channel(channel),
-          _redGreenSwap(redGreenSwap),
-          _batchSize(batchSize)
+          _redGreenSwap(redGreenSwap)
     {
     }
 
     // Accessor methods
     uint32_t Width() const override { return _width; }
     uint32_t Height() const override { return _height; }
-    const std::string &HostName() const override { return _hostName; }
-    const std::string &FriendlyName() const override { return _friendlyName; }
+    const string &HostName() const override { return _hostName; }
+    const string &FriendlyName() const override { return _friendlyName; }
+    uint16_t Port() const override { return _port; }
     uint32_t OffsetX() const override { return _offsetX; }
     uint32_t OffsetY() const override { return _offsetY; }
     bool Reversed() const override { return _reversed; }
     uint8_t Channel() const override { return _channel; }
     bool RedGreenSwap() const override { return _redGreenSwap; }
-    uint32_t BatchSize() const override { return _batchSize; }
 
     // Canvas association
-    void SetCanvas(std::shared_ptr<ICanvas> canvas) { _canvas = canvas; }
-    std::shared_ptr<ICanvas> GetCanvas() const { return _canvas; }
+    void SetCanvas(shared_ptr<ICanvas> canvas) { _canvas = canvas; }
+    shared_ptr<ICanvas> GetCanvas() const { return _canvas; }
 
     // Data retrieval
-    std::vector<uint8_t> GetPixelData() const override
+    vector<uint8_t> GetPixelData() const override
     {
         if (!_canvas)
-            throw std::runtime_error("LEDFeature must be associated with a canvas to retrieve pixel data.");
+            throw runtime_error("LEDFeature must be associated with a canvas to retrieve pixel data.");
 
         const auto& graphics = _canvas->Graphics();
 
@@ -81,7 +83,7 @@ public:
         }
 
         // Otherwise, manually extract the feature's pixel data
-        std::vector<CRGB> featurePixels;
+        vector<CRGB> featurePixels;
 
         for (uint32_t y = 0; y < _height; ++y)
         {
@@ -103,11 +105,11 @@ public:
     }
 
 
-    std::vector<uint8_t> GetDataFrame() const override
+    vector<uint8_t> GetDataFrame() const override
     {
         // Calculate epoch time
-        auto now = std::chrono::system_clock::now();
-        auto epoch = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+        auto now = system_clock::now();
+        auto epoch = duration_cast<microseconds>(now.time_since_epoch()).count();
         uint64_t seconds = epoch / 1'000'000;
         uint64_t microseconds = epoch % 1'000'000;
 
@@ -122,8 +124,9 @@ public:
     }
 
 private:
-    std::string _hostName;
-    std::string _friendlyName;
+    string _hostName;
+    string _friendlyName;
+    uint16_t    _port;
     uint32_t    _width;
     uint32_t    _height;
     uint32_t    _offsetX;
@@ -131,6 +134,5 @@ private:
     bool        _reversed;
     uint8_t     _channel;
     bool        _redGreenSwap;
-    uint32_t    _batchSize;
-    std::shared_ptr<ICanvas> _canvas; // Associated canvas
+    shared_ptr<ICanvas> _canvas; // Associated canvas
 };

@@ -1,4 +1,6 @@
 #pragma once
+using namespace std;
+using namespace std::chrono;
 
 // Interfaces
 // 
@@ -23,7 +25,7 @@ class ILEDGraphics
 public:
     virtual ~ILEDGraphics() = default;
 
-    virtual const std::vector<CRGB> & GetPixels() const = 0;
+    virtual const vector<CRGB> & GetPixels() const = 0;
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
     virtual void SetPixel(uint32_t x, uint32_t y, const CRGB& color) = 0;
@@ -49,18 +51,18 @@ public:
     // Accessor methods
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
-    virtual const std::string &HostName() const = 0;
-    virtual const std::string &FriendlyName() const = 0;
+    virtual const string &HostName() const = 0;
+    virtual const string &FriendlyName() const = 0;
+    virtual uint16_t Port() const = 0;
     virtual uint32_t OffsetX() const = 0;
     virtual uint32_t OffsetY() const = 0;
     virtual bool     Reversed() const = 0;
     virtual uint8_t  Channel() const = 0;
     virtual bool     RedGreenSwap() const = 0;
-    virtual uint32_t BatchSize() const = 0;
 
     // Data retrieval
-    virtual std::vector<uint8_t> GetPixelData() const = 0;
-    virtual std::vector<uint8_t> GetDataFrame() const = 0;    
+    virtual vector<uint8_t> GetPixelData() const = 0;
+    virtual vector<uint8_t> GetDataFrame() const = 0;    
 
 };
 
@@ -76,13 +78,13 @@ public:
     virtual ~ILEDEffect() = default;
 
     // Get the name of the effect
-    virtual const std::string& Name() const = 0;
+    virtual const string& Name() const = 0;
 
     // Called when the effect starts
     virtual void Start(ICanvas& canvas) = 0;
 
     // Called to update the effect, given a canvas and timestamp
-    virtual void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) = 0;
+    virtual void Update(ICanvas& canvas, milliseconds deltaTime) = 0;
 
 };
 
@@ -100,10 +102,8 @@ public:
     virtual ~ISocketController() = default;
 
     virtual void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> &allCanvases) = 0;
-    virtual void AddChannel(const std::string& hostName, const std::string& friendlyName, uint16_t port = 49152) = 0;
-    virtual void RemoveChannel(const std::string& hostName) = 0;
+    virtual shared_ptr<ISocketChannel> FindChannelByHost(const string& hostName) const = 0;
     virtual void RemoveAllChannels() = 0;
-    virtual std::shared_ptr<ISocketChannel> FindChannelByHost(const std::string& hostName) const = 0;
     virtual void StartAll() = 0;
     virtual void StopAll() = 0;
 };
@@ -118,14 +118,14 @@ class IEffectsManager
 public:
     virtual ~IEffectsManager() = default;
 
-    virtual void AddEffect(std::shared_ptr<ILEDEffect> effect) = 0;
-    virtual void RemoveEffect(std::shared_ptr<ILEDEffect> effect) = 0;
+    virtual void AddEffect(shared_ptr<ILEDEffect> effect) = 0;
+    virtual void RemoveEffect(shared_ptr<ILEDEffect> effect) = 0;
     virtual void StartCurrentEffect(ICanvas& canvas) = 0;
     virtual void SetCurrentEffect(size_t index, ICanvas& canvas) = 0;
-    virtual void UpdateCurrentEffect(ICanvas& canvas, std::chrono::milliseconds millisDelta) = 0;
+    virtual void UpdateCurrentEffect(ICanvas& canvas, milliseconds millisDelta) = 0;
     virtual void NextEffect() = 0;
     virtual void PreviousEffect() = 0;
-    virtual std::string CurrentEffectName() const = 0;
+    virtual string CurrentEffectName() const = 0;
     virtual void ClearEffects() = 0;
     virtual void Start(ICanvas& canvas, ISocketController & socketController) = 0;
     virtual void Stop() = 0;
@@ -142,12 +142,12 @@ class ICanvas
 public:
     virtual ~ICanvas() = default;
     // Accessors for features
-    virtual std::vector<std::shared_ptr<ILEDFeature>>& Features() = 0;
-    virtual const std::vector<std::shared_ptr<ILEDFeature>>& Features() const = 0;
+    virtual vector<shared_ptr<ILEDFeature>>& Features() = 0;
+    virtual const vector<shared_ptr<ILEDFeature>>& Features() const = 0;
 
     // Add or remove features
-    virtual void AddFeature(std::shared_ptr<ILEDFeature> feature) = 0;
-    virtual void RemoveFeature(std::shared_ptr<ILEDFeature> feature) = 0;
+    virtual void AddFeature(shared_ptr<ILEDFeature> feature) = 0;
+    virtual void RemoveFeature(shared_ptr<ILEDFeature> feature) = 0;
 
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;
@@ -165,13 +165,13 @@ public:
     virtual ~ISocketChannel() = default;
 
     // Accessors for channel details
-    virtual const std::string& HostName() const = 0;
-    virtual const std::string& FriendlyName() const = 0;
+    virtual const string& HostName() const = 0;
+    virtual const string& FriendlyName() const = 0;
     virtual uint16_t Port() const = 0;
 
     // Data transfer methods
-    virtual bool EnqueueFrame(const std::vector<uint8_t>& frameData) = 0;
-    virtual std::vector<uint8_t> CompressFrame(const std::vector<uint8_t>& data) = 0;
+    virtual bool EnqueueFrame(const vector<uint8_t>& frameData) = 0;
+    virtual vector<uint8_t> CompressFrame(const vector<uint8_t>& data) = 0;
 
     // Connection status
     virtual bool IsConnected() const = 0;

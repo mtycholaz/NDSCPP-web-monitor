@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 // Utilities
 //
@@ -16,9 +17,9 @@
 class Utilities
 {
 public:
-    static std::vector<uint8_t> ConvertPixelsToByteArray(const std::vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
+    static vector<uint8_t> ConvertPixelsToByteArray(const vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
     {
-        std::vector<uint8_t> byteArray;
+        vector<uint8_t> byteArray;
         byteArray.reserve(pixels.size() * sizeof(CRGB)); // Each CRGB has 3 components: R, G, B
 
         // This code makes all kinds of assumptions that CRGB is three RGB bytes, so let's assert that fact
@@ -68,9 +69,9 @@ public:
     // that the original ESP32 code expects
 
     // Converts a uint16_t to a vector of bytes in little-endian order
-    static constexpr std::vector<uint8_t> WORDToBytes(uint16_t value)
+    static constexpr vector<uint8_t> WORDToBytes(uint16_t value)
     {
-        if constexpr (std::endian::native == std::endian::little)
+        if constexpr (endian::native == endian::little)
         {
             return {
                 static_cast<uint8_t>(value & 0xFF),
@@ -85,9 +86,9 @@ public:
     }
 
     // Converts a uint32_t to a vector of bytes in little-endian order
-    static constexpr std::vector<uint8_t> DWORDToBytes(uint32_t value)
+    static constexpr vector<uint8_t> DWORDToBytes(uint32_t value)
     {
-        if constexpr (std::endian::native == std::endian::little)
+        if constexpr (endian::native == endian::little)
         {
             return {
                 static_cast<uint8_t>(value & 0xFF),
@@ -107,9 +108,9 @@ public:
     }
 
     // Converts a uint64_t to a vector of bytes in little-endian order
-    static constexpr std::vector<uint8_t> ULONGToBytes(uint64_t value)
+    static constexpr vector<uint8_t> ULONGToBytes(uint64_t value)
     {
-        if constexpr (std::endian::native == std::endian::little)
+        if constexpr (endian::native == endian::little)
         {
             return {
                 static_cast<uint8_t>(value & 0xFF),
@@ -139,9 +140,9 @@ public:
     // Combines multiple byte arrays into one.  My masterpiece for the day :-)
 
     template <typename... Arrays>
-    static std::vector<uint8_t> CombineByteArrays(const Arrays &...arrays)
+    static vector<uint8_t> CombineByteArrays(const Arrays &...arrays)
     {
-        std::vector<uint8_t> combined;
+        vector<uint8_t> combined;
 
         // Calculate the total size of the combined array.  Remember you
         // saw it here first!  It's a fold expression.  New to me too.
@@ -156,15 +157,15 @@ public:
     }
 
     // Gets color bytes at a specific offset, handling reversing and RGB swapping
-    static std::vector<uint8_t> GetColorBytesAtOffset(const std::vector<CRGB> &LEDs, uint32_t offset, uint32_t count, bool reversed, bool redGreenSwap)
+    static vector<uint8_t> GetColorBytesAtOffset(const vector<CRGB> &LEDs, uint32_t offset, uint32_t count, bool reversed, bool redGreenSwap)
     {
-        std::vector<uint8_t> colorBytes;
+        vector<uint8_t> colorBytes;
         if (offset >= LEDs.size())
         {
             return colorBytes;
         }
 
-        uint32_t end = std::min(offset + count, static_cast<uint32_t>(LEDs.size()));
+        uint32_t end = min(offset + count, static_cast<uint32_t>(LEDs.size()));
         if (reversed)
         {
             for (int32_t i = end - 1; i >= static_cast<int32_t>(offset); --i)
@@ -182,11 +183,11 @@ public:
         return colorBytes;
     }
 
-    static std::vector<uint8_t> Compress(const std::vector<uint8_t> &data)
+    static vector<uint8_t> Compress(const vector<uint8_t> &data)
     {
         // Allocate initial buffer size
         constexpr size_t bufferIncrement = 1024;
-        std::vector<uint8_t> compressedData(bufferIncrement);
+        vector<uint8_t> compressedData(bufferIncrement);
 
         // Initialize zlib stream
         z_stream stream{};
@@ -201,7 +202,7 @@ public:
         // Initialize deflate process with optimal compression level
         if (deflateInit(&stream, Z_BEST_COMPRESSION) != Z_OK)
         {
-            throw std::runtime_error("Failed to initialize zlib compression");
+            throw runtime_error("Failed to initialize zlib compression");
         }
 
         // Compress the data
@@ -220,7 +221,7 @@ public:
             if (result == Z_STREAM_ERROR)
             {
                 deflateEnd(&stream);
-                throw std::runtime_error("Error during zlib compression");
+                throw runtime_error("Error during zlib compression");
             }
         } while (result != Z_STREAM_END);
 
@@ -235,7 +236,7 @@ public:
 
 private:
     // Helper to append color bytes to a vector
-    static void AppendColorBytes(std::vector<uint8_t> &bytes, const CRGB &color, bool redGreenSwap)
+    static void AppendColorBytes(vector<uint8_t> &bytes, const CRGB &color, bool redGreenSwap)
     {
         if (redGreenSwap)
         {

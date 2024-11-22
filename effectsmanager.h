@@ -1,4 +1,6 @@
 #pragma once
+using namespace std;
+using namespace std::chrono;
 
 // EffectsManager
 //
@@ -27,10 +29,10 @@ public:
     }
 
     // Add an effect to the manager
-    void AddEffect(std::shared_ptr<ILEDEffect> effect)
+    void AddEffect(shared_ptr<ILEDEffect> effect)
     {
         if (!effect)
-            throw std::invalid_argument("Cannot add a null effect.");
+            throw invalid_argument("Cannot add a null effect.");
         _effects.push_back(effect);
 
         // Automatically set the first effect as current if none is selected
@@ -39,15 +41,15 @@ public:
     }
 
     // Remove an effect from the manager
-    void RemoveEffect(std::shared_ptr<ILEDEffect> effect)
+    void RemoveEffect(shared_ptr<ILEDEffect> effect)
     {
         if (!effect)
-            throw std::invalid_argument("Cannot remove a null effect.");
+            throw invalid_argument("Cannot remove a null effect.");
 
-        auto it = std::remove(_effects.begin(), _effects.end(), effect);
+        auto it = remove(_effects.begin(), _effects.end(), effect);
         if (it != _effects.end())
         {
-            auto index = std::distance(_effects.begin(), it);
+            auto index = distance(_effects.begin(), it);
             _effects.erase(it);
 
             // Adjust the current effect index
@@ -70,7 +72,7 @@ public:
     void SetCurrentEffect(size_t index, ICanvas& canvas)
     {
         if (index >= _effects.size())
-            throw std::out_of_range("Effect index out of range.");
+            throw out_of_range("Effect index out of range.");
 
         _currentEffectIndex = index;
 
@@ -78,7 +80,7 @@ public:
    }
 
     // Update the current effect and render it to the canvas
-    void UpdateCurrentEffect(ICanvas& canvas, std::chrono::milliseconds millisDelta)
+    void UpdateCurrentEffect(ICanvas& canvas, milliseconds millisDelta)
     {
         if (IsEffectSelected())
             _effects[_currentEffectIndex]->Update(canvas, millisDelta);
@@ -99,7 +101,7 @@ public:
     }
 
     // Get the name of the current effect
-    std::string CurrentEffectName() const
+    string CurrentEffectName() const
     {
         if (IsEffectSelected())
             return _effects[_currentEffectIndex]->Name();
@@ -119,13 +121,13 @@ public:
         if (_running.exchange(true))
             return; // Already running
 
-        _workerThread = std::thread([this, &canvas, &socketController]() 
+        _workerThread = thread([this, &canvas, &socketController]() 
         {
-            auto lastTime = std::chrono::steady_clock::now();
+            auto lastTime = steady_clock::now();
             while (_running)
             {
-                auto now = std::chrono::steady_clock::now();
-                auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTime);
+                auto now = steady_clock::now();
+                auto deltaTime = duration_cast<milliseconds>(now - lastTime);
                 lastTime = now;
 
                 UpdateCurrentEffect(canvas, deltaTime);
@@ -137,12 +139,12 @@ public:
                     auto frame = feature->GetDataFrame();
                     auto target = socketController.FindChannelByHost(feature->HostName());
                     if (!target)
-                        throw std::runtime_error("Feature host not found in SocketController.");
+                        throw runtime_error("Feature host not found in SocketController.");
                     auto compressedFrame = target->CompressFrame(frame);
                     target->EnqueueFrame(compressedFrame);
                 }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30 FPS
+                this_thread::sleep_for(milliseconds(33)); // ~30 FPS
             }
         });
     }
@@ -158,10 +160,10 @@ public:
     }
 
 private:
-    std::vector<std::shared_ptr<ILEDEffect>> _effects;
+    vector<shared_ptr<ILEDEffect>> _effects;
     int _currentEffectIndex; // Index of the current effect
-    std::thread _workerThread;
-    std::atomic<bool> _running;
+    thread _workerThread;
+    atomic<bool> _running;
 
     bool IsEffectSelected() const
     {

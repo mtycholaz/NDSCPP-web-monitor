@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 #include "../interfaces.h"
 #include "../ledeffectbase.h"
@@ -12,7 +13,7 @@ private:
     double _waveFrequency; // Frequency of the wave pattern
 
 public:
-    ColorWaveEffect(const std::string& name, double speed = 0.5, double waveFrequency = 10.0)
+    ColorWaveEffect(const string& name, double speed = 0.5, double waveFrequency = 10.0)
         : LEDEffectBase(name), _hue(0.0), _speed(speed), _waveFrequency(waveFrequency)
     {
     }
@@ -23,7 +24,7 @@ public:
         _hue = 0.0;
     }
 
-    void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) override
+    void Update(ICanvas& canvas, milliseconds deltaTime) override
     {
         // Increment the hue based on speed and elapsed time
         _hue += _speed * deltaTime.count() / 1000.0;

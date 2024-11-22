@@ -81,6 +81,10 @@
         "format": "cpp",
         "stop_token": "cpp",
         "thread": "cpp",
-        "__config": "cpp"
+        "__config": "cpp",
+        "semaphore": "cpp",
+        "exception": "cpp",
+        "numeric": "cpp",
+        "random": "cpp"
     }
 }

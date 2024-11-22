@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 // LEDEffectBase
 // 
@@ -11,14 +12,14 @@
 class LEDEffectBase : public ILEDEffect
 {
 protected:
-    std::string _name;
+    string _name;
 
 public:
-    LEDEffectBase(const std::string& name) : _name(name) {}
+    LEDEffectBase(const string& name) : _name(name) {}
 
     virtual ~LEDEffectBase() = default;
 
-    const std::string& Name() const override { return _name; }
+    const string& Name() const override { return _name; }
 
     // Default implementation for Start does nothing
     void Start(ICanvas& canvas) override 
@@ -26,7 +27,7 @@ public:
     }
 
     // Default implementation for Update does nothing
-    void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) override 
+    void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
     }
 };

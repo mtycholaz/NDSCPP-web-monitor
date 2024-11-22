@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 // Serialization
 //
@@ -23,7 +24,7 @@
 // to_json for serialization
 
 
-void to_json(nlohmann::json& j, const std::shared_ptr<ILEDFeature>& feature) 
+void to_json(nlohmann::json& j, const shared_ptr<ILEDFeature>& feature) 
 {
     if (feature) 
     {
@@ -38,7 +39,6 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ILEDFeature>& feature)
             { "reversed",     feature->Reversed()     },
             { "channel",      feature->Channel()      },
             { "redGreenSwap", feature->RedGreenSwap() },
-            { "batchSize",    feature->BatchSize()    }
         };
     } 
     else 
@@ -51,7 +51,7 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ILEDFeature>& feature)
 void to_json(nlohmann::json& j, const ICanvas& canvas)
 {
     // Serialize the features vector as an array of JSON objects
-    std::vector<nlohmann::json> featuresJson;
+    vector<nlohmann::json> featuresJson;
     for (const auto& feature : canvas.Features())
     {
         if (feature) 
