@@ -18,7 +18,9 @@ Key concepts for programmers:
 
 The project includes a REST API via the `WebServer` class to control and configure canvases dynamically. For detailed interface descriptions and class diagrams, refer to the sections below.
 
-This repository is designed for programmers familiar with modern C++ (C++17 and later) and concepts like interfaces, threading, and network communication. Jump into the code, and start by exploring the interfaces and their implementing classes to understand the system's structure.
+This repository is designed for programmers familiar with modern C++ (C++20 and later) and concepts like interfaces, threading, and network communication. Jump into the code, and start by exploring the interfaces and their implementing classes to understand the system's structure.
+
+This project is dependent on the libraries for libmicrohttpd, lpthreads, and lz.
 
 ## Interfaces Overview
 

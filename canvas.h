@@ -24,27 +24,27 @@ public:
     {
     }
 
-    virtual ILEDGraphics & Graphics() override
+    ILEDGraphics & Graphics() override
     {
         return _graphics;
     }
     
-    virtual EffectsManager & Effects() 
+    EffectsManager & Effects() 
     {
         return _effects;
     }
 
-    virtual std::vector<std::shared_ptr<ILEDFeature>>& Features() override
+    std::vector<std::shared_ptr<ILEDFeature>>& Features() override
     {
         return _features;
     }
 
-    virtual const std::vector<std::shared_ptr<ILEDFeature>>& Features() const override
+    const std::vector<std::shared_ptr<ILEDFeature>>& Features() const override
     {
         return _features;
     }
 
-    virtual void AddFeature(std::shared_ptr<ILEDFeature> feature) override
+    void AddFeature(std::shared_ptr<ILEDFeature> feature) override
     {
         if (!feature)
             throw std::invalid_argument("Cannot add a null feature.");
@@ -52,7 +52,7 @@ public:
         _features.push_back(feature);
     }
 
-    virtual void RemoveFeature(std::shared_ptr<ILEDFeature> feature) override
+    void RemoveFeature(std::shared_ptr<ILEDFeature> feature) override
     {
         if (!feature)
             throw std::invalid_argument("Cannot remove a null feature.");

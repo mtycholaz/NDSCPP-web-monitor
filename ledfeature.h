@@ -49,8 +49,8 @@ public:
     uint32_t Height() const override { return _height; }
     const std::string &HostName() const override { return _hostName; }
     const std::string &FriendlyName() const override { return _friendlyName; }
-    virtual uint32_t OffsetX() const override { return _offsetX; }
-    virtual uint32_t OffsetY() const override { return _offsetY; }
+    uint32_t OffsetX() const override { return _offsetX; }
+    uint32_t OffsetY() const override { return _offsetY; }
     bool Reversed() const override { return _reversed; }
     uint8_t Channel() const override { return _channel; }
     bool RedGreenSwap() const override { return _redGreenSwap; }
