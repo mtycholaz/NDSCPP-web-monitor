@@ -6,7 +6,7 @@ LDFLAGS=
 LIBS=-lcurl -lpthread -lmicrohttpd -lz
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 
-SOURCES=main.cpp server.cpp
+SOURCES=main.cpp webserver.cpp
 EXECUTABLE=ndscpp
 DEPDIR=.deps
 OBJECTS:=$(SOURCES:.cpp=.o)

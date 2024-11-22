@@ -10,9 +10,8 @@ using namespace std::chrono;
 // maintenance of the code.  It also presumably makes it easier in the future to interop
 // with other languages, etc.
 
-#include <string>
+#include "pixeltypes.h"
 #include <vector>
-#include <cstdint>
 #include <map>
 
 // ILEDGraphics 
@@ -129,6 +128,8 @@ public:
     virtual void ClearEffects() = 0;
     virtual void Start(ICanvas& canvas, ISocketController & socketController) = 0;
     virtual void Stop() = 0;
+    virtual void SetFPS(uint16_t fps) = 0;
+    virtual uint16_t GetFPS() const = 0;
 };
 
 

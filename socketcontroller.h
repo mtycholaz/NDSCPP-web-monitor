@@ -36,7 +36,7 @@ public:
         for (const auto &canvas : allCanvases)
         {
             for (const auto &feature : canvas->Features())
-                AddChannel(feature->HostName(), feature->FriendlyName());
+                AddChannel(feature->HostName(), feature->FriendlyName(), feature->Port());
             canvas->Effects().Start(*canvas, *this);
         }
     }

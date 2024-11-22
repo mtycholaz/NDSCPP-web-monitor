@@ -16,9 +16,6 @@ using namespace std::chrono;
 #include "utilities.h"
 #include "canvas.h"
 #include <string>
-#include <vector>
-#include <stdexcept>
-#include <memory>
 
 class LEDFeature : public ILEDFeature
 {

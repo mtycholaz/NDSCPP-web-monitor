@@ -182,6 +182,7 @@ private:
         if (_socketFd == -1)
             return false;
 
+        cout << "Connecting to " << _hostName << ":" << _port << endl;
         if (connect(_socketFd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
         {
             CloseSocket();

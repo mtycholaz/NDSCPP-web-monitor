@@ -5,26 +5,21 @@
 // renders the effect to the canvas, compresses the data, and sends it to the LED
 // matrix via a SocketChannel.  The program will continue to run until it receives
 // a SIGINT signal (Ctrl-C).
+
 #include <csignal>
 #include <iostream>
 #include <atomic>
 #include <chrono>
 #include <thread>
 
-// TODO: Rationalize which headers are needed here - right now I'm including everything to make sure it all compiles...
-
 #include "global.h"
 #include "canvas.h"
 #include "interfaces.h"
-#include "serialization.h"
 #include "socketchannel.h"
 #include "socketcontroller.h"
-#include "ledeffectbase.h"
 #include "ledfeature.h"
-#include "utilities.h"
-#include "server.h"
+#include "webserver.h"
 #include "effectsmanager.h"
-#include "greenfilleffect.h"
 #include "colorwaveeffect.h"    
 
 using namespace std;
@@ -52,7 +47,7 @@ void handle_signal(int signal)
 // LoadCanvases
 //
 // Creates and returns a vector of shared pointers to Canvas objects.  Each Canvas
-// object is configured with a specific LED matrix and effect.  This function is
+// object is configured with one or more LEDFeatures and effects.  This function is
 // called once at the beginning of the program to set up the LED matrix and effects.
 
 vector<shared_ptr<ICanvas>> LoadCanvases()

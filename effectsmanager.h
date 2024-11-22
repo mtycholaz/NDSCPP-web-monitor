@@ -10,22 +10,27 @@ using namespace std::chrono;
 
 #include "interfaces.h"
 #include <vector>
-#include <memory>
-#include <stdexcept>
-#include <chrono>
-#include <thread>
-#include <atomic>
 
 class EffectsManager : public IEffectsManager
 {
 public:
-    EffectsManager()
-        : _currentEffectIndex(-1), _running(false) // No effect selected initially
-    {}
+    EffectsManager(uint16_t fps = 30) : _fps(fps), _currentEffectIndex(-1), _running(false) // No effect selected initially
+    {
+    }
 
     ~EffectsManager()
     {
         Stop(); // Ensure the worker thread is stopped when the manager is destroyed
+    }
+
+    void SetFPS(uint16_t fps)
+    {
+        _fps = fps;
+    }
+
+    uint16_t GetFPS() const
+    {
+        return _fps;
     }
 
     // Add an effect to the manager
@@ -144,7 +149,9 @@ public:
                     target->EnqueueFrame(compressedFrame);
                 }
 
-                this_thread::sleep_for(milliseconds(33)); // ~30 FPS
+                auto sleepTime = (milliseconds(1000) / _fps) - deltaTime;
+                sleepTime = clamp(sleepTime, milliseconds(0), milliseconds(10000)); // Clamp to 0ms to 10s
+                this_thread::sleep_for(milliseconds(sleepTime)); // ~30 FPS
             }
         });
     }
@@ -164,6 +171,7 @@ private:
     int _currentEffectIndex; // Index of the current effect
     thread _workerThread;
     atomic<bool> _running;
+    uint16_t _fps;
 
     bool IsEffectSelected() const
     {
