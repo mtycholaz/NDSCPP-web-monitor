@@ -71,12 +71,12 @@ vector<shared_ptr<ICanvas>> LoadCanvases()
         canvas,             // Canvas to get pixels from
         "192.168.8.176",    // Hostname
         "Workbench Matrix", // Friendly Name
+        49152,              // Port
         512, 32,            // Width, Height
         0, 0,               // Offset X, Offset Y
         false,              // Reversed
         0,                  // Channel
-        false,              // Red-Green Swap
-        1                   // Batch Size
+        false              // Red-Green Swap
     );
     // Add features to the canvas
     canvas->AddFeature(feature1);
