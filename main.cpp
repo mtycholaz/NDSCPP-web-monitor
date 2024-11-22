@@ -114,38 +114,23 @@ int main(int, char *[])
     // Load the canvases and features
     allCanvases = LoadCanvases();
 
-    // Add a SocketChannel for each feature
+    // Add a SocketChannel for each feature and start the drawing of effects
+    
     for (const auto &canvas : allCanvases)
+    {
         for (const auto &feature : canvas->Features())
             socketController.AddChannel(feature->HostName(), feature->FriendlyName());
+        canvas->Effects().Start(*canvas);
+    }
 
     // Start the SocketController
     socketController.StartAll();
 
-    // Main application loop.  Draws frames, compresses them, queues them up for transmit
-    
+    // Main application loop.  EffectManagers draw frames to the canvas queue, and those frames
+    // are then compressed and sent to the LED matrix via the SocketController threads.
+
     while (running)
-    {
-        for (const auto &canvas : allCanvases)
-        {
-            // Render the current effect to the canvas
-            canvas->Effects().UpdateCurrentEffect(*canvas, 16ms); // Assume ~60 FPS (delta time = 1/60)
-
-            // Send the data to each feature's SocketChannel
-            for (const auto &feature : canvas->Features())
-            {
-                auto frame = feature->GetDataFrame();
-
-                auto channel = socketController.FindChannelByHost(feature->HostName());
-                auto compressedFrame = channel->CompressFrame(frame);
-
-                if (channel)
-                    channel->EnqueueFrame(compressedFrame);
-            }
-        }
-        // Wait to simulate ~60 FPS
-        this_thread::sleep_for(chrono::milliseconds(16));
-    }
+        this_thread::sleep_for(chrono::milliseconds(20));
 
     // Stop all channels on exit
     socketController.StopAll();
