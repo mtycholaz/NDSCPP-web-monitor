@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 // Canvas
 //
@@ -40,30 +41,30 @@ public:
         return _effects;
     }
 
-    std::vector<std::shared_ptr<ILEDFeature>>& Features() override
+    vector<shared_ptr<ILEDFeature>>& Features() override
     {
         return _features;
     }
 
-    const std::vector<std::shared_ptr<ILEDFeature>>& Features() const override
+    const vector<shared_ptr<ILEDFeature>>& Features() const override
     {
         return _features;
     }
 
-    void AddFeature(std::shared_ptr<ILEDFeature> feature) override
+    void AddFeature(shared_ptr<ILEDFeature> feature) override
     {
         if (!feature)
-            throw std::invalid_argument("Cannot add a null feature.");
+            throw invalid_argument("Cannot add a null feature.");
 
         _features.push_back(feature);
     }
 
-    void RemoveFeature(std::shared_ptr<ILEDFeature> feature) override
+    void RemoveFeature(shared_ptr<ILEDFeature> feature) override
     {
         if (!feature)
-            throw std::invalid_argument("Cannot remove a null feature.");
+            throw invalid_argument("Cannot remove a null feature.");
 
-        auto it = std::find(_features.begin(), _features.end(), feature);
+        auto it = find(_features.begin(), _features.end(), feature);
         if (it != _features.end())
             _features.erase(it);
     }
@@ -71,5 +72,5 @@ public:
 private:
     uint32_t _width;
     uint32_t _height;
-    std::vector<std::shared_ptr<ILEDFeature>> _features;
+    vector<shared_ptr<ILEDFeature>> _features;
 };

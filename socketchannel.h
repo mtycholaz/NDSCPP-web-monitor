@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 // SocketChannel
 //
@@ -26,7 +27,7 @@
 class SocketChannel : public ISocketChannel
 {
 public:
-    SocketChannel(const std::string &hostName, const std::string &friendlyName, uint16_t port = 49152)
+    SocketChannel(const string &hostName, const string &friendlyName, uint16_t port = 49152)
         : _hostName(hostName),
           _friendlyName(friendlyName),
           _port(port),
@@ -50,18 +51,18 @@ public:
     // Override methods from ISocketChannel
     void Start() override
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        lock_guard<mutex> lock(_mutex);
         if (!_running)
         {
             _running = true;
-            _workerThread = std::thread(&SocketChannel::WorkerLoop, this);
+            _workerThread = thread(&SocketChannel::WorkerLoop, this);
         }
     }
 
     void Stop() override
     {
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            lock_guard<mutex> lock(_mutex);
             _running = false;
         }
 
@@ -73,14 +74,14 @@ public:
 
     bool IsConnected() const override
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        lock_guard<mutex> lock(_mutex);
         return _isConnected;
     }
     
-    const std::string &HostName() const override { return _hostName; }
-    const std::string &FriendlyName() const override { return _friendlyName; }
+    const string &HostName() const override { return _hostName; }
+    const string &FriendlyName() const override { return _friendlyName; }
 
-    std::vector<uint8_t> CompressFrame(const std::vector<uint8_t>& data) override
+    vector<uint8_t> CompressFrame(const vector<uint8_t>& data) override
     {
         constexpr uint32_t COMPRESSED_HEADER_TAG = 0x44415645; // Magic "DAVE" tag
         constexpr uint32_t CUSTOM_TAG = 0x12345678;
@@ -98,10 +99,10 @@ public:
         );
     }
 
-    bool EnqueueFrame(const std::vector<uint8_t> &frameData) override
+    bool EnqueueFrame(const vector<uint8_t> &frameData) override
     {
         {
-            std::lock_guard<std::mutex> lock(_queueMutex);
+            lock_guard<mutex> lock(_queueMutex);
             if (_frameQueue.size() >= MaxQueueDepth)
                 return false; // Queue is full
             _frameQueue.push(frameData);
@@ -114,9 +115,9 @@ private:
     {
         while (_running)
         {
-            std::vector<uint8_t> frame;
+            vector<uint8_t> frame;
             {
-                std::lock_guard<std::mutex> lock(_queueMutex);
+                lock_guard<mutex> lock(_queueMutex);
                 if (!_frameQueue.empty())
                 {
                     frame = _frameQueue.front();
@@ -127,17 +128,17 @@ private:
             if (!frame.empty())
                 SendFrame(frame);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Adjust based on requirements
+            this_thread::sleep_for(milliseconds(10)); // Adjust based on requirements
         }
     }
 
-    void SendFrame(const std::vector<uint8_t> &frame)
+    void SendFrame(const vector<uint8_t> &frame)
     {
         if (_socketFd == -1)
         {
             if (!ConnectSocket())
             {
-                std::lock_guard<std::mutex> lock(_mutex);
+                lock_guard<mutex> lock(_mutex);
                 _isConnected = false;
                 return;
             }
@@ -149,21 +150,21 @@ private:
             if (sentBytes == -1)
             {
                 CloseSocket();
-                std::lock_guard<std::mutex> lock(_mutex);
+                lock_guard<mutex> lock(_mutex);
                 _isConnected = false;
                 return;
             }
         }
-        catch(const std::exception& e)
+        catch(const exception& e)
         {
 
-            std::cerr << e.what() << '\n';
+            cerr << e.what() << '\n';
             CloseSocket();
-            std::lock_guard<std::mutex> lock(_mutex);
+            lock_guard<mutex> lock(_mutex);
             _isConnected = false;
         }
         
-        std::lock_guard<std::mutex> lock(_mutex);
+        lock_guard<mutex> lock(_mutex);
         _isConnected = true;
     }
 
@@ -205,18 +206,18 @@ private:
     static constexpr size_t MaxQueueDepth = 100;
 
     // Member variables
-    std::string _hostName;
-    std::string _friendlyName;
+    string _hostName;
+    string _friendlyName;
     uint16_t _port;
 
-    mutable std::mutex _mutex; // Protects connection state
-    std::atomic<bool> _isConnected;
-    std::atomic<bool> _running;
+    mutable mutex _mutex; // Protects connection state
+    atomic<bool> _isConnected;
+    atomic<bool> _running;
 
-    std::mutex _queueMutex; // Protects the frame queue
-    std::queue<std::vector<uint8_t>> _frameQueue;
+    mutex _queueMutex; // Protects the frame queue
+    queue<vector<uint8_t>> _frameQueue;
 
-    std::thread _workerThread;
+    thread _workerThread;
 
     int _socketFd; // File descriptor for the socket
 };

@@ -55,9 +55,9 @@ void handle_signal(int signal)
 // object is configured with a specific LED matrix and effect.  This function is
 // called once at the beginning of the program to set up the LED matrix and effects.
 
-std::vector<std::shared_ptr<ICanvas>> LoadCanvases()
+vector<shared_ptr<ICanvas>> LoadCanvases()
 {
-    std::vector<std::shared_ptr<ICanvas>> canvases;
+    vector<shared_ptr<ICanvas>> canvases;
 
     // Define a Canvas with dimensions matching the sign
     auto canvas = make_shared<Canvas>(512, 32);
@@ -96,7 +96,7 @@ std::vector<std::shared_ptr<ICanvas>> LoadCanvases()
 
 int main(int, char *[])
 {
-    std::vector<std::shared_ptr<ICanvas>> allCanvases;    
+    vector<shared_ptr<ICanvas>> allCanvases;    
     SocketController socketController;
 
     // Register signal handler for SIGINT
@@ -123,10 +123,10 @@ int main(int, char *[])
     // are then compressed and sent to the LED matrix via the SocketController threads.
 
     while (running)
-        this_thread::sleep_for(chrono::milliseconds(100));
+        this_thread::sleep_for(milliseconds(100));
 
-    // Stop all channels on exit
-    socketController.StopAll();
+    // Stops all channels and then removes them
+    socketController.RemoveAllChannels();
 
     cout << "Stopping server..." << endl;
     webServer.Stop();

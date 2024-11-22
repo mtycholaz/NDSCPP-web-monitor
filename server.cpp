@@ -1,8 +1,6 @@
-#include "server.h"
-
+// WebServer
 //
 // WebServer class implementation
-//
 
 #define PORT 7777
 
@@ -11,6 +9,7 @@
 #include <cstring>
 #include <string>
 #include <map>
+#include "server.h"
 
 using namespace std;
 

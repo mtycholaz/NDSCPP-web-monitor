@@ -1,4 +1,6 @@
 #pragma once
+using namespace std;
+using namespace std::chrono;
 
 // GreenFillEffect
 // 
@@ -12,11 +14,11 @@ class GreenFillEffect : public LEDEffectBase
 {
 public:
 
-    GreenFillEffect(const std::string& name) : LEDEffectBase(name) 
+    GreenFillEffect(const string& name) : LEDEffectBase(name) 
     {
     }
 
-    void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) override
+    void Update(ICanvas& canvas, milliseconds deltaTime) override
     {
         canvas.Graphics().Clear(CRGB::Green);
     }
