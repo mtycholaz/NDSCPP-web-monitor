@@ -92,33 +92,36 @@ Includes compression utilities (using zlib), endian-safe conversions, and drawin
 Represents a 24-bit RGB color, including utility methods for HSV-to-RGB conversion and brightness adjustment.  
 Forms the base unit of color manipulation across the system.
 
-```text -----------------------------------          -------------------------------
+```text
+-------------------------------------        ---------------------------------
 |          ISocketChannel           |        |           ICanvas             |
 |-----------------------------------|        |-------------------------------|
 | + HostName()                      |        | + Width()                     |
 | + FriendlyName()                  |        | + Height()                    |
 | + Width()                         |        | + AddFeature()                |
 | + Height()                        |        | + RemoveFeature()             |
-| + Port()                          |        | + DrawPixel()                 |
-| + EnqueueFrame()                  |        | + FillSolid()                 |
-| + IsConnected()                   |        | + FillRainbow()               |
-| + BytesPerSecond()                |        | + Blur()                      |
-| + ResetBytesPerSecond()           |        | + GetPixel()                  |
-| + Start()                         |        | + Update()                    |
-| + Stop()                          |        --------------------------------|
--------------------------------------                                      
+| + Port()                          |        | + Graphics()                  |
+| + EnqueueFrame()                  |        | + Effects()                   |
+| + IsConnected()                   |        | + Update()                    |
+| + BytesPerSecond()                |        |-------------------------------|
+| + ResetBytesPerSecond()           |
+| + Start()                         |
+| + Stop()                          |
+-------------------------------------
 
 ------------------------------------        ---------------------------------
 |          ILEDGraphics            |        |          ILEDFeature          |
 |----------------------------------|        |-------------------------------|
 | + DrawPixel()                    |        | + Width()                     |
 | + DrawLine()                     |        | + Height()                    |
-| + DrawRect()                     |        | + Offset()                    |
-| + DrawCircle()                   |        | + HostName()                  |
-| + FillSolid()                    |        | + FriendlyName()              |
-| + FillGradient()                 |        | + RedGreenSwap()              |
-| + GetPixel()                     |        | + Channel()                   |
-------------------------------------        ---------------------------------
+| + DrawRect()                     |        | + OffsetX()                   |
+| + DrawCircle()                   |        | + OffsetY()                   |
+| + FillSolid()                    |        | + HostName()                  |
+| + FillGradient()                 |        | + FriendlyName()              |
+| + GetPixel()                     |        | + RedGreenSwap()              |
+------------------------------------        | + Channel()                   |
+                                            | + BatchSize()                 |
+                                            |-------------------------------|
 
 Classes:
 ------------------------------------         -------------------------------
@@ -126,25 +129,45 @@ Classes:
 |----------------------------------|        |-------------------------------|
 | - _hostName                      |        | - _channels                   |
 | - _friendlyName                  |        | - _mutex                      |
-| - _width                         |        |-------------------------------|
-| - _height                        |        | + AddChannel()                |
-| - _port                          |        | + RemoveChannel()             |
-| - _mutex                         |        | + StartAll()                  |
-| - _isConnected                   |        | + StopAll()                   |
-|----------------------------------|        | + TotalBytesPerSecond()       |
-| + Implements: ISocketChannel     |        |-------------------------------|
------------------------------------
+| - _port                          |        |-------------------------------|
+| - _mutex                         |        | + AddChannel()                |
+| - _isConnected                   |        | + RemoveChannel()             |
+| - _bytesPerSecond                |        | + RemoveAllChannels()         |
+|----------------------------------|        | + StartAll()                  |
+| + Implements: ISocketChannel     |        | + StopAll()                   |
+------------------------------------        | + FindChannelByHost()         |
+                                             --------------------------------
 
 -----------------------------------          ---------------------------------
-|              Canvas               |<-------|           Feature              |
-|-----------------------------------|        |-=------------------------------|
-| - _width                          |        | - _offsetX                     |
-| - _height                         |        | - _offsetY                     |
-| - _features                       |        | - _hostName                    |
-| - _graphicsEngine                 |        | - _channel                     |
-|-----------------------------------|        | - _redGreenSwap                |
-| + Implements: ICanvas, ILEDGraphics        |--------------------------------|
-------------------------------------|        | + Implements: ILEDFeature      |
-                                       ----------------------------------------
+|              Canvas               |<-------|           Feature             |
+|-----------------------------------|        |-------------------------------|
+| - _width                          |        | - _offsetX                    |
+| - _height                         |        | - _offsetY                    |
+| - _features                       |        | - _hostName                   |
+| - _graphics                       |        | - _channel                    |
+| - _effects                        |        | - _redGreenSwap               |
+|-----------------------------------|        | - _batchSize                  |
+| + Implements: ICanvas, ILEDGraphics        |-------------------------------|
+|-----------------------------------         | + Implements: ILEDFeature     |
+                                             ---------------------------------
 
+-----------------------------------
+|          EffectsManager          |
+|----------------------------------|
+| - _effects                       |
+| - _currentEffectIndex            |
+| - _workerThread                  |
+| - _running                       |
+|----------------------------------|
+| + AddEffect()                    |
+| + RemoveEffect()                 |
+| + Start()                        |
+| + Stop()                         |
+| + NextEffect()                   |
+| + PreviousEffect()               |
+| + UpdateCurrentEffect()          |
+| + SetCurrentEffect()             |
+| + CurrentEffectName()            |
+| + ClearEffects()                 |
+-----------------------------------
 ```
