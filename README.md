@@ -93,6 +93,7 @@ Represents a 24-bit RGB color, including utility methods for HSV-to-RGB conversi
 Forms the base unit of color manipulation across the system.
 
 ```text
+
 -------------------------------------        ---------------------------------
 |          ISocketChannel           |        |           ICanvas             |
 |-----------------------------------|        |-------------------------------|
