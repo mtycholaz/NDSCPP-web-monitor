@@ -14,7 +14,7 @@
 #include <thread>
 #include <atomic>
 
-class EffectsManager
+class EffectsManager : public IEffectsManager
 {
 public:
     EffectsManager()
@@ -114,12 +114,12 @@ public:
     }
 
     // Start the worker thread to update effects
-    void Start(ICanvas& canvas)
+    void Start(ICanvas& canvas, ISocketController& socketController)
     {
         if (_running.exchange(true))
             return; // Already running
 
-        _workerThread = std::thread([this, &canvas]() 
+        _workerThread = std::thread([this, &canvas, &socketController]() 
         {
             auto lastTime = std::chrono::steady_clock::now();
             while (_running)
@@ -129,6 +129,18 @@ public:
                 lastTime = now;
 
                 UpdateCurrentEffect(canvas, deltaTime);
+                
+                // Now Enqueue the frames from each feature to the SocketController
+
+                for (const auto &feature : canvas.Features())
+                {
+                    auto frame = feature->GetDataFrame();
+                    auto target = socketController.FindChannelByHost(feature->HostName());
+                    if (!target)
+                        throw std::runtime_error("Feature host not found in SocketController.");
+                    auto compressedFrame = target->CompressFrame(frame);
+                    target->EnqueueFrame(compressedFrame);
+                }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(33)); // ~30 FPS
             }

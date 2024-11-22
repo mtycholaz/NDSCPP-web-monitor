@@ -12,7 +12,7 @@
 #include <mutex>
 #include "socketchannel.h"
 
-class SocketController
+class SocketController : public ISocketController
 {
 private:
     std::vector<std::shared_ptr<SocketChannel>> _channels;
@@ -28,7 +28,7 @@ public:
     ~SocketController() { StopAll(); }
 
     // Adds a new SocketChannel to the controller
-    void AddChannel(const std::string& hostName, const std::string& friendlyName, uint16_t port = 49152)
+    void AddChannel(const std::string& hostName, const std::string& friendlyName, uint16_t port = 49152) override
     {
         auto newChannel = std::make_shared<SocketChannel>(hostName, friendlyName, port);
         {
@@ -39,7 +39,7 @@ public:
     }
 
     // Removes a SocketChannel by host name
-    void RemoveChannel(const std::string& hostName)
+    void RemoveChannel(const std::string& hostName) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         auto it = std::remove_if(_channels.begin(), _channels.end(),
@@ -49,14 +49,14 @@ public:
         _channels.erase(it, _channels.end());
     }
 
-    void RemoveAllChannels()
+    void RemoveAllChannels() override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         _channels.clear();
     }
 
     // Finds a channel by host name
-    std::shared_ptr<SocketChannel> FindChannelByHost(const std::string& hostName) const
+    std::shared_ptr<ISocketChannel> FindChannelByHost(const std::string& hostName) const override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         for (const auto& channel : _channels)
@@ -68,7 +68,7 @@ public:
     }
     
     // Starts all channels
-    void StartAll()
+    void StartAll() override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         for (auto& channel : _channels)
@@ -76,7 +76,7 @@ public:
     }
 
     // Stops all channels
-    void StopAll()
+    void StopAll() override
     {
         std::lock_guard<std::mutex> lock(_mutex);
         for (auto& channel : _channels)

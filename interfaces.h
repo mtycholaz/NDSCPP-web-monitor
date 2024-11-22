@@ -63,27 +63,7 @@ public:
 
 };
 
-// ICanvas
-//
-// Represents a 2D drawing surface that manages LED features and provides rendering capabilities.  
-// Can contain multiple `ILEDFeature` instances, with features mapped to specific regions of the canvas
-
-class ICanvas 
-{
-public:
-    virtual ~ICanvas() = default;
-    // Accessors for features
-    virtual std::vector<std::shared_ptr<ILEDFeature>>& Features() = 0;
-    virtual const std::vector<std::shared_ptr<ILEDFeature>>& Features() const = 0;
-
-    // Add or remove features
-    virtual void AddFeature(std::shared_ptr<ILEDFeature> feature) = 0;
-    virtual void RemoveFeature(std::shared_ptr<ILEDFeature> feature) = 0;
-
-    virtual ILEDGraphics & Graphics() = 0;
-};
-
-
+class ICanvas;
 
 // ILEDEffect
 //
@@ -103,6 +83,72 @@ public:
     // Called to update the effect, given a canvas and timestamp
     virtual void Update(ICanvas& canvas, std::chrono::milliseconds deltaTime) = 0;
 
+};
+
+// ISocketController
+//
+// The SocketController class manages a collection of SocketChannels, allowing for adding and removing
+// them as well as accessing them to send data to their respective features. It also provides methods
+// for starting and stopping all channels.
+
+class ISocketChannel;
+
+class ISocketController
+{
+public:
+    virtual ~ISocketController() = default;
+
+    virtual void AddChannel(const std::string& hostName, const std::string& friendlyName, uint16_t port = 49152) = 0;
+    virtual void RemoveChannel(const std::string& hostName) = 0;
+    virtual void RemoveAllChannels() = 0;
+    virtual std::shared_ptr<ISocketChannel> FindChannelByHost(const std::string& hostName) const = 0;
+    virtual void StartAll() = 0;
+    virtual void StopAll() = 0;
+};
+
+// IEffectsManager
+//
+// Manages a collection of LED effects, allowing for cycling through effects, starting and stopping them,
+// and updating the current effect.  Provides methods for adding, removing, and clearing effects.
+
+class IEffectsManager
+{
+public:
+    virtual ~IEffectsManager() = default;
+
+    virtual void AddEffect(std::shared_ptr<ILEDEffect> effect) = 0;
+    virtual void RemoveEffect(std::shared_ptr<ILEDEffect> effect) = 0;
+    virtual void StartCurrentEffect(ICanvas& canvas) = 0;
+    virtual void SetCurrentEffect(size_t index, ICanvas& canvas) = 0;
+    virtual void UpdateCurrentEffect(ICanvas& canvas, std::chrono::milliseconds millisDelta) = 0;
+    virtual void NextEffect() = 0;
+    virtual void PreviousEffect() = 0;
+    virtual std::string CurrentEffectName() const = 0;
+    virtual void ClearEffects() = 0;
+    virtual void Start(ICanvas& canvas, ISocketController & socketController) = 0;
+    virtual void Stop() = 0;
+};
+
+
+// ICanvas
+//
+// Represents a 2D drawing surface that manages LED features and provides rendering capabilities.  
+// Can contain multiple `ILEDFeature` instances, with features mapped to specific regions of the canvas
+
+class ICanvas 
+{
+public:
+    virtual ~ICanvas() = default;
+    // Accessors for features
+    virtual std::vector<std::shared_ptr<ILEDFeature>>& Features() = 0;
+    virtual const std::vector<std::shared_ptr<ILEDFeature>>& Features() const = 0;
+
+    // Add or remove features
+    virtual void AddFeature(std::shared_ptr<ILEDFeature> feature) = 0;
+    virtual void RemoveFeature(std::shared_ptr<ILEDFeature> feature) = 0;
+
+    virtual ILEDGraphics & Graphics() = 0;
+    virtual IEffectsManager & Effects() = 0;
 };
 
 // ISocketChannel
