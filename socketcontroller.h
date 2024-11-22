@@ -19,6 +19,16 @@ public:
     SocketController() = default;
     ~SocketController() { StopAll(); }
 
+    void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> &allCanvases) override
+    {
+        for (const auto &canvas : allCanvases)
+        {
+            for (const auto &feature : canvas->Features())
+                AddChannel(feature->HostName(), feature->FriendlyName());
+            canvas->Effects().Start(*canvas, *this);
+        }
+    }
+    
     // Adds a new SocketChannel to the controller
     void AddChannel(const std::string& hostName, const std::string& friendlyName, uint16_t port = 49152) override
     {
