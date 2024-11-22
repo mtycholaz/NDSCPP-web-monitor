@@ -32,6 +32,11 @@ public:
     uint32_t Width()  const override { return _width; }
     uint32_t Height() const override { return _height; }
 
+    const std::vector<CRGB>& GetPixels() const override
+    {
+        return _pixels;
+    }
+
     void SetPixel(uint32_t x, uint32_t y, const CRGB& color) override
     {
         if (x >= 0 && x < _width && y >= 0 && y < _height)
