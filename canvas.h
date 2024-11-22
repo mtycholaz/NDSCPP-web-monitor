@@ -4,6 +4,7 @@
 //
 // Represents the larger drawing surface that is made up from one or more LEDFeatures
 
+#include <nlohmann/json.hpp>
 #include "interfaces.h"
 #include "basegraphics.h"
 #include "effectsmanager.h"
@@ -29,6 +30,11 @@ public:
         return _graphics;
     }
     
+    const ILEDGraphics& Graphics() const override 
+    { 
+        return _graphics; 
+    }
+
     IEffectsManager & Effects() override
     {
         return _effects;

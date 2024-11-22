@@ -148,6 +148,7 @@ public:
     virtual void RemoveFeature(std::shared_ptr<ILEDFeature> feature) = 0;
 
     virtual ILEDGraphics & Graphics() = 0;
+    virtual const ILEDGraphics& Graphics() const = 0;
     virtual IEffectsManager & Effects() = 0;
 };
 

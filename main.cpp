@@ -16,6 +16,7 @@
 #include "global.h"
 #include "canvas.h"
 #include "interfaces.h"
+#include "serialization.h"
 #include "socketchannel.h"
 #include "socketcontroller.h"
 #include "ledeffectbase.h"
