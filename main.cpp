@@ -100,8 +100,8 @@ int main(int, char *[])
         );
 
         // Add the effect to the EffectsManager
-        effectsManager.AddEffect(greenEffect);
-        effectsManager.SetCurrentEffect(0, *canvas);
+        canvas->Effects().AddEffect(greenEffect);
+        canvas->Effects().SetCurrentEffect(0, *canvas);
 
         // Start the SocketController
         socketController.StartAll();
@@ -111,7 +111,7 @@ int main(int, char *[])
         while (running)
         {
             // Render the current effect to the canvas
-            effectsManager.UpdateCurrentEffect(*canvas, 16ms); // Assume ~60 FPS (delta time = 1/60)
+            canvas->Effects().UpdateCurrentEffect(*canvas, 16ms); // Assume ~60 FPS (delta time = 1/60)
 
             // Send the data to each feature's SocketChannel
             for (const auto &feature : canvas->Features())
