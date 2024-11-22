@@ -74,7 +74,7 @@ public:
         if (_width == graphics.Width() && _height == graphics.Height() && _offsetX == 0 && _offsetY == 0)
         {
             return Utilities::ConvertPixelsToByteArray(
-                graphics.GetPixels(), // Assume the graphics object provides a method to retrieve all pixels
+                graphics.GetPixels(), 
                 _reversed,
                 _redGreenSwap
             );
