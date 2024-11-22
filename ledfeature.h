@@ -68,9 +68,21 @@ public:
         if (!_canvas)
             throw std::runtime_error("LEDFeature must be associated with a canvas to retrieve pixel data.");
 
+        const auto& graphics = _canvas->Graphics();
+
+        // If the feature matches the canvas in size and position, directly return the canvas pixel data
+        if (_width == graphics.Width() && _height == graphics.Height() && _offsetX == 0 && _offsetY == 0)
+        {
+            return Utilities::ConvertPixelsToByteArray(
+                graphics.GetPixels(), // Assume the graphics object provides a method to retrieve all pixels
+                _reversed,
+                _redGreenSwap
+            );
+        }
+
+        // Otherwise, manually extract the feature's pixel data
         std::vector<CRGB> featurePixels;
 
-        // Retrieve pixel data from the canvas
         for (uint32_t y = 0; y < _height; ++y)
         {
             for (uint32_t x = 0; x < _width; ++x)
@@ -80,16 +92,16 @@ public:
                 uint32_t canvasY = y + _offsetY;
 
                 // Ensure we don't exceed canvas boundaries
-                if (canvasX < _canvas->Graphics().Width() && canvasY < _canvas->Graphics().Height())
-                    featurePixels.push_back(_canvas->Graphics().GetPixel(canvasX, canvasY));
+                if (canvasX < graphics.Width() && canvasY < graphics.Height())
+                    featurePixels.push_back(graphics.GetPixel(canvasX, canvasY));
                 else
                     featurePixels.push_back(CRGB::Magenta); // Out-of-bounds pixels are defaulted to Magenta
             }
         }
 
-        // Convert to the desired byte array format (e.g., RGB)
         return Utilities::ConvertPixelsToByteArray(featurePixels, _reversed, _redGreenSwap);
     }
+
 
     std::vector<uint8_t> GetDataFrame() const override
     {

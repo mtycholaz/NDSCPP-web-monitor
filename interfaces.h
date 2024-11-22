@@ -23,6 +23,7 @@ class ILEDGraphics
 public:
     virtual ~ILEDGraphics() = default;
 
+    virtual const std::vector<CRGB> & GetPixels() const = 0;
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
     virtual void SetPixel(uint32_t x, uint32_t y, const CRGB& color) = 0;
