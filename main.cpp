@@ -24,7 +24,8 @@
 #include "utilities.h"
 #include "server.h"
 #include "effectsmanager.h"
-#include "effects/greeenfilleffect.h"
+#include "greenfilleffect.h"
+#include "colorwaveeffect.h"    
 
 using namespace std;
 
@@ -49,7 +50,6 @@ void handle_signal(int signal)
 }
 
 SocketController socketController;
-EffectsManager effectsManager;
 
 // Main program entry point. Runs the webServer and starts up the LED processing.
 // When SIGINT is received, exits gracefully.
@@ -75,7 +75,7 @@ int main(int, char *[])
         auto canvas = make_shared<Canvas>(512, 32);
 
         // Define a GreenFillEffect
-        auto greenEffect = make_shared<GreenFillEffect>("Green Fill");
+        auto greenEffect = make_shared<ColorWaveEffect>("Color Wave");
 
         // Add LEDFeature for a specific client (example IP: "192.168.1.100")
         auto feature1 = make_shared<LEDFeature>

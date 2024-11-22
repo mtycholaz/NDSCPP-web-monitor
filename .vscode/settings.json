@@ -1,6 +1,7 @@
 {
     "C_Cpp.default.includePath": [
-        "/opt/homebrew/include/"
+        "/opt/homebrew/include/",
+        "effects"
     ],
     "files.associations": {
         "__bit_reference": "cpp",

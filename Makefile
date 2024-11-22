@@ -1,7 +1,7 @@
 SHELL:=/bin/bash
 
 CC=clang++
-CFLAGS=-std=c++2a -g3 -O3
+CFLAGS=-std=c++2a -g3 -O3 -Ieffects
 LDFLAGS=
 LIBS=-lcurl -lpthread -lmicrohttpd -lz
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
@@ -78,6 +78,6 @@ $(DEPFILES):
 
 
 clean: clear_aic
-	rm -f $(OBJECTS) $(EXECUTABLE) $(DEPFILES) $
+	rm -f $(OBJECTS) $(EXECUTABLE) $(DEPFILES)
 
 include $(wildcard $(DEPFILES))
