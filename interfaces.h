@@ -99,6 +99,7 @@ class ISocketController
 public:
     virtual ~ISocketController() = default;
 
+    virtual void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> &allCanvases) = 0;
     virtual void AddChannel(const std::string& hostName, const std::string& friendlyName, uint16_t port = 49152) = 0;
     virtual void RemoveChannel(const std::string& hostName) = 0;
     virtual void RemoveAllChannels() = 0;
