@@ -9,7 +9,6 @@ DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 SOURCES=main.cpp server.cpp
 EXECUTABLE=ndscpp
 DEPDIR=.deps
-AIC_CHECK=.ALLOW_IGNORE_CACHE
 OBJECTS:=$(SOURCES:.cpp=.o)
 DEPFILES:=$(SOURCES:%.cpp=$(DEPDIR)/%.d)
 
@@ -24,20 +23,9 @@ Usage:
 	force	Force a rebuild of all files
 	clean	Remove all build artifacts
 
-Note:	the ALLOW_IGNORE_CACHE variable can be used to allow (true) or
-	disallow (false) the cache to be ignored using the cached=no query
-	parameter. The default value is set in the equally named macro in
-	global.h.
-	For production scenarios it is recommended to NOT allow cached=no.
-	Changing this variable between invocations of make will trigger a
-	recompile of all C++ source files.
-
 Examples:
-	Build ndscpp using the default concerning cached=no:
 	$$ make all
 
-	Build ndscpp with support for cached=no:
-	$$ make ALLOW_IGNORE_CACHE=true all
 
 endef
 
@@ -57,14 +45,10 @@ help:; @ $(info $(helptext)) :
 .PHONY: all
 .PHONY: phony
 .PHONY: force
-.PHONY: clear_aic
 .PHONY: clean
 
 all: $(EXECUTABLE)
-force: clear_aic all
-
-
-clear_aic: ; rm -f $(AIC_CHECK)
+force: all
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
@@ -76,8 +60,7 @@ $(DEPDIR): ; @mkdir -p $@
 
 $(DEPFILES):
 
-
-clean: clear_aic
+clean:
 	rm -f $(OBJECTS) $(EXECUTABLE) $(DEPFILES)
 
 include $(wildcard $(DEPFILES))
