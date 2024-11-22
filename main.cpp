@@ -24,7 +24,8 @@
 #include "utilities.h"
 #include "server.h"
 #include "effectsmanager.h"
-#include "effects/greeenfilleffect.h"
+#include "greenfilleffect.h"
+#include "colorwaveeffect.h"    
 
 using namespace std;
 
@@ -49,7 +50,6 @@ void handle_signal(int signal)
 }
 
 SocketController socketController;
-EffectsManager effectsManager;
 
 // Main program entry point. Runs the webServer and starts up the LED processing.
 // When SIGINT is received, exits gracefully.
@@ -75,7 +75,7 @@ int main(int, char *[])
         auto canvas = make_shared<Canvas>(512, 32);
 
         // Define a GreenFillEffect
-        auto greenEffect = make_shared<GreenFillEffect>("Green Fill");
+        auto greenEffect = make_shared<ColorWaveEffect>("Color Wave");
 
         // Add LEDFeature for a specific client (example IP: "192.168.1.100")
         auto feature1 = make_shared<LEDFeature>
@@ -100,8 +100,8 @@ int main(int, char *[])
         );
 
         // Add the effect to the EffectsManager
-        effectsManager.AddEffect(greenEffect);
-        effectsManager.SetCurrentEffect(0, *canvas);
+        canvas->Effects().AddEffect(greenEffect);
+        canvas->Effects().SetCurrentEffect(0, *canvas);
 
         // Start the SocketController
         socketController.StartAll();
@@ -111,7 +111,7 @@ int main(int, char *[])
         while (running)
         {
             // Render the current effect to the canvas
-            effectsManager.UpdateCurrentEffect(*canvas, 16ms); // Assume ~60 FPS (delta time = 1/60)
+            canvas->Effects().UpdateCurrentEffect(*canvas, 16ms); // Assume ~60 FPS (delta time = 1/60)
 
             // Send the data to each feature's SocketChannel
             for (const auto &feature : canvas->Features())

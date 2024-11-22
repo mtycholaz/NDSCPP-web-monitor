@@ -6,16 +6,19 @@
 
 #include "interfaces.h"
 #include "basegraphics.h"
+#include "effectsmanager.h"
 #include <vector>
 #include <memory>
 #include <algorithm>
 #include <stdexcept>
 #include <numeric>
 
+
 class Canvas : public ICanvas
 {
     BaseGraphics _graphics;
-
+    EffectsManager _effects;
+    
 public:
     Canvas(uint32_t width, uint32_t height) : _width(width), _height(height), _graphics(width, height)
     {
@@ -24,6 +27,11 @@ public:
     virtual ILEDGraphics & Graphics() override
     {
         return _graphics;
+    }
+    
+    virtual EffectsManager & Effects() 
+    {
+        return _effects;
     }
 
     virtual std::vector<std::shared_ptr<ILEDFeature>>& Features() override
