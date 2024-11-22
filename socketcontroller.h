@@ -1,12 +1,6 @@
 #pragma once
 
-// SocketController
-//
-// Manages the list of active SocketChannels.  This class is responsible for creating
-// and destroying SocketChannels, and for starting and stopping them.  It also provides
-// a method to find a SocketChannel by host name.
-
-#include <vector>
+#include <unordered_map>
 #include <memory>
 #include <string>
 #include <mutex>
@@ -15,13 +9,11 @@
 class SocketController : public ISocketController
 {
 private:
-    std::vector<std::shared_ptr<SocketChannel>> _channels;
-    
-    // The mutex is used to protect the list of channels and it is marked as mutable
-    // so that it can be locked in const methods.  It doesn't change the object's 
-    // state beyond acquiring a lock, so it is semantically const.
+    // Map of host names to SocketChannel objects for efficient lookup
+    std::unordered_map<std::string, std::shared_ptr<SocketChannel>> _channels;
 
-    mutable std::mutex _mutex; 
+    // Mutex to protect access to the channel map
+    mutable std::mutex _mutex;
 
 public:
     SocketController() = default;
@@ -33,7 +25,7 @@ public:
         auto newChannel = std::make_shared<SocketChannel>(hostName, friendlyName, port);
         {
             std::lock_guard<std::mutex> lock(_mutex);
-            _channels.push_back(newChannel);
+            _channels[hostName] = newChannel;
         }
         newChannel->Start();
     }
@@ -42,44 +34,48 @@ public:
     void RemoveChannel(const std::string& hostName) override
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        auto it = std::remove_if(_channels.begin(), _channels.end(),
-                                 [&](const std::shared_ptr<SocketChannel>& channel) {
-                                     return channel->HostName() == hostName;
-                                 });
-        _channels.erase(it, _channels.end());
-    }
-
-    void RemoveAllChannels() override
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _channels.clear();
+        auto it = _channels.find(hostName);
+        if (it != _channels.end())
+        {
+            it->second->Stop();
+            _channels.erase(it);
+        }
     }
 
     // Finds a channel by host name
     std::shared_ptr<ISocketChannel> FindChannelByHost(const std::string& hostName) const override
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        for (const auto& channel : _channels)
-        {
-            if (channel->HostName() == hostName)
-                return channel;
-        }
+        auto it = _channels.find(hostName);
+        if (it != _channels.end())
+            return it->second;
+        
         return nullptr; // Return null if no matching channel is found
     }
-    
+
     // Starts all channels
     void StartAll() override
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        for (auto& channel : _channels)
+        for (auto& [_, channel] : _channels)
             channel->Start();
+        
     }
 
     // Stops all channels
     void StopAll() override
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        for (auto& channel : _channels)
+        for (auto& [_, channel] : _channels)
             channel->Stop();
     }
+
+        // Removes all channels
+    void RemoveAllChannels() override
+    {
+        StopAll();
+        std::lock_guard<std::mutex> lock(_mutex);
+        _channels.clear();
+    }
+
 };
