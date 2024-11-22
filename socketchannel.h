@@ -42,7 +42,7 @@ public:
         CloseSocket();
     }
 
-    virtual uint16_t Port() const override
+    uint16_t Port() const override
     {
         return _port;
     }
@@ -80,7 +80,7 @@ public:
     const std::string &HostName() const override { return _hostName; }
     const std::string &FriendlyName() const override { return _friendlyName; }
 
-    virtual std::vector<uint8_t> CompressFrame(const std::vector<uint8_t>& data) override
+    std::vector<uint8_t> CompressFrame(const std::vector<uint8_t>& data) override
     {
         constexpr uint32_t COMPRESSED_HEADER_TAG = 0x44415645; // Magic "DAVE" tag
         constexpr uint32_t CUSTOM_TAG = 0x12345678;

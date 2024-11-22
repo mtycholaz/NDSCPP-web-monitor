@@ -21,7 +21,7 @@ public:
     const std::string& Name() const override { return _name; }
 
     // Default implementation for Start does nothing
-    virtual void Start(ICanvas& canvas) override 
+    void Start(ICanvas& canvas) override 
     {
     }
 

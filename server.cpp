@@ -59,7 +59,7 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
     else
     {
         response_code = MHD_HTTP_BAD_REQUEST;
-        response_text = "<html><body>Error: No ticker symbol provided.</body></html>";
+        response_text = "<html><body>Error: Unknown Request.</body></html>";
     }
 
     response = MHD_create_response_from_buffer(response_text.size(), (void*)response_text.c_str(), MHD_RESPMEM_MUST_COPY);
