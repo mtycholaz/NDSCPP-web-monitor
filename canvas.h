@@ -10,10 +10,7 @@ using namespace std;
 #include "basegraphics.h"
 #include "effectsmanager.h"
 #include <vector>
-#include <memory>
-#include <algorithm>
-#include <stdexcept>
-#include <numeric>
+
 
 
 class Canvas : public ICanvas
@@ -22,7 +19,11 @@ class Canvas : public ICanvas
     EffectsManager _effects;
     
 public:
-    Canvas(uint32_t width, uint32_t height) : _width(width), _height(height), _graphics(width, height)
+    Canvas(uint32_t width, uint32_t height, uint16_t fps = 30) : 
+        _width(width), 
+        _height(height), 
+        _graphics(width, height), 
+        _effects(fps)
     {
     }
 

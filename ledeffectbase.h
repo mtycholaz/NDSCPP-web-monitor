@@ -6,8 +6,6 @@ using namespace std;
 // A helper class that implements the ILEDEffect interface.  
 
 #include "interfaces.h"
-#include <vector>
-#include "pixeltypes.h"
 
 class LEDEffectBase : public ILEDEffect
 {

@@ -1,26 +1,13 @@
-#ifndef GLOBAL_H
-#define GLOBAL_H
-
-// Globals
-//
-// This file contains global definitions and includes that are used throughout the project.
-
-#include <microhttpd.h>
-#include <optional>
-#include <thread>
-#include <pthread.h>
-#include <string>
-#include <chrono>
-#include <iostream>
-#include <iomanip>
-
-#include "pixeltypes.h"
-#include "utilities.h"
-#include "interfaces.h"
-
+#pragma once
 using namespace std;
 using namespace chrono;
 
+// Global Definitions
+//
+// This file contains global definitions and includes that are used throughout the project.
+
+#include <string>
+#include "utilities.h"
 #include "secrets.h"
 
 // arraysize
@@ -83,5 +70,3 @@ inline void delay(int ms)
 {
     this_thread::sleep_for((milliseconds)ms);
 }
-
-#endif
