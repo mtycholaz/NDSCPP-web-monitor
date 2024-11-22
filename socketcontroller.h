@@ -44,6 +44,12 @@ public:
         _channels.erase(it, _channels.end());
     }
 
+    void RemoveAllChannels()
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _channels.clear();
+    }
+    
     // Finds a channel by host name
     std::shared_ptr<SocketChannel> FindChannelByHost(const std::string& hostName) const
     {
@@ -70,6 +76,5 @@ public:
         std::lock_guard<std::mutex> lock(_mutex);
         for (auto& channel : _channels)
             channel->Stop();
-        _channels.clear();
     }
 };
