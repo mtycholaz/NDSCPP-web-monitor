@@ -54,9 +54,9 @@ void handle_signal(int signal)
 // object is configured with a specific LED matrix and effect.  This function is
 // called once at the beginning of the program to set up the LED matrix and effects.
 
-std::vector<std::shared_ptr<Canvas>> LoadCanvases()
+std::vector<std::shared_ptr<ICanvas>> LoadCanvases()
 {
-    std::vector<std::shared_ptr<Canvas>> canvases;
+    std::vector<std::shared_ptr<ICanvas>> canvases;
 
     // Define a Canvas with dimensions matching the sign
     auto canvas = make_shared<Canvas>(512, 32);
@@ -95,7 +95,7 @@ std::vector<std::shared_ptr<Canvas>> LoadCanvases()
 
 int main(int, char *[])
 {
-    std::vector<std::shared_ptr<Canvas>> allCanvases;    
+    std::vector<std::shared_ptr<ICanvas>> allCanvases;    
     SocketController socketController;
 
     // Register signal handler for SIGINT
@@ -120,7 +120,7 @@ int main(int, char *[])
     {
         for (const auto &feature : canvas->Features())
             socketController.AddChannel(feature->HostName(), feature->FriendlyName());
-        canvas->Effects().Start(*canvas);
+        canvas->Effects().Start(*canvas, socketController);
     }
 
     // Start the SocketController

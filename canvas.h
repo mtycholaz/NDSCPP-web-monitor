@@ -29,7 +29,7 @@ public:
         return _graphics;
     }
     
-    EffectsManager & Effects() 
+    IEffectsManager & Effects() override
     {
         return _effects;
     }
