@@ -121,8 +121,8 @@ public:
     }
 
 private:
-    string _hostName;
-    string _friendlyName;
+    string      _hostName;
+    string      _friendlyName;
     uint16_t    _port;
     uint32_t    _width;
     uint32_t    _height;
