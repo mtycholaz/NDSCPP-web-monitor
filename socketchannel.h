@@ -133,22 +133,30 @@ public:
                 return false; // Queue is full
             _frameQueue.push(std::move(frameData));
         }
+        _queueCondition.notify_one(); // Notify the worker thread that a new frame is available
         return true; // Successfully enqueued
     }
 
 private:
+    // Updated WorkerLoop
     void WorkerLoop()
     {
         while (_running)
         {
-            vector<uint8_t> frame;
+            std::vector<uint8_t> frame;
+
             {
-                lock_guard<mutex> lock(_queueMutex);
-                if (!_frameQueue.empty())
-                {
-                    frame = std::move(_frameQueue.front());
-                    _frameQueue.pop();
-                }
+                std::unique_lock<std::mutex> lock(_queueMutex);
+
+                // Wait until _frameQueue is not empty or _running becomes false
+                _queueCondition.wait(lock, [this] { return !_frameQueue.empty() || !_running; });
+
+                // If _running is false and queue is empty, exit the loop
+                if (!_running && _frameQueue.empty())
+                    return;
+
+                frame = std::move(_frameQueue.front());
+                _frameQueue.pop();
             }
 
             if (!frame.empty())
@@ -157,8 +165,6 @@ private:
                 if (response)
                     _lastClientResponse = *response;
             }
-
-            this_thread::sleep_for(milliseconds(10)); // Adjust based on requirements
         }
     }
 
@@ -353,6 +359,8 @@ private:
 
     mutex _queueMutex; // Protects the frame queue
     queue<vector<uint8_t>> _frameQueue;
+    condition_variable _queueCondition; // Condition variable to signal the worker thread
+
 
     thread _workerThread;
 
