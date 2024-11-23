@@ -151,18 +151,19 @@ public:
     // Combines multiple byte arrays into one.  My masterpiece for the day :-)
 
     template <typename... Arrays>
-    static vector<uint8_t> CombineByteArrays(const Arrays &...arrays)
+    static vector<uint8_t> CombineByteArrays(Arrays&&... arrays)
     {
         vector<uint8_t> combined;
 
-        // Calculate the total size of the combined array.  Remember you
-        // saw it here first!  It's a fold expression.  New to me too.
-
+        // Calculate the total size of the combined array using a fold expression
         size_t totalSize = (arrays.size() + ... + 0);
         combined.reserve(totalSize);
 
-        // Append each array to the combined vector with another fold expression
-        (combined.insert(combined.end(), arrays.begin(), arrays.end()), ...);
+        // Append each array to the combined vector using a fold expression
+        (combined.insert(
+            combined.end(),
+            std::make_move_iterator(arrays.begin()),
+            std::make_move_iterator(arrays.end())), ...);
 
         return combined;
     }

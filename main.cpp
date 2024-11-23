@@ -25,9 +25,6 @@
 
 using namespace std;
 
-// Global Objects
-WebServer webServer;
-
 // Atomic flag to indicate whether the program should continue running.
 // Will be set to false when SIGINT is received.
 atomic<bool> running(true);
@@ -95,7 +92,21 @@ int main(int, char *[])
     // Register signal handler for SIGINT
     signal(SIGINT, handle_signal);
 
+    cout << "Loading canvases..." << endl;
+
+    // Load the canvases and features
+    allCanvases = LoadCanvases();
+
+    cout << "Connecting to clients..." << endl;
+
+    // Add a SocketChannel for each feature and start the drawing of effects
+    socketController.AddChannelsForCanvases(allCanvases);
+    socketController.StartAll();
+
+    cout << "Starting the Web Server..." << endl;
+
     // Start the web server
+    WebServer webServer(allCanvases);
     pthread_t serverThread = webServer.Start();
     if (!serverThread)
     {
@@ -103,14 +114,7 @@ int main(int, char *[])
         return 1;
     }
 
-    cout << "Started server, waiting..." << endl;
-
-    // Load the canvases and features
-    allCanvases = LoadCanvases();
-
-    // Add a SocketChannel for each feature and start the drawing of effects
-    socketController.AddChannelsForCanvases(allCanvases);
-    socketController.StartAll();
+    cout << "[Entered Running State]" << endl;
 
     // Main application loop.  EffectManagers draw frames to the canvas queue, and those frames
     // are then compressed and sent to the LED matrix via the SocketController threads.
