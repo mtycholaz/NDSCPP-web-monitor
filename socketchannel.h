@@ -32,19 +32,41 @@ using namespace std;
 // is big-endian, as the ESP32 is little-endian.  Also you must use 64-but
 // doubles on the ESP32 side to match the 64-bit doubles here on the server side.
 
+// Define the ClientResponse structure
 struct ClientResponse
 {
-    uint32_t    size;              // 4
-    uint32_t    flashVersion;      // 4
-    double      currentClock;      // 8
-    double      oldestPacket;      // 8
-    double      newestPacket;      // 8
-    double      brightness;        // 8
-    double      wifiSignal;        // 8
-    uint32_t    bufferSize;        // 4
-    uint32_t    bufferPos;         // 4
-    uint32_t    fpsDrawing;        // 4
-    uint32_t    watts;             // 4
+    uint32_t size;              // 4
+    uint32_t flashVersion;      // 4
+    double currentClock;        // 8
+    double oldestPacket;        // 8
+    double newestPacket;        // 8
+    double brightness;          // 8
+    double wifiSignal;          // 8
+    uint32_t bufferSize;        // 4
+    uint32_t bufferPos;         // 4
+    uint32_t fpsDrawing;        // 4
+    uint32_t watts;             // 4
+
+    // Member function to translate the structure
+    void TranslateClientResponse()
+    {
+        // Check the system's endianness
+        if constexpr (std::endian::native == std::endian::little)
+            return;     // No-op for little-endian systems
+
+        // Perform byte swaps for big-endian systems
+        size            = __builtin_bswap32(size);
+        flashVersion    = __builtin_bswap32(flashVersion);
+        currentClock    = Utilities::ByteSwapDouble(currentClock);
+        oldestPacket    = Utilities::ByteSwapDouble(oldestPacket);
+        newestPacket    = Utilities::ByteSwapDouble(newestPacket);
+        brightness      = Utilities::ByteSwapDouble(brightness);
+        wifiSignal      = Utilities::ByteSwapDouble(wifiSignal);
+        bufferSize      = __builtin_bswap32(bufferSize);
+        bufferPos       = __builtin_bswap32(bufferPos);
+        fpsDrawing      = __builtin_bswap32(fpsDrawing);
+        watts           = __builtin_bswap32(watts);
+    }
 };
 
 class SocketChannel : public ISocketChannel
@@ -161,11 +183,13 @@ private:
 
             if (!frame.empty())
             {
-                optional<ClientResponse> response = SendFrame(frame);
+                // Use std::move explicitly when passing to SendFrame
+                optional<ClientResponse> response = SendFrame(std::move(frame));
                 if (response)
-                    _lastClientResponse = *response;
+                    _lastClientResponse = std::move(*response);
             }
         }
+
     }
 
    optional<ClientResponse> ReadSocketResponse() 
@@ -214,6 +238,7 @@ private:
             }
             ClientResponse response;
             memcpy(&response, buffer.data(), cbToRead);
+            response.TranslateClientResponse(); // Translate the response to native endianness
             return response; // Successfully read the response
         }
 
