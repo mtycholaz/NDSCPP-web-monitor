@@ -10,6 +10,7 @@
 #include <string>
 #include <map>
 #include "webserver.h"
+#include "serialization.h"
 
 using namespace std;
 
@@ -26,6 +27,8 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
                                              size_t                * upload_data_size,
                                              void                 ** con_cls)
 {
+    WebServer * server = static_cast<WebServer*>(cls);
+
     string response_text;
     struct MHD_Response *response;
     enum MHD_Result ret;
@@ -34,7 +37,6 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
         return MHD_NO;  // Only accept GET method
 
     // Lambda function to handle key-value pairs from the query string, used by MHD_get_connection_values
-
     auto keyValueHandler = [](void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
     {
         auto params = static_cast<map<string, string>*>(cls);
@@ -50,15 +52,47 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
 
     uint response_code = MHD_HTTP_OK;
 
-    if (parameters.find("stats") != parameters.end())
+    // Check for REST API endpoints
+    if (strncmp(url, "/api/canvases", 13) == 0) 
     {
-        response_code = MHD_HTTP_OK;
-        response_text = "Stats";
-    } 
+        // List all canvases
+        if (strcmp(url, "/api/canvases") == 0)
+        {
+            auto canvasesJson = nlohmann::json::array();
+            for (size_t i = 0; i < server->_allCanvases.size(); ++i)
+            {
+                nlohmann::json canvasJson = * server->_allCanvases[i];
+                canvasJson["id"] = i;                       // Add ID for reference
+                canvasesJson.push_back(canvasJson);
+            }
+            response_text = canvasesJson.dump();
+        }
+        // Get details for a specific canvas
+        else if (strncmp(url, "/api/canvases/", 14) == 0)
+        {
+            size_t id = std::stoi(url + 14); // Extract ID from the URL
+            if (id < server->_allCanvases.size())
+            {
+                nlohmann::json canvasJson = * server->_allCanvases[id];
+                canvasJson["id"] = id;                      // Include ID in the details
+                response_text = canvasJson.dump();
+            }
+            else
+            {
+                response_code = MHD_HTTP_NOT_FOUND;
+                response_text = R"({"error": "Canvas not found"})";
+            }
+        }
+        else
+        {
+            response_code = MHD_HTTP_BAD_REQUEST;
+            response_text = R"({"error": "Invalid API request"})";
+        }
+    }
     else
     {
         response_code = MHD_HTTP_BAD_REQUEST;
-        response_text = "<html><body>Error: Unknown Request.</body></html>";
+        response_text = R"({"error": "Unknown Request"})";
     }
 
     response = MHD_create_response_from_buffer(response_text.size(), (void*)response_text.c_str(), MHD_RESPMEM_MUST_COPY);
@@ -70,6 +104,7 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
     MHD_destroy_response(response);
     return ret;
 }
+
 
 
 // WebServer::RunServer
