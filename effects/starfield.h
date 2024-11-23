@@ -20,18 +20,18 @@ private:
         uint8_t brightness; // Star brightness
     };
 
-    std::vector<Star> _stars; // Active stars
+    vector<Star> _stars; // Active stars
     int _starCount;           // Number of stars
-    std::mt19937 _rng;        // Random number generator
-    std::uniform_real_distribution<double> _speedDist;      // Speed distribution
-    std::uniform_real_distribution<double> _directionDist;  // Direction distribution
-    std::uniform_int_distribution<uint8_t> _brightnessDist; // Brightness distribution
+    mt19937 _rng;        // Random number generator
+    uniform_real_distribution<double> _speedDist;      // Speed distribution
+    uniform_real_distribution<double> _directionDist;  // Direction distribution
+    uniform_int_distribution<uint8_t> _brightnessDist; // Brightness distribution
 
     int _centerX, _centerY; // Center of the canvas
 
 public:
-    StarfieldEffect(const std::string& name, int starCount = 100)
-        : LEDEffectBase(name), _starCount(starCount), _rng(std::random_device{}()),
+    StarfieldEffect(const string& name, int starCount = 100)
+        : LEDEffectBase(name), _starCount(starCount), _rng(random_device{}()),
           _speedDist(5.0, 20.0), // Increased speed for hyperspace effect
           _directionDist(0, 2 * M_PI), // Full 360° angular range
           _brightnessDist(192, 255), _centerX(0), _centerY(0)

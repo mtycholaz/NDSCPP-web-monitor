@@ -22,19 +22,20 @@ public:
     {
         // Helper function to swap bytes in a double
         uint64_t temp;
-        std::memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
+        memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
         temp = __builtin_bswap64(temp);            // Byte swap the 64-bit integer
-        std::memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
+        memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
         return value;
     }
 
     static vector<uint8_t> ConvertPixelsToByteArray(const vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
     {
-        vector<uint8_t> byteArray;
-        byteArray.reserve(pixels.size() * sizeof(CRGB)); // Each CRGB has 3 components: R, G, B
+        vector<uint8_t> byteArray(pixels.size() * 3); // Allocate space upfront
 
         // This code makes all kinds of assumptions that CRGB is three RGB bytes, so let's assert that fact
         static_assert(sizeof(CRGB) == 3);
+
+        size_t index = 0;
 
         if (reversed)
         {
@@ -42,15 +43,15 @@ public:
             {
                 if (redGreenSwap)
                 {
-                    byteArray.push_back(it->g);
-                    byteArray.push_back(it->r);
-                    byteArray.push_back(it->b);
+                    byteArray[index++] = it->g;
+                    byteArray[index++] = it->r;
+                    byteArray[index++] = it->b;
                 }
                 else
                 {
-                    byteArray.push_back(it->r);
-                    byteArray.push_back(it->g);
-                    byteArray.push_back(it->b);
+                    byteArray[index++] = it->r;
+                    byteArray[index++] = it->g;
+                    byteArray[index++] = it->b;
                 }
             }
         }
@@ -60,15 +61,15 @@ public:
             {
                 if (redGreenSwap)
                 {
-                    byteArray.push_back(pixel.g);
-                    byteArray.push_back(pixel.r);
-                    byteArray.push_back(pixel.b);
+                    byteArray[index++] = pixel.g;
+                    byteArray[index++] = pixel.r;
+                    byteArray[index++] = pixel.b;
                 }
                 else
                 {
-                    byteArray.push_back(pixel.r);
-                    byteArray.push_back(pixel.g);
-                    byteArray.push_back(pixel.b);
+                    byteArray[index++] = pixel.r;
+                    byteArray[index++] = pixel.g;
+                    byteArray[index++] = pixel.b;
                 }
             }
         }
@@ -162,8 +163,8 @@ public:
         // Append each array to the combined vector using a fold expression
         (combined.insert(
             combined.end(),
-            std::make_move_iterator(arrays.begin()),
-            std::make_move_iterator(arrays.end())), ...);
+            make_move_iterator(arrays.begin()),
+            make_move_iterator(arrays.end())), ...);
 
         return combined;
     }

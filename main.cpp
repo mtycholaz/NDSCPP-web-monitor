@@ -53,7 +53,7 @@ vector<shared_ptr<ICanvas>> LoadCanvases()
     vector<shared_ptr<ICanvas>> canvases;
 
     // Define a Canvas with dimensions matching the sign
-    auto canvas = make_shared<Canvas>(512, 32, 60);
+    auto canvas = make_shared<Canvas>(512, 32, 30);
 
     // Add LEDFeature for a specific client (example IP: "192.168.1.100")
     auto feature1 = make_shared<LEDFeature>

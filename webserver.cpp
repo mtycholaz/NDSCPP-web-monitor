@@ -70,7 +70,7 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
         // Get details for a specific canvas
         else if (strncmp(url, "/api/canvases/", 14) == 0)
         {
-            size_t id = std::stoi(url + 14); // Extract ID from the URL
+            size_t id = stoi(url + 14); // Extract ID from the URL
             if (id < server->_allCanvases.size())
             {
                 nlohmann::json canvasJson = * server->_allCanvases[id];
