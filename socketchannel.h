@@ -126,10 +126,10 @@ private:
     {
         while (_running)
         {
-            std::vector<uint8_t> frame;
+            vector<uint8_t> frame;
 
             {
-                std::unique_lock<std::mutex> lock(_queueMutex);
+                unique_lock<mutex> lock(_queueMutex);
 
                 // Wait until _frameQueue is not empty or _running becomes false
                 _queueCondition.wait(lock, [this] { return !_frameQueue.empty() || !_running; });
@@ -144,7 +144,7 @@ private:
 
             if (!frame.empty())
             {
-                // Use std::move explicitly when passing to SendFrame
+                // Use move explicitly when passing to SendFrame
                 optional<ClientResponse> response = SendFrame(std::move(frame));
                 if (response)
                     _lastClientResponse = std::move(*response);
