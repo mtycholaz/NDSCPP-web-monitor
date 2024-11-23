@@ -1,5 +1,27 @@
 # NightDriver Server - Overview
 
+## What it is
+
+It delivers WiFI packets of color data to ESP32 chips that show that color data on LED strips or matrices connected to them.  Here's an example:
+
+My house has a long run of 8000 LEDs like Christmas lights.  Since each ESP32 running NightDriverStrip can only refresh about 1000 LEDs at 30fps, I have broken the run into 8 individual ESP32s, each connected to 1000 LEDs.  They could each run the same effect, but it would be hard to sync, and effects could not span across strips.
+
+NightDriverServer instead composes the drawing on a larger Canvas object, in this case 8000 pixels wide.  Each ESP32 is represented as an LEDFeature object, 1000 pixels wide.  The first is at offset 0 in the canvas, the next at 1000, then 2000, and so on.  
+
+30 times per second, NDSCPP renders the scene to the 8000 pixel canvas.  Worker threads than split that up into the 8 separate chunks of 1000 pixels and send each as a packet to the appropriate LED strip, and they all act in concert as one long strip.
+
+Each NightDriverStrip has a socket available on port 49152 to receive frames of color data, normally at up to 60fps.  The strips buffer a few seconds worth of frames internally, and display them perfectly synced by SNTP time, so an effect frame that is supposed to appear all at once across the strips still does so despite delays in wifi and so on.
+
+Basically, it allows you to build a much larger scene from a lot of little ESP32 installs and control it via WiFi.  
+
+Imagine you had a restaurant with 10 tables.  Each table has an LED candle with 16 LEDs.  There are two ways to configure this.  If you want each candle to do the same thing, you would make a Canvas that is 16 pixels long and then place 10 LEDFeatures in it, all at offset 0.
+
+If you wanted each candle to render differently, you could make a Canvas that is 160 pixels long and offset the LEDFeatures at 0, 10, 20, 30, and so on.  Then your drawing effect could draw to individual candles.
+
+Alternative, you could also define 10 Canvases of 16 pixels , and each Canvas has one LEDFeature of 10 pixels each, and each candle in that case can have its own effect.
+
+-----
+
 NightDriver Server is a C++ project designed to manage LED displays by organizing them into canvases, applying effects, and transmitting data to remote LED controllers. The code is modular and leverages interfaces to separate concerns, making it extensible and straightforward to maintain.
 
 Key concepts for programmers:

@@ -20,9 +20,32 @@ using namespace std;
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <poll.h>
 #include "interfaces.h"
 #include "utilities.h"
 #include "pixeltypes.h"
+
+// ClientResponse
+//
+// Response data sent back to server every time we receive a packet.
+// TODO: There needs to be endian-mismatch handling here if the server is
+// is big-endian, as the ESP32 is little-endian.  Also you must use 64-but
+// doubles on the ESP32 side to match the 64-bit doubles here on the server side.
+
+struct ClientResponse
+{
+    uint32_t    size;              // 4
+    uint32_t    flashVersion;      // 4
+    double      currentClock;      // 8
+    double      oldestPacket;      // 8
+    double      newestPacket;      // 8
+    double      brightness;        // 8
+    double      wifiSignal;        // 8
+    uint32_t    bufferSize;        // 4
+    uint32_t    bufferPos;         // 4
+    uint32_t    fpsDrawing;        // 4
+    uint32_t    watts;             // 4
+};
 
 class SocketChannel : public ISocketChannel
 {
@@ -33,7 +56,8 @@ public:
           _port(port),
           _isConnected(false),
           _running(false),
-          _socketFd(-1)
+          _socketFd(-1),
+          _lastClientResponse()                 // Zero-initialize the response
     {
     }
 
@@ -78,8 +102,10 @@ public:
         return _isConnected;
     }
     
-    const string &HostName() const override { return _hostName; }
-    const string &FriendlyName() const override { return _friendlyName; }
+    const string & HostName()     const override { return _hostName;     }
+    const string & FriendlyName() const override { return _friendlyName; }
+    
+    const ClientResponse & LastClientResponse() const { return _lastClientResponse; }
 
     vector<uint8_t> CompressFrame(const vector<uint8_t>& data) override
     {
@@ -120,19 +146,80 @@ private:
                 lock_guard<mutex> lock(_queueMutex);
                 if (!_frameQueue.empty())
                 {
-                    frame = _frameQueue.front();
+                    frame = std::move(_frameQueue.front());
                     _frameQueue.pop();
                 }
             }
 
             if (!frame.empty())
-                SendFrame(frame);
+            {
+                optional<ClientResponse> response = SendFrame(frame);
+                if (response)
+                    _lastClientResponse = *response;
+            }
 
             this_thread::sleep_for(milliseconds(10)); // Adjust based on requirements
         }
     }
 
-    void SendFrame(const vector<uint8_t> &frame)
+   optional<ClientResponse> ReadSocketResponse() 
+    {
+        const size_t cbToRead = sizeof(ClientResponse);
+        vector<uint8_t> buffer(cbToRead); // Buffer to hold the response
+
+        // Check if data is available
+
+      #ifdef _WIN32
+
+        fd_set readSet;
+        FD_ZERO(&readSet);
+        FD_SET(_socketFd, &readSet);
+
+        timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0; // Non-blocking
+
+        if (select(0, &readSet, nullptr, nullptr, &timeout) <= 0) 
+            return nullopt; // No data available
+
+      #else
+
+        pollfd pfd;
+        pfd.fd = _socketFd;
+        pfd.events = POLLIN;
+
+        if (poll(&pfd, 1, 0) <= 0) 
+            return nullopt; // No data available
+
+      #endif
+
+        // Read data if available and is at least as big as our response structure.  A partial
+        // read is not considered a valid response, so will be skipped until we have a full response.
+        // The first byte of the response is the size of the response, so we can use that to determine
+        // if we are compatible with the client's response.
+
+        ssize_t readBytes = recv(_socketFd, buffer.data(), cbToRead, 0);
+        if (readBytes == static_cast<ssize_t>(cbToRead)) 
+        {
+            if (buffer[0] != static_cast<uint8_t>(cbToRead))
+            {
+                cerr << "Invalid response size received from client" << endl;
+                return nullopt; // Invalid response
+            }
+            ClientResponse response;
+            memcpy(&response, buffer.data(), cbToRead);
+            return response; // Successfully read the response
+        }
+
+        return nullopt; // Not enough data or invalid response
+    }
+
+    // SendFrame
+    //
+    // Delivers a bytestream packet to the client socket and returns a response from that client if 
+    // available.  
+     
+    optional<ClientResponse> SendFrame(const vector<uint8_t> &frame)
     {
         if (_socketFd == -1)
         {
@@ -140,7 +227,7 @@ private:
             {
                 lock_guard<mutex> lock(_mutex);
                 _isConnected = false;
-                return;
+                return nullopt;
             }
         }
 
@@ -152,8 +239,9 @@ private:
                 CloseSocket();
                 lock_guard<mutex> lock(_mutex);
                 _isConnected = false;
-                return;
+                return nullopt;
             }
+            _dataSentCount += sentBytes;
         }
         catch(const exception& e)
         {
@@ -164,8 +252,12 @@ private:
             _isConnected = false;
         }
         
+        optional<ClientResponse> response = ReadSocketResponse();
+    
         lock_guard<mutex> lock(_mutex);
         _isConnected = true;
+    
+        return std::move(*response);
     }
 
     bool ConnectSocket()
@@ -201,24 +293,73 @@ private:
         }
     }
 
+    uint32_t BytesPerSecond()
+    {
+        system_clock::time_point now = system_clock::now();
+        auto elapsed = duration_cast<duration<double>>(now - _lastDataSentCountReset).count(); // Elapsed time in fractional seconds
+
+        if (elapsed == 0.0)
+            return 0;
+
+        uint32_t bytesPerSecond = static_cast<uint32_t>(_dataSentCount / elapsed); // Calculate accurate BPS
+        _dataSentCount = 0;
+        _lastDataSentCountReset = now;
+
+        // Reset the BPS counter every three seconds
+        constexpr auto bpsResetTimer = 3.0; 
+        if (elapsed >= bpsResetTimer)
+        {
+            _lastDataSentCountReset = now;
+            _dataSentCount = 0;
+        }
+
+        return bytesPerSecond;
+    }
+
+    bool SocketConnected()
+    {
+        return _isConnected;
+    }
+
+    bool SocketReady()
+    {
+        if (_socketFd == -1)
+            return false;
+
+        // Check if the socket is still connected
+        struct pollfd pfd;
+        pfd.fd = _socketFd;
+        pfd.events = POLLIN;
+
+        if (poll(&pfd, 1, 0) <= 0)
+            return false; // Not connected
+
+        return true;
+    }
+    
 private:
     // Constants
     static constexpr uint16_t CommandPixelData = 3;
-    static constexpr size_t MaxQueueDepth = 100;
+    static constexpr size_t   MaxQueueDepth = 100;
 
     // Member variables
-    string _hostName;
-    string _friendlyName;
+    string   _hostName;
+    string   _friendlyName;
     uint16_t _port;
 
     mutable mutex _mutex; // Protects connection state
-    atomic<bool> _isConnected;
-    atomic<bool> _running;
+    atomic<bool>  _isConnected;
+    atomic<bool>  _running;
 
     mutex _queueMutex; // Protects the frame queue
     queue<vector<uint8_t>> _frameQueue;
 
     thread _workerThread;
 
+    ClientResponse _lastClientResponse;
+
+    system_clock::time_point _lastDataSentCountReset;
+    uint32_t                 _dataSentCount;
+    
     int _socketFd; // File descriptor for the socket
 };
