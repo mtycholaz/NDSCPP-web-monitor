@@ -21,6 +21,7 @@
 #include "webserver.h"
 #include "effectsmanager.h"
 #include "colorwaveeffect.h"    
+#include "starfield.h"
 
 using namespace std;
 
@@ -55,10 +56,7 @@ vector<shared_ptr<ICanvas>> LoadCanvases()
     vector<shared_ptr<ICanvas>> canvases;
 
     // Define a Canvas with dimensions matching the sign
-    auto canvas = make_shared<Canvas>(512, 32);
-
-    // Define a GreenFillEffect
-    auto colorWaveEffect = make_shared<ColorWaveEffect>("Color Wave");
+    auto canvas = make_shared<Canvas>(512, 32, 60);
 
     // Add LEDFeature for a specific client (example IP: "192.168.1.100")
     auto feature1 = make_shared<LEDFeature>
@@ -77,7 +75,7 @@ vector<shared_ptr<ICanvas>> LoadCanvases()
     canvas->AddFeature(feature1);
 
     // Add the effect to the EffectsManager
-    canvas->Effects().AddEffect(colorWaveEffect);
+    canvas->Effects().AddEffect(make_shared<StarfieldEffect>("Starfield", 100));
     canvas->Effects().SetCurrentEffect(0, *canvas);
 
     // Add the canvas to the list of canvases
