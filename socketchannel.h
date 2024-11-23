@@ -99,13 +99,13 @@ public:
         );
     }
 
-    bool EnqueueFrame(const vector<uint8_t> &frameData) override
+    bool EnqueueFrame(vector<uint8_t> && frameData) override
     {
         {
             lock_guard<mutex> lock(_queueMutex);
             if (_frameQueue.size() >= MaxQueueDepth)
                 return false; // Queue is full
-            _frameQueue.push(frameData);
+            _frameQueue.push(std::move(frameData));
         }
         return true; // Successfully enqueued
     }

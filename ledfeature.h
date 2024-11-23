@@ -6,7 +6,7 @@ using namespace std::chrono;
 
 // LEDFeature
 //
-// Represents one rectangular section of the canvas and is responsiible for producing the
+// Represents one rectangular section of the canvas and is responsible for producing the
 // color data frames for that section of the canvas.  The LEDFeature is associated with a
 // specific Canvas object, and it retrieves the pixel data from the Canvas to produce the
 // data frame.  The LEDFeature is also responsible for producing the data frame in the
@@ -46,22 +46,22 @@ public:
     }
 
     // Accessor methods
-    uint32_t Width() const override { return _width; }
-    uint32_t Height() const override { return _height; }
-    const string &HostName() const override { return _hostName; }
-    const string &FriendlyName() const override { return _friendlyName; }
-    uint16_t Port() const override { return _port; }
-    uint32_t OffsetX() const override { return _offsetX; }
-    uint32_t OffsetY() const override { return _offsetY; }
-    bool Reversed() const override { return _reversed; }
-    uint8_t Channel() const override { return _channel; }
-    bool RedGreenSwap() const override { return _redGreenSwap; }
+    uint32_t        Width()        const override { return _width; }
+    uint32_t        Height()       const override { return _height; }
+    const string &  HostName()     const override { return _hostName; }
+    const string &  FriendlyName() const override { return _friendlyName; }
+    uint16_t        Port()         const override { return _port; }
+    uint32_t        OffsetX()      const override { return _offsetX; }
+    uint32_t        OffsetY()      const override { return _offsetY; }
+    bool            Reversed()     const override { return _reversed; }
+    uint8_t         Channel()      const override { return _channel; }
+    bool            RedGreenSwap() const override { return _redGreenSwap; }
 
     // Canvas association
     void SetCanvas(shared_ptr<ICanvas> canvas) { _canvas = canvas; }
     shared_ptr<ICanvas> GetCanvas() const { return _canvas; }
 
-    // Data retrieval
+   // Data retrieval
     vector<uint8_t> GetPixelData() const override
     {
         if (!_canvas)
@@ -73,14 +73,14 @@ public:
         if (_width == graphics.Width() && _height == graphics.Height() && _offsetX == 0 && _offsetY == 0)
         {
             return Utilities::ConvertPixelsToByteArray(
-                graphics.GetPixels(), 
+                graphics.GetPixels(),
                 _reversed,
                 _redGreenSwap
             );
         }
 
         // Otherwise, manually extract the feature's pixel data
-        vector<CRGB> featurePixels;
+        vector<CRGB> featurePixels(_width * _height, CRGB::Magenta); // Initialize with Magenta by default
 
         for (uint32_t y = 0; y < _height; ++y)
         {
@@ -90,24 +90,24 @@ public:
                 uint32_t canvasX = x + _offsetX;
                 uint32_t canvasY = y + _offsetY;
 
+                // Calculate index for the current pixel in featurePixels
+                uint32_t featureIndex = y * _width + x;
+
                 // Ensure we don't exceed canvas boundaries
                 if (canvasX < graphics.Width() && canvasY < graphics.Height())
-                    featurePixels.push_back(graphics.GetPixel(canvasX, canvasY));
-                else
-                    featurePixels.push_back(CRGB::Magenta); // Out-of-bounds pixels are defaulted to Magenta
+                    featurePixels[featureIndex] = graphics.GetPixel(canvasX, canvasY);
             }
         }
 
         return Utilities::ConvertPixelsToByteArray(featurePixels, _reversed, _redGreenSwap);
     }
 
-
     vector<uint8_t> GetDataFrame() const override
     {
         // Calculate epoch time
         auto now = system_clock::now();
         auto epoch = duration_cast<microseconds>(now.time_since_epoch()).count();
-        uint64_t seconds = epoch / 1'000'000;
+        uint64_t seconds = epoch / 1'000'000 + 2;
         uint64_t microseconds = epoch % 1'000'000;
 
         auto pixelData = GetPixelData();

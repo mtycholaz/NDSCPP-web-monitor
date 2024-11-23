@@ -171,7 +171,7 @@ public:
     virtual uint16_t Port() const = 0;
 
     // Data transfer methods
-    virtual bool EnqueueFrame(const vector<uint8_t>& frameData) = 0;
+    virtual bool EnqueueFrame(vector<uint8_t>&& frameData) = 0;
     virtual vector<uint8_t> CompressFrame(const vector<uint8_t>& data) = 0;
 
     // Connection status

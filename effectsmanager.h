@@ -128,17 +128,20 @@ public:
 
         _workerThread = thread([this, &canvas, &socketController]() 
         {
-            auto lastTime = steady_clock::now();
+            auto frameDuration = milliseconds(1000) / _fps; // Target duration per frame
+            auto nextFrameTime = steady_clock::now();
+
             while (_running)
             {
                 auto now = steady_clock::now();
-                auto deltaTime = duration_cast<milliseconds>(now - lastTime);
-                lastTime = now;
+                if (now < nextFrameTime)
+                {
+                    // Sleep only if we're ahead of schedule
+                    this_thread::sleep_for(nextFrameTime - now);
+                }
 
-                UpdateCurrentEffect(canvas, deltaTime);
-                
-                // Now Enqueue the frames from each feature to the SocketController
-
+                // Update the effects and enqueue frames
+                UpdateCurrentEffect(canvas, frameDuration);
                 for (const auto &feature : canvas.Features())
                 {
                     auto frame = feature->GetDataFrame();
@@ -146,14 +149,14 @@ public:
                     if (!target)
                         throw runtime_error("Feature host not found in SocketController.");
                     auto compressedFrame = target->CompressFrame(frame);
-                    target->EnqueueFrame(compressedFrame);
+                    target->EnqueueFrame(std::move(compressedFrame));
                 }
 
-                auto sleepTime = (milliseconds(1000) / _fps) - deltaTime;
-                sleepTime = clamp(sleepTime, milliseconds(0), milliseconds(10000)); // Clamp to 0ms to 10s
-                this_thread::sleep_for(milliseconds(sleepTime)); // ~30 FPS
+                // Set the next frame target
+                nextFrameTime += frameDuration;
             }
         });
+
     }
 
     // Stop the worker thread
