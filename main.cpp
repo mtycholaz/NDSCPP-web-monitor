@@ -133,8 +133,9 @@ int main(int, char *[])
          canvas->Effects().Stop();
 
     for (const auto &canvas : allCanvases)
-        for (const auto &feature : canvas->Features())
+        for (auto &feature : canvas->Features())
             feature->Socket().Stop();
+    allCanvases.clear();
 
     return 0;
 }
