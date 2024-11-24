@@ -34,11 +34,11 @@ public:
     }
 
     // Add an effect to the manager
-    void AddEffect(shared_ptr<ILEDEffect> effect)
+    void AddEffect(unique_ptr<ILEDEffect> effect)
     {
         if (!effect)
             throw invalid_argument("Cannot add a null effect.");
-        _effects.push_back(effect);
+        _effects.push_back(std::move(effect));
 
         // Automatically set the first effect as current if none is selected
         if (_currentEffectIndex == -1)
@@ -46,7 +46,7 @@ public:
     }
 
     // Remove an effect from the manager
-    void RemoveEffect(shared_ptr<ILEDEffect> effect)
+    void RemoveEffect(unique_ptr<ILEDEffect> & effect)
     {
         if (!effect)
             throw invalid_argument("Cannot remove a null effect.");
@@ -166,7 +166,7 @@ public:
     }
 
 private:
-    vector<shared_ptr<ILEDEffect>> _effects;
+    vector<unique_ptr<ILEDEffect>> _effects;
     int _currentEffectIndex; // Index of the current effect
     thread _workerThread;
     atomic<bool> _running;
