@@ -18,6 +18,7 @@ private:
         double x, y;                                    // Current position
         double dx, dy;                                  // Velocity components
         uint8_t brightness;                             // Star brightness
+        CRGB color;                                     // Star color (random or white)
     };
 
     vector<Star> _stars;                                // Active stars
@@ -26,6 +27,8 @@ private:
     uniform_real_distribution<double> _speedDist;       // Speed distribution
     uniform_real_distribution<double> _directionDist;   // Direction distribution
     uniform_int_distribution<uint8_t> _brightnessDist;  // Brightness distribution
+    uniform_int_distribution<int> _colorChanceDist;     // Determines if a star gets a random color
+    uniform_int_distribution<uint8_t> _colorComponentDist; // Random component for saturated colors
 
     int _centerX, _centerY;                             // Center of the canvas
 
@@ -34,7 +37,8 @@ public:
         : LEDEffectBase(name), _starCount(starCount), _rng(random_device{}()),
           _speedDist(5.0, 20.0),                        // Increased speed for hyperspace effect
           _directionDist(0, 2 * M_PI),                  // Full 360° angular range
-          _brightnessDist(28, 255), _centerX(0), _centerY(0)
+          _brightnessDist(28, 255), _colorChanceDist(0, 1),
+          _colorComponentDist(0, 255), _centerX(0), _centerY(0)
     {
     }
 
@@ -48,12 +52,13 @@ public:
         {
             _stars.push_back(CreateRandomStar());
         }
+        canvas.Graphics().Clear(CRGB::Black);
     }
 
     void Update(ICanvas& canvas, milliseconds deltaTime) override
     {
         auto& graphics = canvas.Graphics();
-        graphics.Clear(CRGB::Black); // Clear the canvas
+        graphics.FadeFrameBy(32);
 
         double timeFactor = deltaTime.count() / 1000.0; // Convert delta time to seconds
 
@@ -73,7 +78,7 @@ public:
             // Draw the star
             int ix = static_cast<int>(star.x);
             int iy = static_cast<int>(star.y);
-            graphics.SetPixel(ix, iy, CRGB(star.brightness, star.brightness, star.brightness));
+            graphics.SetPixel(ix, iy, CRGB(star.color.r, star.color.g, star.color.b));
         }
     }
 
@@ -88,6 +93,38 @@ private:
         double dx = speed * cos(angle);
         double dy = speed * sin(angle);
 
-        return Star{static_cast<double>(_centerX), static_cast<double>(_centerY), dx, dy, _brightnessDist(_rng)};
+        // Determine color: 50% chance for random saturated color, otherwise white
+        CRGB color;
+        if (_colorChanceDist(_rng) == 0)
+        {
+            uint8_t red = _colorComponentDist(_rng);
+            uint8_t green = _colorComponentDist(_rng);
+            uint8_t blue = _colorComponentDist(_rng);
+
+            // Make sure one component is maxed for a fully saturated color
+            int maxComponent = max({red, green, blue});
+            if (maxComponent == red)
+                red = 255;
+            else if (maxComponent == green)
+                green = 255;
+            else
+                blue = 255;
+
+            color = CRGB(red, green, blue);
+        }
+        else
+        {
+            // White color
+            color = CRGB(255, 255, 255);
+        }
+
+        return Star{
+            static_cast<double>(_centerX),
+            static_cast<double>(_centerY),
+            dx,
+            dy,
+            _brightnessDist(_rng),
+            color
+        };
     }
 };
