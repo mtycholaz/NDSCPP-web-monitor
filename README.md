@@ -21,6 +21,7 @@ If you wanted each candle to render differently, you could make a Canvas that is
 Alternatively, you could also define 10 Canvases of 16 pixels, and each Canvas has one LEDFeature of 10 pixels each, and each candle in that case can have its own effect.
 
 -----
+<img width="1774" alt="2024-11-23_21-33-58" src="https://github.com/user-attachments/assets/820e37e6-8e1b-4b4b-ab10-6a2f27a34d7f">
 
 NightDriver Server is a C++ project designed to manage LED displays by organizing them into canvases, applying effects, and transmitting data to remote LED controllers. The code is modular, and leverages interface to separate concerns, making it extensible and straightforward to maintain.
 
