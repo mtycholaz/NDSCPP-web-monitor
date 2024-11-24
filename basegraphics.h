@@ -17,7 +17,7 @@ protected:
     uint32_t _height;
     vector<CRGB> _pixels;
 
-    virtual uint32_t _index(uint32_t x, uint32_t y) const 
+    virtual inline __attribute__((always_inline)) uint32_t _index(uint32_t x, uint32_t y) const 
     {
         return y * _width + x;
     }
@@ -40,13 +40,13 @@ public:
 
     void SetPixel(uint32_t x, uint32_t y, const CRGB& color) override
     {
-        if (x >= 0 && x < _width && y >= 0 && y < _height)
+        if (x < _width && y < _height)
             _pixels[_index(x, y)] = color;
     }
 
     CRGB GetPixel(uint32_t x, uint32_t y) const override 
     {
-        if (x >= 0 && x < _width && y >= 0 && y < _height)
+        if (x < _width && y < _height)
             return _pixels[_index(x, y)];
         return CRGB(0, 0, 0); // Default to black for out-of-bounds
     }
