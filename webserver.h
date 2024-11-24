@@ -17,29 +17,32 @@ using namespace std;
 #include <thread>
 #include "global.h"
 #include "interfaces.h"
+#include "socketcontroller.h"
 class WebServer
 {
         
   private:
-        pthread_t server_thread;
-        pthread_mutex_t mutex;
-        pthread_cond_t cond;
-        struct MHD_Daemon *daemon;
-        const vector<shared_ptr<ICanvas>> & _allCanvases;
-    
-        static void * RunServer(void *arg);
-        static enum MHD_Result AnswerConnection(void                      * cls, 
-                                                struct MHD_Connection     * connection,
-                                                const char 			  * url, 
-                                                const char 			  * method,
-                                                const char 			  * version, 
-                                                const char 			  * upload_data,
-                                                size_t     			  * upload_data_size, 
-                                                void      			 ** con_cls);
+      pthread_t server_thread;
+      pthread_mutex_t mutex;
+      pthread_cond_t cond;
+      struct MHD_Daemon *daemon;
+      const vector<shared_ptr<ICanvas>> & _allCanvases;
+      SocketController & _socketController;
+
+      static void * RunServer(void *arg);
+      static enum MHD_Result AnswerConnection(void                        * cls, 
+                                              struct MHD_Connection       * connection,
+                                              const char 			  * url, 
+                                              const char 			  * method,
+                                              const char 			  * version, 
+                                              const char 			  * upload_data,
+                                              size_t     			  * upload_data_size, 
+                                              void      			 ** con_cls);
 
   public:
   
-      WebServer(const vector<shared_ptr<ICanvas>> & allCanvases) : _allCanvases(allCanvases)
+      WebServer(const vector<shared_ptr<ICanvas>> & allCanvases, SocketController & socketController) 
+            : _allCanvases(allCanvases), _socketController(socketController)
       {
             pthread_mutex_init(&mutex, NULL);
             pthread_cond_init(&cond, NULL);

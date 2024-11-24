@@ -11,7 +11,7 @@ class SocketController : public ISocketController
 {
 private:
     // Map of host names to SocketChannel objects for efficient lookup
-    unordered_map<string, shared_ptr<SocketChannel>> _channels;
+    unordered_map<string, shared_ptr<ISocketChannel>> _channels;
 
     // Mutex to protect access to the channel map
     mutable mutex _mutex;
@@ -30,6 +30,11 @@ private:
 public:
     SocketController() = default;
     ~SocketController() { StopAll(); }
+
+    const unordered_map<string, shared_ptr<ISocketChannel>> AllChannels() const override
+    { 
+        return _channels;
+    }
 
     void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> & allCanvases) override
     {

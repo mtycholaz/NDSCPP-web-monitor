@@ -90,30 +90,12 @@ public:
 
 };
 
-// ISocketController
-//
-// The SocketController class manages a collection of SocketChannels, allowing for adding and removing
-// them as well as accessing them to send data to their respective features. It also provides methods
-// for starting and stopping all channels.
-
-class ISocketChannel;
-
-class ISocketController
-{
-public:
-    virtual ~ISocketController() = default;
-
-    virtual void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> &allCanvases) = 0;
-    virtual shared_ptr<ISocketChannel> FindChannelByHost(const string& hostName) const = 0;
-    virtual void RemoveAllChannels() = 0;
-    virtual void StartAll() = 0;
-    virtual void StopAll() = 0;
-};
-
 // IEffectsManager
 //
 // Manages a collection of LED effects, allowing for cycling through effects, starting and stopping them,
 // and updating the current effect.  Provides methods for adding, removing, and clearing effects.
+
+class ISocketController;
 
 class IEffectsManager
 {
@@ -181,8 +163,27 @@ public:
     virtual bool IsConnected() const = 0;
 
     virtual const ClientResponse & LastClientResponse() const = 0;
-    
+
     // Start and stop operations
     virtual void Start() = 0;
     virtual void Stop() = 0;
+};
+
+// ISocketController
+//
+// The SocketController class manages a collection of SocketChannels, allowing for adding and removing
+// them as well as accessing them to send data to their respective features. It also provides methods
+// for starting and stopping all channels.
+
+class ISocketController
+{
+public:
+    virtual ~ISocketController() = default;
+
+    virtual const unordered_map<string, shared_ptr<ISocketChannel>> AllChannels() const  = 0;
+    virtual void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> &allCanvases) = 0;
+    virtual shared_ptr<ISocketChannel> FindChannelByHost(const string& hostName) const = 0;
+    virtual void RemoveAllChannels() = 0;
+    virtual void StartAll() = 0;
+    virtual void StopAll() = 0;
 };

@@ -89,6 +89,19 @@ enum MHD_Result WebServer::AnswerConnection(void                   * cls,
             response_text = R"({"error": "Invalid API request"})";
         }
     }
+    else if (strncmp(url, "/api/sockets", 12) == 0)
+    {
+        // List all sockets and their statistics
+        if (strcmp(url, "/api/sockets") == 0)
+        {
+            response_text = nlohmann::json(server->_socketController.AllChannels()).dump();
+        }
+        else
+        {
+            response_code = MHD_HTTP_BAD_REQUEST;
+            response_text = R"({"error": "Invalid API request"})";
+        }
+    }
     else
     {
         response_code = MHD_HTTP_BAD_REQUEST;
