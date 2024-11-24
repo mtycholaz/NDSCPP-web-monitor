@@ -47,38 +47,35 @@ void handle_signal(int signal)
 // object is configured with one or more LEDFeatures and effects.  This function is
 // called once at the beginning of the program to set up the LED matrix and effects.
 
-vector<shared_ptr<ICanvas>> LoadCanvases()
+vector<unique_ptr<ICanvas>> LoadCanvases()
 {
-    vector<shared_ptr<ICanvas>> canvases;
+    vector<unique_ptr<ICanvas>> canvases;
 
-    // Define a Canvas with dimensions matching the sign
-    auto canvas = make_shared<Canvas>(512, 32, 30);
+    // Define a Canvas
+    auto canvas = make_unique<Canvas>(512, 32, 30);
 
-    // Add LEDFeature for a specific client (example IP: "192.168.1.100")
-    auto feature1 = make_shared<LEDFeature>
-    (
-        canvas,             // Canvas to get pixels from
-        "192.168.8.176",    // Hostname
-        "Workbench Matrix", // Friendly Name
-        49152,              // Port
-        512, 32,            // Width, Height
-        0, 0,               // Offset X, Offset Y
-        false,              // Reversed
-        0,                  // Channel
-        false              // Red-Green Swap
+    // Add LEDFeature
+    auto feature1 = make_shared<LEDFeature>(
+        canvas.get(),         // Canvas pointer
+        "192.168.8.176",      // Hostname
+        "Workbench Matrix",   // Friendly Name
+        49152,                // Port
+        512, 32,              // Width, Height
+        0, 0,                 // Offset X, Offset Y
+        false,                // Reversed
+        0,                    // Channel
+        false                 // Red-Green Swap
     );
-    // Add features to the canvas
-    canvas->AddFeature(feature1);
+    canvas->AddFeature(std::move(feature1));
 
-    // Add the effect to the EffectsManager
-    canvas->Effects().AddEffect(make_shared<StarfieldEffect>("Starfield", 100));
+    // Add effect to EffectsManager
+    canvas->Effects().AddEffect(make_unique<StarfieldEffect>("Starfield", 100));
     canvas->Effects().SetCurrentEffect(0, *canvas);
 
-    // Add the canvas to the list of canvases
-    canvases.push_back(canvas);
-
+    canvases.push_back(std::move(canvas));
     return canvases;
 }
+
 
 // Main program entry point. Runs the webServer and starts up the LED processing.
 // When SIGINT is received, exits gracefully.
@@ -92,7 +89,7 @@ int main(int, char *[])
 
     // Load the canvases and features
 
-    vector<shared_ptr<ICanvas>> allCanvases = LoadCanvases();
+    vector<unique_ptr<ICanvas>> allCanvases = LoadCanvases();
 
     cout << "Connecting to clients..." << endl;
 
