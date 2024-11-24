@@ -156,7 +156,6 @@ public:
                 nextFrameTime += frameDuration;
             }
         });
-
     }
 
     // Stop the worker thread

@@ -20,25 +20,6 @@ using namespace std;
 // into a JSON object.  This function is then used by the nlohmann::json library to serialize
 // the shared pointer.
 
-
-// to_json for serialization
-
-inline void to_json(nlohmann::json& j, const shared_ptr<ISocketChannel> & channel)
-{
-    if (channel)
-    {
-        j = nlohmann::json{
-            { "hostName",     channel->HostName()     },
-            { "friendlyName", channel->FriendlyName() },
-            { "port",         channel->Port()         }
-        };
-    }
-    else
-    {
-        j = nullptr; // Handle null shared pointers
-    }
-}
-
 // ClientResponse
 //
 // Response data sent back to server every time we receive a packet.
@@ -83,7 +64,7 @@ struct ClientResponse
 };
 
 
-inline void to_json(nlohmann::json& j, const ClientResponse response)
+inline void to_json(nlohmann::json& j, const ClientResponse & response)
 {
     j = nlohmann::json{
         { "client-size",           response.size         },
@@ -124,7 +105,7 @@ inline void to_json(nlohmann::json& j, const shared_ptr<ILEDFeature>& feature)
     }
 }
 
-inline void to_json(nlohmann::json& j, const ICanvas& canvas)
+inline void to_json(nlohmann::json& j, const ICanvas & canvas)
 {
     // Serialize the features vector as an array of JSON objects
     vector<nlohmann::json> featuresJson;
@@ -147,4 +128,75 @@ inline void to_json(nlohmann::json& j, const ICanvas& canvas)
         { "height",   canvas.Graphics().Height()  },
         { "features", featuresJson                }
     };
+}
+
+inline void to_json(nlohmann::json& j, const ISocketChannel& socket)
+{
+    j["hostName"] = socket.HostName();
+    j["friendlyName"] = socket.FriendlyName();
+
+    const auto& lastResponse = socket.LastClientResponse();
+    if (lastResponse.size == sizeof(ClientResponse))
+    {
+        // Serialize the ClientResponse structure
+        j["stats"] = {
+            {"flashVersion", lastResponse.flashVersion},
+            {"currentClock", lastResponse.currentClock},
+            {"oldestPacket", lastResponse.oldestPacket},
+            {"newestPacket", lastResponse.newestPacket},
+            {"brightness", lastResponse.brightness},
+            {"wifiSignal", lastResponse.wifiSignal},
+            {"bufferSize", lastResponse.bufferSize},
+            {"bufferPos", lastResponse.bufferPos},
+            {"fpsDrawing", lastResponse.fpsDrawing},
+            {"watts", lastResponse.watts}
+        };
+    }
+}
+
+inline void to_json(nlohmann::json& j, const shared_ptr<ISocketChannel> & socket)
+{
+    if (socket)
+    {
+        j = nlohmann::json{
+            { "hostName",     socket->HostName()     },
+            { "friendlyName", socket->FriendlyName() },
+            { "port",         socket->Port()         }
+        };
+        const auto& lastResponse = socket->LastClientResponse();
+        if (lastResponse.size == sizeof(ClientResponse))
+        {
+            // Serialize the ClientResponse structure
+            j["stats"] = {
+                {"flashVersion", lastResponse.flashVersion},
+                {"currentClock", lastResponse.currentClock},
+                {"oldestPacket", lastResponse.oldestPacket},
+                {"newestPacket", lastResponse.newestPacket},
+                {"brightness",   lastResponse.brightness},
+                {"wifiSignal",   lastResponse.wifiSignal},
+                {"bufferSize",   lastResponse.bufferSize},
+                {"bufferPos",    lastResponse.bufferPos},
+                {"fpsDrawing",   lastResponse.fpsDrawing},
+                {"watts",        lastResponse.watts}
+            };
+        }        
+    }
+    else
+    {
+        j = nullptr; // Handle null shared pointers
+    }
+}
+
+inline void to_json(nlohmann::json& j, const std::vector<std::shared_ptr<ISocketChannel>>& sockets)
+{
+    j = nlohmann::json::array();
+    for (const auto& socket : sockets)
+    {
+        if (socket)
+        {
+            nlohmann::json socketJson;
+            to_json(socketJson, *socket); // Use the `to_json` specialization for `ISocketChannel`
+            j.push_back(socketJson);
+        }
+    }
 }

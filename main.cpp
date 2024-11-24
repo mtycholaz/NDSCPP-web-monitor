@@ -106,7 +106,7 @@ int main(int, char *[])
     cout << "Starting the Web Server..." << endl;
 
     // Start the web server
-    WebServer webServer(allCanvases);
+    WebServer webServer(allCanvases, socketController);
     pthread_t serverThread = webServer.Start();
     if (!serverThread)
     {
