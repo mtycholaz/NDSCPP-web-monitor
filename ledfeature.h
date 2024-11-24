@@ -20,7 +20,7 @@ using namespace std::chrono;
 class LEDFeature : public ILEDFeature
 {
 public:
-    LEDFeature(shared_ptr<ICanvas> canvas,
+    LEDFeature(Canvas * canvas,
                const string &hostName,
                const string &friendlyName,
                uint16_t port,
@@ -56,10 +56,6 @@ public:
     {
         return _socketChannel;
     }
-
-    // Canvas association
-    void SetCanvas(shared_ptr<ICanvas> canvas) { _canvas = canvas; }
-    shared_ptr<ICanvas> GetCanvas() const { return _canvas; }
 
    // Data retrieval
     vector<uint8_t> GetPixelData() const override
@@ -128,6 +124,6 @@ private:
     bool        _reversed;
     uint8_t     _channel;
     bool        _redGreenSwap;
-    shared_ptr<ICanvas> _canvas; // Associated canvas
+    ICanvas   * _canvas; // Associated canvas
     SocketChannel _socketChannel;
 };

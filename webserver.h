@@ -26,7 +26,7 @@ class WebServer
       pthread_mutex_t mutex;
       pthread_cond_t cond;
       struct MHD_Daemon *daemon;
-      const vector<shared_ptr<ICanvas>> & _allCanvases;
+      const vector<unique_ptr<ICanvas>> & _allCanvases;
 
       static void * RunServer(void *arg);
       static enum MHD_Result AnswerConnection(void                        * cls, 
@@ -40,7 +40,7 @@ class WebServer
 
   public:
   
-      WebServer(const vector<shared_ptr<ICanvas>> & allCanvases) : _allCanvases(allCanvases)
+      WebServer(const vector<unique_ptr<ICanvas>> & allCanvases) : _allCanvases(allCanvases)
       {
             pthread_mutex_init(&mutex, NULL);
             pthread_cond_init(&cond, NULL);
