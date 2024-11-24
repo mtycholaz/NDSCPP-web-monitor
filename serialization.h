@@ -79,7 +79,7 @@ inline void to_json(nlohmann::json& j, const ClientResponse & response)
 }
 
 
-inline void to_json(nlohmann::json& j, const shared_ptr<ILEDFeature> & feature) 
+inline void to_json(nlohmann::json& j, const unique_ptr<ILEDFeature> & feature) 
 {
     if (feature) 
     {

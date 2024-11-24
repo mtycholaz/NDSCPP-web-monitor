@@ -42,25 +42,25 @@ public:
         return _effects;
     }
 
-    vector<shared_ptr<ILEDFeature>>& Features() override
+    vector<unique_ptr<ILEDFeature>>& Features() override
     {
         return _features;
     }
 
-    const vector<shared_ptr<ILEDFeature>>& Features() const override
+    const vector<unique_ptr<ILEDFeature>>& Features() const override
     {
         return _features;
     }
 
-    void AddFeature(shared_ptr<ILEDFeature> feature) override
+    void AddFeature(unique_ptr<ILEDFeature> feature) override
     {
         if (!feature)
             throw invalid_argument("Cannot add a null feature.");
 
-        _features.push_back(feature);
+        _features.push_back(std::move(feature));
     }
 
-    void RemoveFeature(shared_ptr<ILEDFeature> feature) override
+    void RemoveFeature(unique_ptr<ILEDFeature> feature) override
     {
         if (!feature)
             throw invalid_argument("Cannot remove a null feature.");
@@ -73,5 +73,5 @@ public:
 private:
     uint32_t _width;
     uint32_t _height;
-    vector<shared_ptr<ILEDFeature>> _features;
+    vector<unique_ptr<ILEDFeature>> _features;
 };
