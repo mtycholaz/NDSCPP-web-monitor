@@ -17,7 +17,7 @@ private:
     mutable mutex _mutex;
 
     // Adds a new SocketChannel to the controller
-    void AddChannel(const string& hostName, const string& friendlyName, uint16_t port = 49152)
+    void AddChannel(const string & hostName, const string & friendlyName, uint16_t port = 49152)
     {
         auto newChannel = make_shared<SocketChannel>(hostName, friendlyName, port);
         {
@@ -31,7 +31,7 @@ public:
     SocketController() = default;
     ~SocketController() { StopAll(); }
 
-    void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> &allCanvases) override
+    void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> & allCanvases) override
     {
         for (const auto &canvas : allCanvases)
         {
@@ -42,7 +42,7 @@ public:
     }
     
     // Finds a channel by host name
-    shared_ptr<ISocketChannel> FindChannelByHost(const string& hostName) const override
+    shared_ptr<ISocketChannel> FindChannelByHost(const string & hostName) const override
     {
         lock_guard<mutex> lock(_mutex);
         auto it = _channels.find(hostName);
@@ -69,12 +69,11 @@ public:
             channel->Stop();
     }
 
-        // Removes all channels
+    // Removes all channels
     void RemoveAllChannels() override
     {
         StopAll();
         lock_guard<mutex> lock(_mutex);
         _channels.clear();
     }
-
 };

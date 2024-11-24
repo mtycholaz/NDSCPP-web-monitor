@@ -42,6 +42,9 @@ public:
 // Represents a 2D collection of LEDs with positioning, rendering, and configuration capabilities.  
 // Provides APIs for interacting with its parent canvas and retrieving its assigned color data.
 
+
+class ClientResponse;
+
 class ILEDFeature
 {
 public:
@@ -177,6 +180,8 @@ public:
     // Connection status
     virtual bool IsConnected() const = 0;
 
+    virtual const ClientResponse & LastClientResponse() const = 0;
+    
     // Start and stop operations
     virtual void Start() = 0;
     virtual void Stop() = 0;

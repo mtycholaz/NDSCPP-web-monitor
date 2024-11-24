@@ -33,7 +33,7 @@ class ClientResponse;
 class SocketChannel : public ISocketChannel
 {
 public:
-    SocketChannel(const string &hostName, const string &friendlyName, uint16_t port = 49152)
+    SocketChannel(const string & hostName, const string & friendlyName, uint16_t port = 49152)
         : _hostName(hostName),
           _friendlyName(friendlyName),
           _port(port),
@@ -88,7 +88,7 @@ public:
     const string & HostName()     const override { return _hostName;     }
     const string & FriendlyName() const override { return _friendlyName; }
     
-    const ClientResponse & LastClientResponse() const { return _lastClientResponse; }
+    const ClientResponse & LastClientResponse() const override { return _lastClientResponse; }
 
     vector<uint8_t> CompressFrame(const vector<uint8_t>& data) override
     {
@@ -104,7 +104,7 @@ public:
             Utilities::DWORDToBytes(static_cast<uint32_t>(compressedData.size())),
             Utilities::DWORDToBytes(static_cast<uint32_t>(data.size())),
             Utilities::DWORDToBytes(CUSTOM_TAG),
-            compressedData
+            std::move(compressedData)
         );
     }
 
@@ -153,7 +153,7 @@ private:
 
     }
 
-   optional<ClientResponse> ReadSocketResponse() 
+    optional<ClientResponse> ReadSocketResponse() 
     {
         const size_t cbToRead = sizeof(ClientResponse);
         vector<uint8_t> buffer(cbToRead); // Buffer to hold the response
