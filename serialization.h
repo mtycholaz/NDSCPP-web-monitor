@@ -114,7 +114,7 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
         if (feature) 
         {
             nlohmann::json featureJson;
-            to_json(featureJson, feature); // Call the shared_ptr version
+            to_json(featureJson, feature); 
             featuresJson.push_back(std::move(featureJson));
         } 
         else 
@@ -152,7 +152,7 @@ inline void to_json(nlohmann::json& j, const ISocketChannel& socket)
         };
     }
 }
-inline void to_json(nlohmann::json& j, const std::vector<std::shared_ptr<ISocketChannel>>& sockets)
+inline void to_json(nlohmann::json& j, const std::vector<std::unique_ptr<ISocketChannel>>& sockets)
 {
     j = nlohmann::json::array();
     for (const auto& socket : sockets)
