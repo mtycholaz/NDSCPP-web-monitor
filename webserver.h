@@ -17,7 +17,7 @@ using namespace std;
 #include <thread>
 #include "global.h"
 #include "interfaces.h"
-#include "socketcontroller.h"
+
 class WebServer
 {
         
@@ -27,7 +27,6 @@ class WebServer
       pthread_cond_t cond;
       struct MHD_Daemon *daemon;
       const vector<shared_ptr<ICanvas>> & _allCanvases;
-      SocketController & _socketController;
 
       static void * RunServer(void *arg);
       static enum MHD_Result AnswerConnection(void                        * cls, 
@@ -41,8 +40,7 @@ class WebServer
 
   public:
   
-      WebServer(const vector<shared_ptr<ICanvas>> & allCanvases, SocketController & socketController) 
-            : _allCanvases(allCanvases), _socketController(socketController)
+      WebServer(const vector<shared_ptr<ICanvas>> & allCanvases) : _allCanvases(allCanvases)
       {
             pthread_mutex_init(&mutex, NULL);
             pthread_cond_init(&cond, NULL);

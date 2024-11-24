@@ -16,7 +16,6 @@
 #include "canvas.h"
 #include "interfaces.h"
 #include "socketchannel.h"
-#include "socketcontroller.h"
 #include "ledfeature.h"
 #include "webserver.h"
 #include "effectsmanager.h"
@@ -87,8 +86,7 @@ vector<shared_ptr<ICanvas>> LoadCanvases()
 int main(int, char *[])
 {
     vector<shared_ptr<ICanvas>> allCanvases;    
-    SocketController socketController;
-
+    
     // Register signal handler for SIGINT
     signal(SIGINT, handle_signal);
 
@@ -99,14 +97,22 @@ int main(int, char *[])
 
     cout << "Connecting to clients..." << endl;
 
-    // Add a SocketChannel for each feature and start the drawing of effects
-    socketController.AddChannelsForCanvases(allCanvases);
-    socketController.StartAll();
+    // Connect and start the sockets to the clients
+
+    for (const auto &canvas : allCanvases)
+        for (const auto &feature : canvas->Features())
+            feature->Socket().Start();
+            
+    // Start rendering effects
+
+    for (const auto &canvas : allCanvases)
+         canvas->Effects().Start(*canvas);
 
     cout << "Starting the Web Server..." << endl;
 
     // Start the web server
-    WebServer webServer(allCanvases, socketController);
+    
+    WebServer webServer(allCanvases);
     pthread_t serverThread = webServer.Start();
     if (!serverThread)
     {
@@ -122,8 +128,14 @@ int main(int, char *[])
     while (running)
         this_thread::sleep_for(milliseconds(100));
 
-    // Stops all channels and then removes them
-    socketController.RemoveAllChannels();
+    // Shut down rendering and communications
+
+    for (const auto &canvas : allCanvases)
+         canvas->Effects().Stop();
+
+    for (const auto &canvas : allCanvases)
+        for (const auto &feature : canvas->Features())
+            feature->Socket().Stop();
 
     cout << "Stopping server..." << endl;
     webServer.Stop();

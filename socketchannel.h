@@ -120,25 +120,32 @@ public:
     }
 
 private:
-    // Updated WorkerLoop
+
     void WorkerLoop()
     {
         while (_running)
         {
             vector<uint8_t> frame;
-
             {
+                constexpr chrono::milliseconds kMaxQueueWaitTime(100);
+
                 unique_lock<mutex> lock(_queueMutex);
 
-                // Wait until _frameQueue is not empty or _running becomes false
-                _queueCondition.wait(lock, [this] { return !_frameQueue.empty() || !_running; });
+                // Wait for a maximum of 100 milliseconds for the condition or check _running
+                _queueCondition.wait_for(lock, kMaxQueueWaitTime, [this] 
+                {
+                    return !_frameQueue.empty() || !_running;
+                });
 
-                // If _running is false and queue is empty, exit the loop
+                // If _running is false and the queue is empty, exit the loop
                 if (!_running && _frameQueue.empty())
                     return;
 
-                frame = std::move(_frameQueue.front());
-                _frameQueue.pop();
+                if (!_frameQueue.empty())
+                {
+                    frame = std::move(_frameQueue.front());
+                    _frameQueue.pop();
+                }
             }
 
             if (!frame.empty())
@@ -149,8 +156,8 @@ private:
                     _lastClientResponse = std::move(*response);
             }
         }
-
     }
+
 
     optional<ClientResponse> ReadSocketResponse() 
     {
