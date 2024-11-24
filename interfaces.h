@@ -153,12 +153,12 @@ class ICanvas
 public:
     virtual ~ICanvas() = default;
     // Accessors for features
-    virtual vector<shared_ptr<ILEDFeature>>& Features() = 0;
-    virtual const vector<shared_ptr<ILEDFeature>>& Features() const = 0;
+    virtual vector<unique_ptr<ILEDFeature>>& Features() = 0;
+    virtual const vector<unique_ptr<ILEDFeature>>& Features() const = 0;
 
     // Add or remove features
-    virtual void AddFeature(shared_ptr<ILEDFeature> feature) = 0;
-    virtual void RemoveFeature(shared_ptr<ILEDFeature> feature) = 0;
+    virtual void AddFeature(unique_ptr<ILEDFeature> feature) = 0;
+    virtual void RemoveFeature(unique_ptr<ILEDFeature> feature) = 0;
 
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;

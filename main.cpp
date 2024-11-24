@@ -55,7 +55,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     auto canvas = make_unique<Canvas>(512, 32, 30);
 
     // Add LEDFeature
-    auto feature1 = make_shared<LEDFeature>(
+    auto feature1 = make_unique<LEDFeature>(
         canvas.get(),         // Canvas pointer
         "192.168.8.176",      // Hostname
         "Workbench Matrix",   // Friendly Name
