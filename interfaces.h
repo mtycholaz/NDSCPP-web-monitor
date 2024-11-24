@@ -44,30 +44,6 @@ public:
 
 
 class ClientResponse;
-
-class ILEDFeature
-{
-public:
-    virtual ~ILEDFeature() = default;
-
-    // Accessor methods
-    virtual uint32_t Width() const = 0;
-    virtual uint32_t Height() const = 0;
-    virtual const string &HostName() const = 0;
-    virtual const string &FriendlyName() const = 0;
-    virtual uint16_t Port() const = 0;
-    virtual uint32_t OffsetX() const = 0;
-    virtual uint32_t OffsetY() const = 0;
-    virtual bool     Reversed() const = 0;
-    virtual uint8_t  Channel() const = 0;
-    virtual bool     RedGreenSwap() const = 0;
-
-    // Data retrieval
-    virtual vector<uint8_t> GetPixelData() const = 0;
-    virtual vector<uint8_t> GetDataFrame() const = 0;    
-
-};
-
 class ICanvas;
 
 // ILEDEffect
@@ -95,8 +71,6 @@ public:
 // Manages a collection of LED effects, allowing for cycling through effects, starting and stopping them,
 // and updating the current effect.  Provides methods for adding, removing, and clearing effects.
 
-class ISocketController;
-
 class IEffectsManager
 {
 public:
@@ -111,33 +85,10 @@ public:
     virtual void PreviousEffect() = 0;
     virtual string CurrentEffectName() const = 0;
     virtual void ClearEffects() = 0;
-    virtual void Start(ICanvas& canvas, ISocketController & socketController) = 0;
+    virtual void Start(ICanvas& canvas) = 0;
     virtual void Stop() = 0;
     virtual void SetFPS(uint16_t fps) = 0;
     virtual uint16_t GetFPS() const = 0;
-};
-
-
-// ICanvas
-//
-// Represents a 2D drawing surface that manages LED features and provides rendering capabilities.  
-// Can contain multiple `ILEDFeature` instances, with features mapped to specific regions of the canvas
-
-class ICanvas 
-{
-public:
-    virtual ~ICanvas() = default;
-    // Accessors for features
-    virtual vector<shared_ptr<ILEDFeature>>& Features() = 0;
-    virtual const vector<shared_ptr<ILEDFeature>>& Features() const = 0;
-
-    // Add or remove features
-    virtual void AddFeature(shared_ptr<ILEDFeature> feature) = 0;
-    virtual void RemoveFeature(shared_ptr<ILEDFeature> feature) = 0;
-
-    virtual ILEDGraphics & Graphics() = 0;
-    virtual const ILEDGraphics& Graphics() const = 0;
-    virtual IEffectsManager & Effects() = 0;
 };
 
 // ISocketChannel
@@ -169,21 +120,47 @@ public:
     virtual void Stop() = 0;
 };
 
-// ISocketController
-//
-// The SocketController class manages a collection of SocketChannels, allowing for adding and removing
-// them as well as accessing them to send data to their respective features. It also provides methods
-// for starting and stopping all channels.
 
-class ISocketController
+class ILEDFeature 
 {
 public:
-    virtual ~ISocketController() = default;
+    virtual ~ILEDFeature() = default;
 
-    virtual const unordered_map<string, shared_ptr<ISocketChannel>> AllChannels() const  = 0;
-    virtual void AddChannelsForCanvases(const vector<shared_ptr<ICanvas>> &allCanvases) = 0;
-    virtual shared_ptr<ISocketChannel> FindChannelByHost(const string& hostName) const = 0;
-    virtual void RemoveAllChannels() = 0;
-    virtual void StartAll() = 0;
-    virtual void StopAll() = 0;
+    // Accessor methods
+    virtual uint32_t Width() const = 0;
+    virtual uint32_t Height() const = 0;
+    virtual uint32_t OffsetX() const = 0;
+    virtual uint32_t OffsetY() const = 0;
+    virtual bool     Reversed() const = 0;
+    virtual uint8_t  Channel() const = 0;
+    virtual bool     RedGreenSwap() const = 0;
+
+    // Data retrieval
+    virtual vector<uint8_t> GetPixelData() const = 0;
+    virtual vector<uint8_t> GetDataFrame() const = 0;    
+
+    virtual ISocketChannel & Socket() = 0;
+
+};
+
+// ICanvas
+//
+// Represents a 2D drawing surface that manages LED features and provides rendering capabilities.  
+// Can contain multiple `ILEDFeature` instances, with features mapped to specific regions of the canvas
+
+class ICanvas 
+{
+public:
+    virtual ~ICanvas() = default;
+    // Accessors for features
+    virtual vector<shared_ptr<ILEDFeature>>& Features() = 0;
+    virtual const vector<shared_ptr<ILEDFeature>>& Features() const = 0;
+
+    // Add or remove features
+    virtual void AddFeature(shared_ptr<ILEDFeature> feature) = 0;
+    virtual void RemoveFeature(shared_ptr<ILEDFeature> feature) = 0;
+
+    virtual ILEDGraphics & Graphics() = 0;
+    virtual const ILEDGraphics& Graphics() const = 0;
+    virtual IEffectsManager & Effects() = 0;
 };

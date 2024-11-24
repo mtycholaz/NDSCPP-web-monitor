@@ -23,9 +23,6 @@ using namespace std;
 // ClientResponse
 //
 // Response data sent back to server every time we receive a packet.
-// TODO: There needs to be endian-mismatch handling here if the server is
-// is big-endian, as the ESP32 is little-endian.  Also you must use 64-but
-// doubles on the ESP32 side to match the 64-bit doubles here on the server side.
 
 struct ClientResponse
 {
@@ -67,37 +64,40 @@ struct ClientResponse
 inline void to_json(nlohmann::json& j, const ClientResponse & response)
 {
     j = nlohmann::json{
-        { "client-size",           response.size         },
-        { "client-flashVersion",   response.flashVersion },
-        { "client-currentClock",   response.currentClock },
-        { "client-oldestPacket",   response.oldestPacket },
-        { "client-newestPacket",   response.newestPacket },
-        { "client-brightness",     response.brightness   },
-        { "client-wifiSignal",     response.wifiSignal   },
-        { "client-bufferSize",     response.bufferSize   },
-        { "client-bufferPos",      response.bufferPos    },
-        { "client-fpsDrawing",     response.fpsDrawing   },
-        { "client-watts",          response.watts        }
+        { "responseSize",   response.size         },
+        { "flashVersion",   response.flashVersion },
+        { "currentClock",   response.currentClock },
+        { "oldestPacket",   response.oldestPacket },
+        { "newestPacket",   response.newestPacket },
+        { "brightness",     response.brightness   },
+        { "wifiSignal",     response.wifiSignal   },
+        { "bufferSize",     response.bufferSize   },
+        { "bufferPos",      response.bufferPos    },
+        { "fpsDrawing",     response.fpsDrawing   },
+        { "watts",          response.watts        }
     };
 }
 
 
-inline void to_json(nlohmann::json& j, const shared_ptr<ILEDFeature>& feature) 
+inline void to_json(nlohmann::json& j, const shared_ptr<ILEDFeature> & feature) 
 {
     if (feature) 
     {
         // Manually serialize fields from the ILEDFeature interface
         j = nlohmann::json{
-            { "hostName",     feature->HostName()     },
-            { "friendlyName", feature->FriendlyName() },
-            { "width",        feature->Width()        },
-            { "height",       feature->Height()       },
-            { "offsetX",      feature->OffsetX()      },
-            { "offsetY",      feature->OffsetY()      },
-            { "reversed",     feature->Reversed()     },
-            { "channel",      feature->Channel()      },
-            { "redGreenSwap", feature->RedGreenSwap() },
+            { "hostName",     feature->Socket().HostName()     },
+            { "friendlyName", feature->Socket().FriendlyName() },
+            { "width",        feature->Width()                 },
+            { "height",       feature->Height()                },
+            { "offsetX",      feature->OffsetX()               },
+            { "offsetY",      feature->OffsetY()               },
+            { "reversed",     feature->Reversed()              },
+            { "channel",      feature->Channel()               },
+            { "redGreenSwap", feature->RedGreenSwap()          },
         };
+
+        if (feature->Socket().LastClientResponse().size == sizeof(ClientResponse))
+            j["stats"] = feature->Socket().LastClientResponse();
     } 
     else 
     {
@@ -129,7 +129,6 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
         { "features", featuresJson                }
     };
 }
-
 inline void to_json(nlohmann::json& j, const ISocketChannel& socket)
 {
     j["hostName"] = socket.HostName();
@@ -140,53 +139,19 @@ inline void to_json(nlohmann::json& j, const ISocketChannel& socket)
     {
         // Serialize the ClientResponse structure
         j["stats"] = {
-            {"flashVersion", lastResponse.flashVersion},
-            {"currentClock", lastResponse.currentClock},
-            {"oldestPacket", lastResponse.oldestPacket},
-            {"newestPacket", lastResponse.newestPacket},
-            {"brightness", lastResponse.brightness},
-            {"wifiSignal", lastResponse.wifiSignal},
-            {"bufferSize", lastResponse.bufferSize},
-            {"bufferPos", lastResponse.bufferPos},
-            {"fpsDrawing", lastResponse.fpsDrawing},
-            {"watts", lastResponse.watts}
+            {"flashVersion",    lastResponse.flashVersion},
+            {"currentClock",    lastResponse.currentClock},
+            {"oldestPacket",    lastResponse.oldestPacket},
+            {"newestPacket",    lastResponse.newestPacket},
+            {"brightness",      lastResponse.brightness},
+            {"wifiSignal",      lastResponse.wifiSignal},
+            {"bufferSize",      lastResponse.bufferSize},
+            {"bufferPos",       lastResponse.bufferPos},
+            {"fpsDrawing",      lastResponse.fpsDrawing},
+            {"watts",           lastResponse.watts}
         };
     }
 }
-
-inline void to_json(nlohmann::json& j, const shared_ptr<ISocketChannel> & socket)
-{
-    if (socket)
-    {
-        j = nlohmann::json{
-            { "hostName",     socket->HostName()     },
-            { "friendlyName", socket->FriendlyName() },
-            { "port",         socket->Port()         }
-        };
-        const auto& lastResponse = socket->LastClientResponse();
-        if (lastResponse.size == sizeof(ClientResponse))
-        {
-            // Serialize the ClientResponse structure
-            j["stats"] = {
-                {"flashVersion", lastResponse.flashVersion},
-                {"currentClock", lastResponse.currentClock},
-                {"oldestPacket", lastResponse.oldestPacket},
-                {"newestPacket", lastResponse.newestPacket},
-                {"brightness",   lastResponse.brightness},
-                {"wifiSignal",   lastResponse.wifiSignal},
-                {"bufferSize",   lastResponse.bufferSize},
-                {"bufferPos",    lastResponse.bufferPos},
-                {"fpsDrawing",   lastResponse.fpsDrawing},
-                {"watts",        lastResponse.watts}
-            };
-        }        
-    }
-    else
-    {
-        j = nullptr; // Handle null shared pointers
-    }
-}
-
 inline void to_json(nlohmann::json& j, const std::vector<std::shared_ptr<ISocketChannel>>& sockets)
 {
     j = nlohmann::json::array();

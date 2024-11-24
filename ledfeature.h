@@ -32,30 +32,30 @@ public:
                uint8_t channel = 0,
                bool redGreenSwap = false)
         : _canvas(canvas),
-          _hostName(hostName),
-          _friendlyName(friendlyName),
-          _port(port),
           _width(width),
           _height(height),
           _offsetX(offsetX),
           _offsetY(offsetY),
           _reversed(reversed),
           _channel(channel),
-          _redGreenSwap(redGreenSwap)
+          _redGreenSwap(redGreenSwap),
+          _socketChannel(hostName, friendlyName, port)
     {
     }
 
     // Accessor methods
     uint32_t        Width()        const override { return _width; }
     uint32_t        Height()       const override { return _height; }
-    const string &  HostName()     const override { return _hostName; }
-    const string &  FriendlyName() const override { return _friendlyName; }
-    uint16_t        Port()         const override { return _port; }
     uint32_t        OffsetX()      const override { return _offsetX; }
     uint32_t        OffsetY()      const override { return _offsetY; }
     bool            Reversed()     const override { return _reversed; }
     uint8_t         Channel()      const override { return _channel; }
     bool            RedGreenSwap() const override { return _redGreenSwap; }
+
+    virtual ISocketChannel & Socket() override 
+    {
+        return _socketChannel;
+    }
 
     // Canvas association
     void SetCanvas(shared_ptr<ICanvas> canvas) { _canvas = canvas; }
@@ -121,9 +121,6 @@ public:
     }
 
 private:
-    string      _hostName;
-    string      _friendlyName;
-    uint16_t    _port;
     uint32_t    _width;
     uint32_t    _height;
     uint32_t    _offsetX;
@@ -132,4 +129,5 @@ private:
     uint8_t     _channel;
     bool        _redGreenSwap;
     shared_ptr<ICanvas> _canvas; // Associated canvas
+    SocketChannel _socketChannel;
 };

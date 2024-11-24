@@ -121,12 +121,12 @@ public:
     }
 
     // Start the worker thread to update effects
-    void Start(ICanvas& canvas, ISocketController& socketController)
+    void Start(ICanvas& canvas)
     {
         if (_running.exchange(true))
             return; // Already running
 
-        _workerThread = thread([this, &canvas, &socketController]() 
+        _workerThread = thread([this, &canvas]() 
         {
             auto frameDuration = milliseconds(1000) / _fps; // Target duration per frame
             auto nextFrameTime = steady_clock::now();
@@ -145,11 +145,8 @@ public:
                 for (const auto &feature : canvas.Features())
                 {
                     auto frame = feature->GetDataFrame();
-                    auto target = socketController.FindChannelByHost(feature->HostName());
-                    if (!target)
-                        throw runtime_error("Feature host not found in SocketController.");
-                    auto compressedFrame = target->CompressFrame(frame);
-                    target->EnqueueFrame(std::move(compressedFrame));
+                    auto compressedFrame = feature->Socket().CompressFrame(frame);
+                    feature->Socket().EnqueueFrame(std::move(compressedFrame));
                 }
 
                 // Set the next frame target
