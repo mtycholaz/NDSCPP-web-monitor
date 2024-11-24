@@ -60,7 +60,7 @@ public:
         _features.push_back(std::move(feature));
     }
 
-    void RemoveFeature(unique_ptr<ILEDFeature> feature) override
+    void RemoveFeature(unique_ptr<ILEDFeature> & feature) override
     {
         if (!feature)
             throw invalid_argument("Cannot remove a null feature.");

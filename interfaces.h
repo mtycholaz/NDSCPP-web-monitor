@@ -30,6 +30,7 @@ public:
     virtual void SetPixel(uint32_t x, uint32_t y, const CRGB& color) = 0;
     virtual CRGB GetPixel(uint32_t x, uint32_t y) const = 0;
     virtual void Clear(const CRGB& color) = 0;
+    virtual void FadeFrameBy(uint8_t dimAmount) = 0;
     virtual void FillRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) = 0;
     virtual void DrawLine(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, const CRGB& color) = 0;
     virtual void DrawCircle(uint32_t x, uint32_t y, uint32_t radius, const CRGB& color) = 0;
@@ -158,7 +159,7 @@ public:
 
     // Add or remove features
     virtual void AddFeature(unique_ptr<ILEDFeature> feature) = 0;
-    virtual void RemoveFeature(unique_ptr<ILEDFeature> feature) = 0;
+    virtual void RemoveFeature(unique_ptr<ILEDFeature> & feature) = 0;
 
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;

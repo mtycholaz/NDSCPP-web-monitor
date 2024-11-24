@@ -133,4 +133,14 @@ public:
         DrawLine(x + width - 1, y, x + width - 1, y + height - 1, color);   // Right
         DrawLine(x, y + height - 1, x + width - 1, y + height - 1, color);  // Bottom
     }
+
+    void FadeFrameBy(uint8_t dimAmount) override
+    {
+        for (auto& pixel : _pixels)
+        {
+            pixel.r = scale8(pixel.r, 255-dimAmount);
+            pixel.g = scale8(pixel.g, 255-dimAmount);
+            pixel.b = scale8(pixel.b, 255-dimAmount);
+        }
+    }
 };
