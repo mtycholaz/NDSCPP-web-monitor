@@ -23,52 +23,20 @@ using namespace std;
 
 // to_json for serialization
 
-inline void to_json(nlohmann::json& j, const shared_ptr<ILEDFeature>& feature) 
+inline void to_json(nlohmann::json& j, const shared_ptr<ISocketChannel> & channel)
 {
-    if (feature) 
+    if (channel)
     {
-        // Manually serialize fields from the ILEDFeature interface
         j = nlohmann::json{
-            { "hostName",     feature->HostName()     },
-            { "friendlyName", feature->FriendlyName() },
-            { "width",        feature->Width()        },
-            { "height",       feature->Height()       },
-            { "offsetX",      feature->OffsetX()      },
-            { "offsetY",      feature->OffsetY()      },
-            { "reversed",     feature->Reversed()     },
-            { "channel",      feature->Channel()      },
-            { "redGreenSwap", feature->RedGreenSwap() },
+            { "hostName",     channel->HostName()     },
+            { "friendlyName", channel->FriendlyName() },
+            { "port",         channel->Port()         }
         };
-    } 
-    else 
+    }
+    else
     {
         j = nullptr; // Handle null shared pointers
     }
-}
-
-inline void to_json(nlohmann::json& j, const ICanvas& canvas)
-{
-    // Serialize the features vector as an array of JSON objects
-    vector<nlohmann::json> featuresJson;
-    for (const auto& feature : canvas.Features())
-    {
-        if (feature) 
-        {
-            nlohmann::json featureJson;
-            to_json(featureJson, feature); // Call the shared_ptr version
-            featuresJson.push_back(std::move(featureJson));
-        } 
-        else 
-        {
-            featuresJson.push_back(nullptr); // Handle null pointers
-        }
-    }
-
-    j = nlohmann::json{
-        { "width",    canvas.Graphics().Width()   },
-        { "height",   canvas.Graphics().Height()  },
-        { "features", featuresJson                }
-    };
 }
 
 // ClientResponse
@@ -118,17 +86,65 @@ struct ClientResponse
 inline void to_json(nlohmann::json& j, const ClientResponse response)
 {
     j = nlohmann::json{
-        { "size",           response.size         },
-        { "flashVersion",   response.flashVersion },
-        { "currentClock",   response.currentClock },
-        { "oldestPacket",   response.oldestPacket },
-        { "newestPacket",   response.newestPacket },
-        { "brightness",     response.brightness   },
-        { "wifiSignal",     response.wifiSignal   },
-        { "bufferSize",     response.bufferSize   },
-        { "bufferPos",      response.bufferPos    },
-        { "fpsDrawing",     response.fpsDrawing   },
-        { "watts",          response.watts        }
+        { "client-size",           response.size         },
+        { "client-flashVersion",   response.flashVersion },
+        { "client-currentClock",   response.currentClock },
+        { "client-oldestPacket",   response.oldestPacket },
+        { "client-newestPacket",   response.newestPacket },
+        { "client-brightness",     response.brightness   },
+        { "client-wifiSignal",     response.wifiSignal   },
+        { "client-bufferSize",     response.bufferSize   },
+        { "client-bufferPos",      response.bufferPos    },
+        { "client-fpsDrawing",     response.fpsDrawing   },
+        { "client-watts",          response.watts        }
     };
 }
 
+
+inline void to_json(nlohmann::json& j, const shared_ptr<ILEDFeature>& feature) 
+{
+    if (feature) 
+    {
+        // Manually serialize fields from the ILEDFeature interface
+        j = nlohmann::json{
+            { "hostName",     feature->HostName()     },
+            { "friendlyName", feature->FriendlyName() },
+            { "width",        feature->Width()        },
+            { "height",       feature->Height()       },
+            { "offsetX",      feature->OffsetX()      },
+            { "offsetY",      feature->OffsetY()      },
+            { "reversed",     feature->Reversed()     },
+            { "channel",      feature->Channel()      },
+            { "redGreenSwap", feature->RedGreenSwap() },
+        };
+    } 
+    else 
+    {
+        j = nullptr; // Handle null shared pointers
+    }
+}
+
+inline void to_json(nlohmann::json& j, const ICanvas& canvas)
+{
+    // Serialize the features vector as an array of JSON objects
+    vector<nlohmann::json> featuresJson;
+    for (const auto& feature : canvas.Features())
+    {
+        if (feature) 
+        {
+            nlohmann::json featureJson;
+            to_json(featureJson, feature); // Call the shared_ptr version
+            featuresJson.push_back(std::move(featureJson));
+        } 
+        else 
+        {
+            featuresJson.push_back(nullptr); // Handle null pointers
+        }
+    }
+
+    j = nlohmann::json{
+        { "width",    canvas.Graphics().Width()   },
+        { "height",   canvas.Graphics().Height()  },
+        { "features", featuresJson                }
+    };
+}
