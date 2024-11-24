@@ -85,15 +85,14 @@ vector<shared_ptr<ICanvas>> LoadCanvases()
 
 int main(int, char *[])
 {
-    vector<shared_ptr<ICanvas>> allCanvases;    
-    
     // Register signal handler for SIGINT
     signal(SIGINT, handle_signal);
 
     cout << "Loading canvases..." << endl;
 
     // Load the canvases and features
-    allCanvases = LoadCanvases();
+
+    vector<shared_ptr<ICanvas>> allCanvases = LoadCanvases();
 
     cout << "Connecting to clients..." << endl;
 
@@ -128,6 +127,9 @@ int main(int, char *[])
     while (running)
         this_thread::sleep_for(milliseconds(100));
 
+    cout << "Stopping web server..." << endl;
+    webServer.Stop();
+    
     // Shut down rendering and communications
 
     for (const auto &canvas : allCanvases)
@@ -137,7 +139,5 @@ int main(int, char *[])
         for (const auto &feature : canvas->Features())
             feature->Socket().Stop();
 
-    cout << "Stopping server..." << endl;
-    webServer.Stop();
     return 0;
 }
