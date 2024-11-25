@@ -15,6 +15,8 @@ using namespace std;
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <poll.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "interfaces.h"
 #include "utilities.h"
 #include "pixeltypes.h"
@@ -22,9 +24,9 @@ using namespace std;
 
 // SocketChannel
 //
-// Represents a socket connection to a NightDriverStrip client.  Keeps a queue of frames and 
-// pops them off the queue and sends them on a worker thread.  The worker thread will attempt
-// to connect to the client if it is not already connected.  The worker thread will also
+// Represents a socket connection to a NightDriverStrip client. Keeps a queue of frames and 
+// pops them off the queue and sends them on a worker thread. The worker thread will attempt
+// to connect to the client if it is not already connected. The worker thread will also
 // attempt to reconnect if the connection is lost.
 
 class ClientResponse;
@@ -32,14 +34,17 @@ class ClientResponse;
 class SocketChannel : public ISocketChannel
 {
 public:
-    SocketChannel(const string & hostName, const string & friendlyName, uint16_t port = 49152)
+    SocketChannel(const string& hostName, const string& friendlyName, uint16_t port = 49152)
         : _hostName(hostName),
           _friendlyName(friendlyName),
           _port(port),
           _isConnected(false),
           _running(false),
           _socketFd(-1),
-          _lastClientResponse()                 // Zero-initialize the response
+          _lastClientResponse(),
+          _dataSentCount(0),
+          _lastDataSentCountReset(system_clock::now()),
+          _lastConnectionAttempt(system_clock::now())
     {
     }
 
@@ -54,7 +59,6 @@ public:
         return _port;
     }
 
-    // Override methods from ISocketChannel
     void Start() override
     {
         lock_guard<mutex> lock(_mutex);
@@ -84,10 +88,14 @@ public:
         return _isConnected;
     }
     
-    const string & HostName()     const override { return _hostName;     }
-    const string & FriendlyName() const override { return _friendlyName; }
+    const string& HostName() const override { return _hostName; }
+    const string& FriendlyName() const override { return _friendlyName; }
     
-    const ClientResponse & LastClientResponse() const override { return _lastClientResponse; }
+    const ClientResponse& LastClientResponse() const override 
+    { 
+        lock_guard<mutex> lock(_responseMutex);
+        return _lastClientResponse; 
+    }
 
     vector<uint8_t> CompressFrame(const vector<uint8_t>& data) override
     {
@@ -107,96 +115,94 @@ public:
         );
     }
 
-    bool EnqueueFrame(vector<uint8_t> && frameData) override
+    bool EnqueueFrame(vector<uint8_t>&& frameData) override
     {
-        cout << "Adding Frame to Queue at queue depth " << _frameQueue.size() << endl;
+        lock_guard<mutex> lock(_queueMutex);
+        if (_frameQueue.size() >= MaxQueueDepth)
         {
-            lock_guard<mutex> lock(_queueMutex);
-            if (_frameQueue.size() >= MaxQueueDepth)
-                return false; // Queue is full
-            _frameQueue.push(std::move(frameData));
+            cout << "Queue is full, dropping frame and resetting socket" << endl;
+            CloseSocket();
+            return false;
         }
-        _queueCondition.notify_one(); // Notify the worker thread that a new frame is available
-        return true; // Successfully enqueued
+        _frameQueue.push(std::move(frameData));
+        return true;
     }
 
 private:
-
     void WorkerLoop()
     {
+        steady_clock::time_point lastSendTime = steady_clock::now();
+        constexpr auto kMaxBatchSize = 4;
+        constexpr auto xMaxBatchDelay_ms = 1000;
+        constexpr auto reconnectDelay_ms = 5000; // 5 second delay between connection attempts
+
         while (_running)
         {
-            vector<uint8_t> combinedBuffer; // Buffer to hold all combined frames
-            size_t totalBytes = 0;
-            size_t packetCount = 0;
-            constexpr auto kMaxBatchSize = 20;
+            try
             {
-                unique_lock<mutex> lock(_queueMutex);
+                vector<uint8_t> combinedBuffer;
+                size_t totalBytes = 0;
+                size_t packetCount = 0;
 
-                // Drain the queue into the combined buffer
-                while (!_frameQueue.empty() && packetCount < kMaxBatchSize)
+                auto now = steady_clock::now();
+                auto timeToSend = duration_cast<milliseconds>(now - lastSendTime).count() >= xMaxBatchDelay_ms;
+
+                // Only start draining if it's time to send or the queue has reached the max size
+                if (!_frameQueue.empty() && (_frameQueue.size() >= kMaxBatchSize || timeToSend))
                 {
-                    vector<uint8_t>& frame = _frameQueue.front();
-                    totalBytes += frame.size();
-                    packetCount++;
-                    combinedBuffer.insert(combinedBuffer.end(), frame.begin(), frame.end());
-                    _frameQueue.pop();
+                    unique_lock<mutex> lock(_queueMutex);
+                    
+                    while (!_frameQueue.empty() && packetCount < kMaxBatchSize)
+                    {
+                        vector<uint8_t>& frame = _frameQueue.front();
+                        totalBytes += frame.size();
+                        packetCount++;
+                        combinedBuffer.insert(combinedBuffer.end(), frame.begin(), frame.end());
+                        _frameQueue.pop();
+                    }
+
+                    lastSendTime = steady_clock::now();
+                }
+
+                if (!combinedBuffer.empty())
+                {
+                    optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
+                    if (response)
+                    {
+                        lock_guard<mutex> lock(_responseMutex);
+                        _lastClientResponse = std::move(*response);
+                    }
+                }
+            }
+            catch (const exception& e)
+            {
+                cerr << "WorkerLoop exception: " << e.what() << endl;
+                CloseSocket();
+                
+                // Wait before attempting to reconnect
+                auto now = system_clock::now();
+                if (duration_cast<milliseconds>(now - _lastConnectionAttempt).count() < reconnectDelay_ms)
+                {
+                    this_thread::sleep_for(milliseconds(100));
+                    continue;
                 }
             }
 
-            // If we have data to send, send the combined buffer
-            if (!combinedBuffer.empty())
-            {
-                cout << "Sending Combined Frame " << system_clock::now() 
-                     << " (" << totalBytes << " bytes, " << packetCount << " packets)" 
-                     << endl;
-
-                optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
-                if (response)
-                    _lastClientResponse = std::move(*response);
-            }
-
-            // Sleep briefly to yield to other threads
             this_thread::sleep_for(milliseconds(1));
         }
     }
 
-
     optional<ClientResponse> ReadSocketResponse() 
     {
         const size_t cbToRead = sizeof(ClientResponse);
-        vector<uint8_t> buffer(cbToRead); // Buffer to hold the response
-
-        // Check if data is available
-
-      #ifdef _WIN32
-
-        fd_set readSet;
-        FD_ZERO(&readSet);
-        FD_SET(_socketFd, &readSet);
-
-        timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 0; // Non-blocking
-
-        if (select(0, &readSet, nullptr, nullptr, &timeout) <= 0) 
-            return nullopt; // No data available
-
-      #else
+        vector<uint8_t> buffer(cbToRead);
 
         pollfd pfd;
         pfd.fd = _socketFd;
         pfd.events = POLLIN;
 
         if (poll(&pfd, 1, 0) <= 0) 
-            return nullopt; // No data available
-
-      #endif
-
-        // Read data if available and is at least as big as our response structure.  A partial
-        // read is not considered a valid response, so will be skipped until we have a full response.
-        // The first byte of the response is the size of the response, so we can use that to determine
-        // if we are compatible with the client's response.
+            return nullopt;
 
         ssize_t readBytes = recv(_socketFd, buffer.data(), cbToRead, 0);
         if (readBytes == static_cast<ssize_t>(cbToRead)) 
@@ -204,26 +210,50 @@ private:
             if (buffer[0] != static_cast<uint8_t>(cbToRead))
             {
                 cerr << "Invalid response size received from client" << endl;
-                return nullopt; // Invalid response
+                return nullopt;
             }
+
+            // Validate the response before copying
+            if (!ValidateClientResponse(buffer.data(), cbToRead))
+            {
+                cerr << "Invalid client response format" << endl;
+                return nullopt;
+            }
+
             ClientResponse response;
             memcpy(&response, buffer.data(), cbToRead);
-            response.TranslateClientResponse(); // Translate the response to native endianness
+            response.TranslateClientResponse();
 
-            cout << response.currentClock - system_clock::to_time_t(system_clock::now()) << " seconds behind" << endl;
+            cout << response.currentClock - system_clock::to_time_t(system_clock::now()) 
+                 << " seconds behind" << endl;
 
-            return response; // Successfully read the response
+            return response;
         }
 
-        return nullopt; // Not enough data or invalid response
+        return nullopt;
     }
 
-    // SendFrame
-    //
-    // Delivers a bytestream packet to the client socket and returns a response from that client if 
-    // available.  
-     
-    optional<ClientResponse> SendFrame(const vector<uint8_t> && frame)
+    bool ValidateClientResponse(const void* data, size_t size) const
+    {
+        if (size != sizeof(ClientResponse))
+            return false;
+
+        const ClientResponse* response = static_cast<const ClientResponse*>(data);
+        
+        // Add validation logic based on your ClientResponse structure
+        // For example, check if fields are within expected ranges
+        
+        return true; // Implement actual validation
+    }
+
+    bool SetSocketNonBlocking(int socketFd)
+    {
+        int flags = fcntl(socketFd, F_GETFL, 0);
+        if (flags == -1) return false;
+        return (fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) != -1);
+    }
+
+    optional<ClientResponse> SendFrame(const vector<uint8_t>&& frame)
     {
         if (_socketFd == -1)
         {
@@ -235,94 +265,134 @@ private:
             }
         }
 
-        try
+        size_t totalSent = 0;
+        while (totalSent < frame.size())
         {
-            ssize_t sentBytes = send(_socketFd, frame.data(), frame.size(), MSG_NOSIGNAL);
-            if (sentBytes == -1)
+            ssize_t sent = send(_socketFd, 
+                               frame.data() + totalSent, 
+                               frame.size() - totalSent, 
+                               MSG_NOSIGNAL | MSG_DONTWAIT);
+            
+            if (sent == -1)
             {
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                {
+                    // Socket buffer full, wait and retry
+                    this_thread::sleep_for(milliseconds(1));
+                    continue;
+                }
                 CloseSocket();
                 lock_guard<mutex> lock(_mutex);
                 _isConnected = false;
                 return nullopt;
             }
-            _dataSentCount += sentBytes;
+            totalSent += sent;
         }
-        catch(const exception& e)
-        {
 
-            cerr << e.what() << '\n';
-            CloseSocket();
-            lock_guard<mutex> lock(_mutex);
-            _isConnected = false;
-        }
-        
         {
             lock_guard<mutex> lock(_mutex);
             _isConnected = true;
+            _dataSentCount += totalSent;
         }
 
-        return std::nullopt;
-
-        optional<ClientResponse> response;
-        while (response = ReadSocketResponse())
-        {
-            if (!response)
-                break;
-        }
-
-        if (!response)
-            return std::nullopt;
-            
-        return std::move(*response);
+        return ReadSocketResponse();
     }
 
     bool ConnectSocket()
     {
+        _lastConnectionAttempt = system_clock::now();
+        
+        int tempSocket = socket(AF_INET, SOCK_STREAM, 0);
+        if (tempSocket == -1)
+            return false;
+
         struct sockaddr_in serverAddr;
         memset(&serverAddr, 0, sizeof(serverAddr));
         serverAddr.sin_family = AF_INET;
         serverAddr.sin_port = htons(_port);
 
         if (inet_pton(AF_INET, _hostName.c_str(), &serverAddr.sin_addr) <= 0)
-            return false;
-
-        _socketFd = socket(AF_INET, SOCK_STREAM, 0);
-        if (_socketFd == -1)
-            return false;
-
-        cout << "Connecting to " << _hostName << ":" << _port << endl;
-        if (connect(_socketFd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
         {
-            CloseSocket();
+            close(tempSocket);
             return false;
         }
 
+        // Set socket to non-blocking mode
+        if (!SetSocketNonBlocking(tempSocket))
+        {
+            close(tempSocket);
+            return false;
+        }
+
+        // Non-blocking connect
+        int result = connect(tempSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+        if (result == -1)
+        {
+            if (errno != EINPROGRESS)
+            {
+                close(tempSocket);
+                return false;
+            }
+
+            // Wait for connection with timeout
+            pollfd pfd;
+            pfd.fd = tempSocket;
+            pfd.events = POLLOUT;
+            
+            if (poll(&pfd, 1, 5000) <= 0) // 5 second timeout
+            {
+                close(tempSocket);
+                return false;
+            }
+
+            // Check if connection was successful
+            int error = 0;
+            socklen_t len = sizeof(error);
+            if (getsockopt(tempSocket, SOL_SOCKET, SO_ERROR, &error, &len) < 0 || error != 0)
+            {
+                close(tempSocket);
+                return false;
+            }
+        }
+
+        cout << "Connected to " << _hostName << ":" << _port << endl;
+        _socketFd = tempSocket;
         return true;
     }
 
     void CloseSocket()
     {
+        lock_guard<mutex> lock(_mutex);
+        cout << "Closing socket connection to " << _hostName << endl;
+        
+        // Clear the queue
+        {
+            lock_guard<mutex> queueLock(_queueMutex);
+            queue<vector<uint8_t>> empty;
+            _frameQueue.swap(empty);
+        }
+
         if (_socketFd != -1)
         {
             close(_socketFd);
             _socketFd = -1;
         }
+        _isConnected = false;
     }
 
     uint32_t BytesPerSecond()
     {
+        lock_guard<mutex> lock(_mutex);
+        
         system_clock::time_point now = system_clock::now();
-        auto elapsed = duration_cast<duration<double>>(now - _lastDataSentCountReset).count(); // Elapsed time in fractional seconds
+        auto elapsed = duration_cast<duration<double>>(now - _lastDataSentCountReset).count();
 
         if (elapsed == 0.0)
             return 0;
 
-        uint32_t bytesPerSecond = static_cast<uint32_t>(_dataSentCount / elapsed); // Calculate accurate BPS
-        _dataSentCount = 0;
-        _lastDataSentCountReset = now;
+        uint32_t bytesPerSecond = static_cast<uint32_t>(_dataSentCount / elapsed);
 
-        // Reset the BPS counter every three seconds
-        constexpr auto bpsResetTimer = 3.0; 
+        constexpr auto bpsResetTimer = 3.0;
         if (elapsed >= bpsResetTimer)
         {
             _lastDataSentCountReset = now;
@@ -332,52 +402,28 @@ private:
         return bytesPerSecond;
     }
 
-    bool SocketConnected()
-    {
-        return _isConnected;
-    }
-
-    bool SocketReady()
-    {
-        if (_socketFd == -1)
-            return false;
-
-        // Check if the socket is still connected
-        struct pollfd pfd;
-        pfd.fd = _socketFd;
-        pfd.events = POLLIN;
-
-        if (poll(&pfd, 1, 0) <= 0)
-            return false; // Not connected
-
-        return true;
-    }
-    
 private:
-    // Constants
     static constexpr uint16_t CommandPixelData = 3;
-    static constexpr size_t   MaxQueueDepth = 100;
+    static constexpr size_t MaxQueueDepth = 100;
 
-    // Member variables
-    string   _hostName;
-    string   _friendlyName;
+    string _hostName;
+    string _friendlyName;
     uint16_t _port;
 
-    mutable mutex _mutex; // Protects connection state
-    atomic<bool>  _isConnected;
-    atomic<bool>  _running;
+    mutable mutex _mutex;
+    mutable mutex _queueMutex;
+    mutable mutex _responseMutex;
+    
+    atomic<bool> _isConnected;
+    atomic<bool> _running;
 
-    mutex _queueMutex; // Protects the frame queue
     queue<vector<uint8_t>> _frameQueue;
-    condition_variable _queueCondition; // Condition variable to signal the worker thread
-
-
     thread _workerThread;
 
     ClientResponse _lastClientResponse;
-
     system_clock::time_point _lastDataSentCountReset;
-    uint32_t                 _dataSentCount;
+    system_clock::time_point _lastConnectionAttempt;
+    uint32_t _dataSentCount;
     
-    int _socketFd; // File descriptor for the socket
+    int _socketFd;
 };

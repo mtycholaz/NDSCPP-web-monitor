@@ -22,6 +22,7 @@
 #include "colorwaveeffect.h"    
 #include "greenfilleffect.h"
 #include "starfield.h"
+#include "videoeffect.h"
 
 using namespace std;
 
@@ -52,12 +53,13 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 {
     vector<unique_ptr<ICanvas>> canvases;
 
-    // Define a Canvas
-    auto canvas = make_unique<Canvas>(64, 32, 30);
+    // Define a Canvas for the Mesmerizer
+
+    auto canvasMesmerizer = make_unique<Canvas>(64, 32, 24);
 
     // Add LEDFeature
     auto feature1 = make_unique<LEDFeature>(
-        canvas.get(),         // Canvas pointer
+        canvasMesmerizer.get(),         // Canvas pointer
         "192.168.8.161",      // Hostname
         "Mesmerizer",         // Friendly Name
         49152,                // Port
@@ -67,13 +69,38 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         0,                    // Channel
         false                 // Red-Green Swap
     );
-    canvas->AddFeature(std::move(feature1));
+    canvasMesmerizer->AddFeature(std::move(feature1));
 
     // Add effect to EffectsManager
-    canvas->Effects().AddEffect(make_unique<StarfieldEffect>("Starfield", 100));
-    canvas->Effects().SetCurrentEffect(0, *canvas);
+    canvasMesmerizer->Effects().AddEffect(make_unique<StarfieldEffect>("Starfield", 75));
+    canvasMesmerizer->Effects().SetCurrentEffect(0, *canvasMesmerizer);
 
-    canvases.push_back(std::move(canvas));
+    canvases.push_back(std::move(canvasMesmerizer));
+
+    // Define a Canvas for the Workbench Banner
+
+    auto canvasBanner = make_unique<Canvas>(512, 32, 60);
+
+    // Add LEDFeature
+    auto feature2 = make_unique<LEDFeature>(
+        canvasBanner.get(),   // Canvas pointer
+        "192.168.1.98",       // Hostname
+        "Banner",             // Friendly Name
+        49152,                // Port
+        512, 32,              // Width, Height
+        0, 0,                 // Offset X, Offset Y
+        false,                // Reversed
+        0,                    // Channel
+        false                 // Red-Green Swap
+    );
+    canvasBanner->AddFeature(std::move(feature2));
+
+    // Add effect to EffectsManager
+    canvasBanner->Effects().AddEffect(make_unique<MP4PlaybackEffect>("Blue Dots", "./media/mp4/Space.mp4"));
+    canvasBanner->Effects().SetCurrentEffect(0, *canvasBanner);
+
+    // canvases.push_back(std::move(canvasBanner));
+
     return canvases;
 }
 

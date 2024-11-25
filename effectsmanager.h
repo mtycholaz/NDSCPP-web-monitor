@@ -130,6 +130,7 @@ public:
         {
             auto frameDuration = milliseconds(1000) / _fps; // Target duration per frame
             auto nextFrameTime = steady_clock::now();
+            constexpr auto bUseCompression = true;
 
             while (_running)
             {
@@ -145,8 +146,15 @@ public:
                 for (const auto &feature : canvas.Features())
                 {
                     auto frame = feature->GetDataFrame();
-                    auto compressedFrame = feature->Socket().CompressFrame(frame);
-                    feature->Socket().EnqueueFrame(std::move(compressedFrame));
+                    if (bUseCompression)
+                    {
+                        auto compressedFrame = feature->Socket().CompressFrame(frame);
+                        feature->Socket().EnqueueFrame(std::move(compressedFrame));
+                    }
+                    else
+                    {
+                        feature->Socket().EnqueueFrame(std::move(frame));
+                    }
                 }
 
                 // Set the next frame target

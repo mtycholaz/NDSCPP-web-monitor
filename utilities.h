@@ -213,7 +213,7 @@ public:
         stream.avail_in = static_cast<uInt>(data.size());
 
         // Initialize deflate process with optimal compression level
-        if (deflateInit(&stream, Z_BEST_COMPRESSION) != Z_OK)
+        if (deflateInit(&stream, Z_BEST_SPEED) != Z_OK)
         {
             throw runtime_error("Failed to initialize zlib compression");
         }

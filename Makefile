@@ -3,7 +3,8 @@ SHELL:=/bin/bash
 CC=clang++
 CFLAGS=-std=c++2a -g3 -O3 -Ieffects
 LDFLAGS=
-LIBS=-lcurl -lpthread -lmicrohttpd -lz
+LIBS=-lcurl -lpthread -lmicrohttpd -lz -lavformat -lavcodec -lavutil -lswscale -lswresample
+
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 
 SOURCES=main.cpp webserver.cpp
