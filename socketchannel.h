@@ -263,13 +263,7 @@ private:
 
         return std::nullopt;
 
-        optional<ClientResponse> response;
-        while (response = ReadSocketResponse())
-        {
-            if (!response)
-                break;
-        }
-
+        optional<ClientResponse> response = ReadSocketResponse();
         if (!response)
             return std::nullopt;
             

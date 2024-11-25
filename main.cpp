@@ -65,7 +65,8 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         0, 0,                 // Offset X, Offset Y
         false,                // Reversed
         0,                    // Channel
-        false                 // Red-Green Swap
+        false,                // Red-Green Swap
+        30                    // Client Buffer Count    
     );
     canvas->AddFeature(std::move(feature1));
 
@@ -123,7 +124,7 @@ int main(int, char *[])
     // are then compressed and sent to the LED matrix via the SocketController threads.
 
     while (running)
-        this_thread::sleep_for(milliseconds(100));
+        this_thread::sleep_for(milliseconds(10));
 
     cout << "Stopping web server..." << endl;
     webServer.Stop();
