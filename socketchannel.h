@@ -150,9 +150,9 @@ private:
     void WorkerLoop()
     {
         steady_clock::time_point lastSendTime = steady_clock::now();
-        constexpr auto kMaxBatchSize = 4;
-        constexpr auto xMaxBatchDelay_ms = 1000;
-        constexpr auto reconnectDelay_ms = 5000; // 5 second delay between connection attempts
+        constexpr auto kMaxBatchSize = 20;
+        constexpr auto xMaxBatchDelay = 250ms;
+        constexpr auto reconnectDelay = 1000ms; // 5 second delay between connection attempts
 
         while (_running)
         {
@@ -163,7 +163,7 @@ private:
                 size_t packetCount = 0;
 
                 auto now = steady_clock::now();
-                auto timeToSend = duration_cast<milliseconds>(now - lastSendTime).count() >= xMaxBatchDelay_ms;
+                auto timeToSend = duration_cast<milliseconds>(now - lastSendTime) >= xMaxBatchDelay;
 
                 // Only start draining if it's time to send or the queue has reached the max size
                 if (!_frameQueue.empty() && (_frameQueue.size() >= kMaxBatchSize || timeToSend))
@@ -182,13 +182,18 @@ private:
                     lastSendTime = steady_clock::now();
                 }
 
-                if (!combinedBuffer.empty())
+                if (packetCount > 0)
                 {
-                    optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
-                    if (response)
+                    cout << "Sending " << packetCount << " packets, " << totalBytes << " bytes" << " at queue size " << _frameQueue.size() << endl;
+
+                    if (!combinedBuffer.empty())
                     {
-                        lock_guard<mutex> lock(_responseMutex);
-                        _lastClientResponse = std::move(*response);
+                        optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
+                        if (response)
+                        {
+                            lock_guard<mutex> lock(_responseMutex);
+                            _lastClientResponse = std::move(*response);
+                        }
                     }
                 }
             }
@@ -199,7 +204,7 @@ private:
                 
                 // Wait before attempting to reconnect
                 auto now = system_clock::now();
-                if (duration_cast<milliseconds>(now - _lastConnectionAttempt).count() < reconnectDelay_ms)
+                if (duration_cast<milliseconds>(now - _lastConnectionAttempt) < reconnectDelay)
                 {
                     this_thread::sleep_for(milliseconds(100));
                     continue;
@@ -208,6 +213,7 @@ private:
 
             this_thread::sleep_for(milliseconds(1));
         }
+        cout << "Leaving WorkerLoop..." << endl;
     }
 
     // ReadSocketResponse

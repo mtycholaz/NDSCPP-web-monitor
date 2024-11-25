@@ -64,7 +64,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 
     // Define a Canvas for the Mesmerizer
 
-    auto canvasMesmerizer = make_unique<Canvas>(64, 32, 24);
+    auto canvasMesmerizer = make_unique<Canvas>(64, 32, 20);
 
     // Add LEDFeature
     auto feature1 = make_unique<LEDFeature>(
@@ -77,31 +77,32 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        30                    // Client Buffer Count    
+        180                    // Client Buffer Count    
     );
     canvasMesmerizer->AddFeature(std::move(feature1));
 
     // Add effect to EffectsManager
-    canvasMesmerizer->Effects().AddEffect(make_unique<StarfieldEffect>("Starfield", 75));
+    canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("Starfield", "./media/mp4/rickroll.mp4"));
     canvasMesmerizer->Effects().SetCurrentEffect(0, *canvasMesmerizer);
 
     canvases.push_back(std::move(canvasMesmerizer));
 
     // Define a Canvas for the Workbench Banner
 
-    auto canvasBanner = make_unique<Canvas>(512, 32, 60);
+    auto canvasBanner = make_unique<Canvas>(512, 32, 24);
 
     // Add LEDFeature
     auto feature2 = make_unique<LEDFeature>(
         canvasBanner.get(),   // Canvas pointer
         "192.168.1.98",       // Hostname
         "Banner",             // Friendly Name
-        49152,                // Port
+        49152,                // Port∏
         512, 32,              // Width, Height
         0, 0,                 // Offset X, Offset Y
         false,                // Reversed
         0,                    // Channel
-        false                 // Red-Green Swap
+        false,                 // Red-Green Swap
+        300
     );
     canvasBanner->AddFeature(std::move(feature2));
 
@@ -109,7 +110,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     canvasBanner->Effects().AddEffect(make_unique<MP4PlaybackEffect>("Blue Dots", "./media/mp4/Space.mp4"));
     canvasBanner->Effects().SetCurrentEffect(0, *canvasBanner);
 
-    // canvases.push_back(std::move(canvasBanner));
+    //canvases.push_back(std::move(canvasBanner));
 
     return canvases;
 }
@@ -150,6 +151,10 @@ int main(int, char *[])
     WebServer webServer(allCanvases);
     webServer.Start();
     
+    cout << "Shutting down..." << endl;
+
+    running = false;
+
     // Shut down rendering and communications
 
     for (const auto &canvas : allCanvases)
