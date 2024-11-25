@@ -109,6 +109,7 @@ public:
 
     bool EnqueueFrame(vector<uint8_t> && frameData) override
     {
+        cout << "Adding Frame to Queue at queue depth " << _frameQueue.size() << endl;
         {
             lock_guard<mutex> lock(_queueMutex);
             if (_frameQueue.size() >= MaxQueueDepth)
@@ -125,36 +126,38 @@ private:
     {
         while (_running)
         {
-            vector<uint8_t> frame;
+            vector<uint8_t> combinedBuffer; // Buffer to hold all combined frames
+            size_t totalBytes = 0;
+            size_t packetCount = 0;
+            constexpr auto kMaxBatchSize = 20;
             {
-                constexpr chrono::milliseconds kMaxQueueWaitTime(100);
-
                 unique_lock<mutex> lock(_queueMutex);
 
-                // Wait for a maximum of 100 milliseconds for the condition or check _running
-                _queueCondition.wait_for(lock, kMaxQueueWaitTime, [this] 
+                // Drain the queue into the combined buffer
+                while (!_frameQueue.empty() && packetCount < kMaxBatchSize)
                 {
-                    return !_frameQueue.empty() || !_running;
-                });
-
-                // If _running is false and the queue is empty, exit the loop
-                if (!_running && _frameQueue.empty())
-                    return;
-
-                if (!_frameQueue.empty())
-                {
-                    frame = std::move(_frameQueue.front());
+                    vector<uint8_t>& frame = _frameQueue.front();
+                    totalBytes += frame.size();
+                    packetCount++;
+                    combinedBuffer.insert(combinedBuffer.end(), frame.begin(), frame.end());
                     _frameQueue.pop();
                 }
             }
 
-            if (!frame.empty())
+            // If we have data to send, send the combined buffer
+            if (!combinedBuffer.empty())
             {
-                // Use move explicitly when passing to SendFrame
-                optional<ClientResponse> response = SendFrame(std::move(frame));
+                cout << "Sending Combined Frame " << system_clock::now() 
+                     << " (" << totalBytes << " bytes, " << packetCount << " packets)" 
+                     << endl;
+
+                optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
                 if (response)
                     _lastClientResponse = std::move(*response);
             }
+
+            // Sleep briefly to yield to other threads
+            this_thread::sleep_for(milliseconds(1));
         }
     }
 
@@ -206,6 +209,9 @@ private:
             ClientResponse response;
             memcpy(&response, buffer.data(), cbToRead);
             response.TranslateClientResponse(); // Translate the response to native endianness
+
+            cout << response.currentClock - system_clock::to_time_t(system_clock::now()) << " seconds behind" << endl;
+
             return response; // Successfully read the response
         }
 
@@ -250,11 +256,23 @@ private:
             _isConnected = false;
         }
         
-        optional<ClientResponse> response = ReadSocketResponse();
-    
-        lock_guard<mutex> lock(_mutex);
-        _isConnected = true;
-    
+        {
+            lock_guard<mutex> lock(_mutex);
+            _isConnected = true;
+        }
+
+        return std::nullopt;
+
+        optional<ClientResponse> response;
+        while (response = ReadSocketResponse())
+        {
+            if (!response)
+                break;
+        }
+
+        if (!response)
+            return std::nullopt;
+            
         return std::move(*response);
     }
 

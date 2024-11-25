@@ -20,6 +20,7 @@
 #include "webserver.h"
 #include "effectsmanager.h"
 #include "colorwaveeffect.h"    
+#include "greenfilleffect.h"
 #include "starfield.h"
 
 using namespace std;
@@ -52,15 +53,15 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     vector<unique_ptr<ICanvas>> canvases;
 
     // Define a Canvas
-    auto canvas = make_unique<Canvas>(512, 32, 30);
+    auto canvas = make_unique<Canvas>(64, 32, 30);
 
     // Add LEDFeature
     auto feature1 = make_unique<LEDFeature>(
         canvas.get(),         // Canvas pointer
-        "192.168.8.176",      // Hostname
-        "Workbench Matrix",   // Friendly Name
+        "192.168.8.161",      // Hostname
+        "Mesmerizer",         // Friendly Name
         49152,                // Port
-        512, 32,              // Width, Height
+        64, 32,               // Width, Height
         0, 0,                 // Offset X, Offset Y
         false,                // Reversed
         0,                    // Channel
