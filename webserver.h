@@ -12,7 +12,7 @@ class WebServer
 {
 private:
     const vector<unique_ptr<ICanvas>> &_allCanvases; // Reference to all canvases
-    crow::SimpleApp app;
+    crow::SimpleApp crowApp;
 
 public:
     WebServer(const vector<unique_ptr<ICanvas>> &allCanvases) : _allCanvases(allCanvases)
@@ -25,12 +25,8 @@ public:
 
     void Start()
     {
-        std::cout << "Starting WebServer...\n";
-        std::cout << "Address of this: " << this << std::endl;
-        std::cout << "Number of canvases: " << _allCanvases.size() << std::endl;
-
         // Define the `/api/canvases` endpoint
-        CROW_ROUTE(app, "/api/canvases")
+        CROW_ROUTE(crowApp, "/api/canvases")
             .methods(crow::HTTPMethod::GET)([this]()
             {
                 auto canvasesJson = nlohmann::json::array();
@@ -48,7 +44,7 @@ public:
             });
 
         // Define the `/api/canvases/:id` endpoint
-        CROW_ROUTE(app, "/api/canvases/<int>")
+        CROW_ROUTE(crowApp, "/api/canvases/<int>")
             .methods(crow::HTTPMethod::GET)([this](int id)
             {
                 if (id < 0 || id >= _allCanvases.size() || !_allCanvases[id])
@@ -61,11 +57,11 @@ public:
             });
 
         // Start the server
-        app.port(7777).multithreaded().run();
+        crowApp.port(7777).multithreaded().run();
     }
 
     void Stop()
     {
-        app.stop();
+        crowApp.stop();
     }
 };

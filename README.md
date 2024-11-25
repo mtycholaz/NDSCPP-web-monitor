@@ -90,42 +90,7 @@ Provides APIs for interacting with its parent canvas and retrieving its assigned
 Manages a collection of `ISocketChannel` instances, providing lifecycle control and connection pooling.  
 Handles adding, removing, and retrieving channels by hostname.
 
-## Classes Overview
 
-### SocketChannel  
-Implements `ISocketChannel` to manage socket connections and transmit LED frame data.  
-Includes support for data compression and efficient queuing of frames.  
-Tracks connection state and throughput metrics.
-
-### SocketController  
-Implements `ISocketController` to manage a collection of `SocketChannel` instances, providing start, stop, and connection management.  
-Ensures thread-safe operations with internal locking mechanisms.
-
-### Canvas  
-Implements `ICanvas` and `ILEDGraphics`, representing a 2D drawing surface with support for multiple LED features.  
-Features advanced rendering capabilities, including drawing primitives, gradients, and solid fills.  
-Serves as the primary interface for rendering effects to assigned LED features.
-
-### LEDFeature  
-Implements `ILEDFeature` to represent a logical set of LEDs within a canvas.  
-Handles retrieving pixel data from its assigned region of the parent canvas for transmission over a socket.  
-Includes attributes such as offset, dimensions, and channel assignment.
-
-### EffectsManager  
-Manages a collection of effects and controls the currently active effect.  
-Applies the active effect to an `ICanvas` instance during rendering.  
-Provides utilities for switching between effects (`NextEffect` and `PreviousEffect`).
-
-### WebServer  
-Hosts a REST API for interacting with and controlling LED canvases and their features.  
-Supports dynamic management of features, canvases, and effects via HTTP endpoints.
-### ILEDFeature  
-Represents a 2D collection of LEDs with positioning, rendering, and configuration capabilities.  
-Provides APIs for interacting with its parent canvas and retrieving its assigned color data.
-
-### ISocketController  
-Manages a collection of `ISocketChannel` instances, providing lifecycle control and connection pooling.  
-Handles adding, removing, and retrieving channels by hostname.
 
 ## Classes Overview
 
@@ -160,15 +125,7 @@ Supports dynamic management of features, canvases, and effects via HTTP endpoint
 ### Utilities  
 Provides static helper functions for byte manipulation, color conversion, and data combination tasks.  
 Includes compression utilities (using zlib), endian-safe conversions, and drawing utilities for LED data.
-### Utilities  
-Provides static helper functions for byte manipulation, color conversion, and data combination tasks.  
-Includes compression utilities (using zlib), endian-safe conversions, and drawing utilities for LED data.
 
-### CRGB  
-Represents a 24-bit RGB color, including utility methods for HSV-to-RGB conversion and brightness adjustment.  
-Forms the base unit of color manipulation across the system.
-
-```text
 ### CRGB  
 Represents a 24-bit RGB color, including utility methods for HSV-to-RGB conversion and brightness adjustment.  
 Forms the base unit of color manipulation across the system.
@@ -279,36 +236,3 @@ Classes:
 | + CurrentEffectName()            |
 | + ClearEffects()                 |
 -----------------------------------
-```
-|              Canvas               |<-------|           Feature             |
-|-----------------------------------|        |-------------------------------|
-| - _width                          |        | - _offsetX                    |
-| - _height                         |        | - _offsetY                    |
-| - _features                       |        | - _hostName                   |
-| - _graphics                       |        | - _channel                    |
-| - _effects                        |        | - _redGreenSwap               |
-|-----------------------------------|        | - _batchSize                  |
-| + Implements: ICanvas, ILEDGraphics        |-------------------------------|
-|-----------------------------------         | + Implements: ILEDFeature     |
-                                             ---------------------------------
-
------------------------------------
-|          EffectsManager          |
-|----------------------------------|
-| - _effects                       |
-| - _currentEffectIndex            |
-| - _workerThread                  |
-| - _running                       |
-|----------------------------------|
-| + AddEffect()                    |
-| + RemoveEffect()                 |
-| + Start()                        |
-| + Stop()                         |
-| + NextEffect()                   |
-| + PreviousEffect()               |
-| + UpdateCurrentEffect()          |
-| + SetCurrentEffect()             |
-| + CurrentEffectName()            |
-| + ClearEffects()                 |
------------------------------------
-```
