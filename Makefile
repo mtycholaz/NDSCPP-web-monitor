@@ -1,13 +1,13 @@
 SHELL:=/bin/bash
 
 CC=clang++
-CFLAGS=-std=c++2a -g3 -O3 -Ieffects
+CFLAGS=-std=c++2a -g3 -O3 -Ieffects -I/opt/homebrew/include
 LDFLAGS=
 LIBS=-lcurl -lpthread -lmicrohttpd -lz -lavformat -lavcodec -lavutil -lswscale -lswresample
 
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 
-SOURCES=main.cpp webserver.cpp
+SOURCES=main.cpp
 EXECUTABLE=ndscpp
 DEPDIR=.deps
 OBJECTS:=$(SOURCES:.cpp=.o)

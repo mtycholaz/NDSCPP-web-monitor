@@ -138,13 +138,8 @@ int main(int, char *[])
     // Start the web server
     
     WebServer webServer(allCanvases);
-    pthread_t serverThread = webServer.Start();
-    if (!serverThread)
-    {
-        cerr << "Failed to start the server thread\n";
-        return 1;
-    }
-
+    webServer.Start();
+    
     cout << "[Entered Running State]" << endl;
 
     // Main application loop.  EffectManagers draw frames to the canvas queue, and those frames

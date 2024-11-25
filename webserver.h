@@ -1,57 +1,71 @@
 #pragma once
+#include <iostream>
+#include <vector>
+#include <memory>
+#include <nlohmann/json.hpp>
+#include "crow_all.h"
+#include "interfaces.h" // Assuming ICanvas is defined here
+
 using namespace std;
-
-// WebServer
-//
-// This class is responsible for starting and stopping the web server.  It uses the
-// MicroHTTPD library to create a simple web server that listens on the port.  The
-// server is started on a separate thread, and the main thread can signal the server
-// to stop by calling the Stop method.  The server will then stop and the thread will
-// exit.
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <microhttpd.h>
-#include <pthread.h>
-#include <string.h>
-#include <thread>
-#include "global.h"
-#include "interfaces.h"
 
 class WebServer
 {
-        
-  private:
-      pthread_t server_thread;
-      pthread_mutex_t mutex;
-      pthread_cond_t cond;
-      struct MHD_Daemon *daemon;
-      const vector<unique_ptr<ICanvas>> & _allCanvases;
+private:
+    const vector<unique_ptr<ICanvas>> &_allCanvases; // Reference to all canvases
+    crow::SimpleApp app;
 
-      static void * RunServer(void *arg);
-      static enum MHD_Result AnswerConnection(void                        * cls, 
-                                              struct MHD_Connection       * connection,
-                                              const char 			  * url, 
-                                              const char 			  * method,
-                                              const char 			  * version, 
-                                              const char 			  * upload_data,
-                                              size_t     			  * upload_data_size, 
-                                              void      			 ** con_cls);
+public:
+    WebServer(const vector<unique_ptr<ICanvas>> &allCanvases) : _allCanvases(allCanvases)
+    {
+    }
 
-  public:
-  
-      WebServer(const vector<unique_ptr<ICanvas>> & allCanvases) : _allCanvases(allCanvases)
-      {
-            pthread_mutex_init(&mutex, NULL);
-            pthread_cond_init(&cond, NULL);
-      }
+    ~WebServer()
+    {
+    }
 
-      ~WebServer() 
-      {
-            pthread_mutex_destroy(&mutex);
-            pthread_cond_destroy(&cond);
-      }
-      
-      pthread_t Start();
-      void Stop();
+    void Start()
+    {
+        std::cout << "Starting WebServer...\n";
+        std::cout << "Address of this: " << this << std::endl;
+        std::cout << "Number of canvases: " << _allCanvases.size() << std::endl;
+
+        // Define the `/api/canvases` endpoint
+        CROW_ROUTE(app, "/api/canvases")
+            .methods(crow::HTTPMethod::GET)([this]()
+            {
+                auto canvasesJson = nlohmann::json::array();
+                for (size_t i = 0; i < _allCanvases.size(); ++i)
+                {
+                    if (_allCanvases[i]) // Ensure the canvas pointer is valid
+                    {
+                        nlohmann::json canvasJson;
+                        to_json(canvasJson, *_allCanvases[i]); // Use the utility function
+                        canvasJson["id"] = i; // Add ID for reference
+                        canvasesJson.push_back(canvasJson);
+                    }
+                }
+                return crow::response{canvasesJson.dump()};
+            });
+
+        // Define the `/api/canvases/:id` endpoint
+        CROW_ROUTE(app, "/api/canvases/<int>")
+            .methods(crow::HTTPMethod::GET)([this](int id)
+            {
+                if (id < 0 || id >= _allCanvases.size() || !_allCanvases[id])
+                    return crow::response(404, R"({"error": "Canvas not found"})");
+
+                nlohmann::json canvasJson;
+                to_json(canvasJson, *_allCanvases[id]); // Use the utility function
+                canvasJson["id"] = id; // Include ID in the details
+                return crow::response{canvasJson.dump()};
+            });
+
+        // Start the server
+        app.port(7777).multithreaded().run();
+    }
+
+    void Stop()
+    {
+        app.stop();
+    }
 };
