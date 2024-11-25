@@ -66,11 +66,7 @@ public:
         lock_guard<mutex> lock(_mutex);
         if (!_running)
         {
-        lock_guard<mutex> lock(_mutex);
-        if (!_running)
-        {
             _running = true;
-            _workerThread = thread(&SocketChannel::WorkerLoop, this);
             _workerThread = thread(&SocketChannel::WorkerLoop, this);
         }
     }
@@ -79,7 +75,6 @@ public:
     {
         {
             lock_guard<mutex> lock(_mutex);
-            lock_guard<mutex> lock(_mutex);
             _running = false;
         }
 
@@ -87,13 +82,10 @@ public:
             _workerThread.join();
 
         CloseSocket();
-
-        CloseSocket();
     }
 
     bool IsConnected() const override
     {
-        lock_guard<mutex> lock(_mutex);
         lock_guard<mutex> lock(_mutex);
         return _isConnected;
     }

@@ -50,10 +50,6 @@ void handle_signal(int signal)
     {
         cerr << "Received SIGPIPE, ignoring...\n" << flush;
     }
-    else if (signal == SIGPIPE)
-    {
-        cerr << "Received SIGPIPE, ignoring...\n" << flush;
-    }
 }
 
 // LoadCanvases
@@ -132,28 +128,7 @@ int main(int, char *[])
 
     // Load the canvases and features
 
-    vector<unique_ptr<ICanvas>> allCanvases = LoadCanvases();
-
-    cout << "Connecting to clients..." << endl;
-
-    // Connect and start the sockets to the clients
-
-    for (const auto &canvas : allCanvases)
-        for (const auto &feature : canvas->Features())
-            feature->Socket().Start();
-            
-    // Start rendering effects
-
-    for (const auto &canvas : allCanvases)
-         canvas->Effects().Start(*canvas);
-
-    cout << "Starting the Web Server..." << endl;
-
-    cout << "Loading canvases..." << endl;
-
-    // Load the canvases and features
-
-    vector<unique_ptr<ICanvas>> allCanvases = LoadCanvases();
+    const auto allCanvases = LoadCanvases();
 
     cout << "Connecting to clients..." << endl;
 
@@ -175,19 +150,6 @@ int main(int, char *[])
     WebServer webServer(allCanvases);
     webServer.Start();
     
-    cout << "[Entered Running State]" << endl;
-
-    // Main application loop.  EffectManagers draw frames to the canvas queue, and those frames
-    // are then compressed and sent to the LED matrix via the SocketController threads.
-
-    while (running)
-        this_thread::sleep_for(milliseconds(10));
-        this_thread::sleep_for(milliseconds(10));
-
-    cout << "Stopping web server..." << endl;
-    cout << "Stopping web server..." << endl;
-    webServer.Stop();
-    
     // Shut down rendering and communications
 
     for (const auto &canvas : allCanvases)
@@ -196,18 +158,6 @@ int main(int, char *[])
     for (const auto &canvas : allCanvases)
         for (auto &feature : canvas->Features())
             feature->Socket().Stop();
-    allCanvases.clear();
-
-    
-    // Shut down rendering and communications
-
-    for (const auto &canvas : allCanvases)
-         canvas->Effects().Stop();
-
-    for (const auto &canvas : allCanvases)
-        for (auto &feature : canvas->Features())
-            feature->Socket().Stop();
-    allCanvases.clear();
 
     return 0;
 }

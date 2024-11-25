@@ -18,78 +18,12 @@ using namespace std;
 class Utilities
 {
 public:
-
     static double ByteSwapDouble(double value)
     {
         // Helper function to swap bytes in a double
         uint64_t temp;
         memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
-        temp = __builtin_bswap64(temp);            // Byte swap the 64-bit integer
-        memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
-        return value;
-    }
-
-    static vector<uint8_t> ConvertPixelsToByteArray(const vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
-    {
-        vector<uint8_t> byteArray(pixels.size() * 3); // Allocate space upfront
-
-        // This code makes all kinds of assumptions that CRGB is three RGB bytes, so let's assert that fact
-        static_assert(sizeof(CRGB) == 3);
-
-        size_t index = 0;
-
-        if (reversed)
-        {
-            for (auto it = pixels.rbegin(); it != pixels.rend(); ++it)
-            {
-                if (redGreenSwap)
-                {
-                    byteArray[index++] = it->g;
-                    byteArray[index++] = it->r;
-                    byteArray[index++] = it->b;
-                }
-                else
-                {
-                    byteArray[index++] = it->r;
-                    byteArray[index++] = it->g;
-                    byteArray[index++] = it->b;
-                }
-            }
-        }
-        else
-        {
-            for (const auto &pixel : pixels)
-            {
-                if (redGreenSwap)
-                {
-                    byteArray[index++] = pixel.g;
-                    byteArray[index++] = pixel.r;
-                    byteArray[index++] = pixel.b;
-                }
-                else
-                {
-                    byteArray[index++] = pixel.r;
-                    byteArray[index++] = pixel.g;
-                    byteArray[index++] = pixel.b;
-                }
-            }
-        }
-
-        return byteArray;
-    }
-
-    // The following XXXXToBytes functions produce a bytestream in the little-endian
-    // that the original ESP32 code expects
-
-    // Converts a uint16_t to a vector of bytes in little-endian order
-    static constexpr vector<uint8_t> WORDToBytes(uint16_t value)
-
-    static double ByteSwapDouble(double value)
-    {
-        // Helper function to swap bytes in a double
-        uint64_t temp;
-        memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
-        temp = __builtin_bswap64(temp);            // Byte swap the 64-bit integer
+        temp = __builtin_bswap64(temp);        // Byte swap the 64-bit integer
         memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
         return value;
     }
@@ -195,26 +129,6 @@ public:
                 static_cast<uint8_t>((swapped >> 16) & 0xFF),
                 static_cast<uint8_t>((swapped >> 24) & 0xFF)};
         }
-    // Converts a uint32_t to a vector of bytes in little-endian order
-    static constexpr vector<uint8_t> DWORDToBytes(uint32_t value)
-    {
-        if constexpr (endian::native == endian::little)
-        {
-            return {
-                static_cast<uint8_t>(value & 0xFF),
-                static_cast<uint8_t>((value >> 8) & 0xFF),
-                static_cast<uint8_t>((value >> 16) & 0xFF),
-                static_cast<uint8_t>((value >> 24) & 0xFF)};
-        }
-        else
-        {
-            uint32_t swapped = __builtin_bswap32(value);
-            return {
-                static_cast<uint8_t>(swapped & 0xFF),
-                static_cast<uint8_t>((swapped >> 8) & 0xFF),
-                static_cast<uint8_t>((swapped >> 16) & 0xFF),
-                static_cast<uint8_t>((swapped >> 24) & 0xFF)};
-        }
     }
 
     // Converts a uint64_t to a vector of bytes in little-endian order
@@ -250,41 +164,7 @@ public:
     // Combines multiple byte arrays into one.  My masterpiece for the day :-)
 
     template <typename... Arrays>
-    static vector<uint8_t> CombineByteArrays(Arrays&&... arrays)
-    // Converts a uint64_t to a vector of bytes in little-endian order
-    static constexpr vector<uint8_t> ULONGToBytes(uint64_t value)
-    {
-        if constexpr (endian::native == endian::little)
-        {
-            return {
-                static_cast<uint8_t>(value & 0xFF),
-                static_cast<uint8_t>((value >> 8) & 0xFF),
-                static_cast<uint8_t>((value >> 16) & 0xFF),
-                static_cast<uint8_t>((value >> 24) & 0xFF),
-                static_cast<uint8_t>((value >> 32) & 0xFF),
-                static_cast<uint8_t>((value >> 40) & 0xFF),
-                static_cast<uint8_t>((value >> 48) & 0xFF),
-                static_cast<uint8_t>((value >> 56) & 0xFF)};
-        }
-        else
-        {
-            uint64_t swapped = __builtin_bswap64(value);
-            return {
-                static_cast<uint8_t>(swapped & 0xFF),
-                static_cast<uint8_t>((swapped >> 8) & 0xFF),
-                static_cast<uint8_t>((swapped >> 16) & 0xFF),
-                static_cast<uint8_t>((swapped >> 24) & 0xFF),
-                static_cast<uint8_t>((swapped >> 32) & 0xFF),
-                static_cast<uint8_t>((swapped >> 40) & 0xFF),
-                static_cast<uint8_t>((swapped >> 48) & 0xFF),
-                static_cast<uint8_t>((swapped >> 56) & 0xFF)};
-        }
-    }
-
-    // Combines multiple byte arrays into one.  My masterpiece for the day :-)
-
-    template <typename... Arrays>
-    static vector<uint8_t> CombineByteArrays(Arrays&&... arrays)
+    static vector<uint8_t> CombineByteArrays(Arrays &&...arrays)
     {
         vector<uint8_t> combined;
 
@@ -294,21 +174,10 @@ public:
 
         // Append each array to the combined vector using a fold expression
         (combined.insert(
-            combined.end(),
-            make_move_iterator(arrays.begin()),
-            make_move_iterator(arrays.end())), ...);
-
-        vector<uint8_t> combined;
-
-        // Calculate the total size of the combined array using a fold expression
-        size_t totalSize = (arrays.size() + ... + 0);
-        combined.reserve(totalSize);
-
-        // Append each array to the combined vector using a fold expression
-        (combined.insert(
-            combined.end(),
-            make_move_iterator(arrays.begin()),
-            make_move_iterator(arrays.end())), ...);
+             combined.end(),
+             make_move_iterator(arrays.begin()),
+             make_move_iterator(arrays.end())),
+         ...);
 
         return combined;
     }
@@ -408,4 +277,3 @@ private:
         bytes.push_back(color.b);
     }
 };
-

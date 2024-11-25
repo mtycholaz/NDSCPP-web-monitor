@@ -185,3 +185,4 @@ private:
         return _currentEffectIndex >= 0 && _currentEffectIndex < static_cast<int>(_effects.size());
     }
 };
+
