@@ -91,11 +91,20 @@ public:
     const string& HostName() const override { return _hostName; }
     const string& FriendlyName() const override { return _friendlyName; }
     
+    // LastClientResponse
+    // 
+    // A copy of the last success/stats packet we got back from the client
+    
     const ClientResponse& LastClientResponse() const override 
     { 
         lock_guard<mutex> lock(_responseMutex);
         return _lastClientResponse; 
     }
+
+    // CompressFrame
+    //
+    // Takes a frame of binary data, compresses it, and inserts a small header
+    // in front of it with a magic number and the size of the compressed data.
 
     vector<uint8_t> CompressFrame(const vector<uint8_t>& data) override
     {
@@ -129,6 +138,13 @@ public:
     }
 
 private:
+
+    // Worker Loop
+    //
+    // The main duties of the WorkerLoop are to send frames to the client and read responses from the client.
+    // It continually watches for new packets to appear int he queue and then sends them in batches.
+    // It also reads responses from the client and updates the lastClientResponse member variable.
+
     void WorkerLoop()
     {
         steady_clock::time_point lastSendTime = steady_clock::now();
@@ -192,6 +208,12 @@ private:
         }
     }
 
+    // ReadSocketResponse
+    //
+    // When we send a frame to the client, it sends us a stats/result packet back.  This function reads
+    // the response from the socket and returns it as a ClientResponse object.  If the response is invalid
+    // or the socket is closed, nullopt is returned.
+
     optional<ClientResponse> ReadSocketResponse() 
     {
         const size_t cbToRead = sizeof(ClientResponse);
@@ -213,37 +235,13 @@ private:
                 return nullopt;
             }
 
-            // Validate the response before copying
-            if (!ValidateClientResponse(buffer.data(), cbToRead))
-            {
-                cerr << "Invalid client response format" << endl;
-                return nullopt;
-            }
-
             ClientResponse response;
             memcpy(&response, buffer.data(), cbToRead);
             response.TranslateClientResponse();
-
-            cout << response.currentClock - system_clock::to_time_t(system_clock::now()) 
-                 << " seconds behind" << endl;
-
             return response;
         }
 
         return nullopt;
-    }
-
-    bool ValidateClientResponse(const void* data, size_t size) const
-    {
-        if (size != sizeof(ClientResponse))
-            return false;
-
-        const ClientResponse* response = static_cast<const ClientResponse*>(data);
-        
-        // Add validation logic based on your ClientResponse structure
-        // For example, check if fields are within expected ranges
-        
-        return true; // Implement actual validation
     }
 
     bool SetSocketNonBlocking(int socketFd)
@@ -295,11 +293,19 @@ private:
             _dataSentCount += totalSent;
         }
 
-        optional<ClientResponse> response = ReadSocketResponse();
-        if (!response)
-            return std::nullopt;
-            
-        return std::move(*response);
+        // We read socket responses from the stream until there are none left, and then use the last valid
+        // one that we saw.  
+        
+        optional<ClientResponse> lastValidResponse = nullopt;
+        for(;;)
+        {
+            optional<ClientResponse> response = ReadSocketResponse();
+            if (!response)
+                break; // Exit the loop when nullopt is returned.
+
+            lastValidResponse = std::move(response); // Update with the latest valid response.
+        }
+        return lastValidResponse; // Return the last valid response, if any.
     }
 
     bool ConnectSocket()

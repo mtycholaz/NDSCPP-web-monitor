@@ -27,18 +27,21 @@ using namespace std;
 struct ClientResponse
 {
     uint32_t size;              // 4
+    uint64_t sequence;          // 8
     uint32_t flashVersion;      // 4
-    double currentClock;        // 8
-    double oldestPacket;        // 8
-    double newestPacket;        // 8
-    double brightness;          // 8
-    double wifiSignal;          // 8
+    double   currentClock;      // 8
+    double   oldestPacket;      // 8
+    double   newestPacket;      // 8
+    double   brightness;        // 8
+    double   wifiSignal;        // 8
     uint32_t bufferSize;        // 4
     uint32_t bufferPos;         // 4
     uint32_t fpsDrawing;        // 4
     uint32_t watts;             // 4
 
-    // Member function to translate the structure
+    // Member function to translate the structure from the ESP32 little endian
+    // to whatever the current running system is
+
     void TranslateClientResponse()
     {
         // Check the system's endianness
@@ -58,13 +61,14 @@ struct ClientResponse
         fpsDrawing      = __builtin_bswap32(fpsDrawing);
         watts           = __builtin_bswap32(watts);
     }
-};
+} __attribute__((packed));;
 
 
 inline void to_json(nlohmann::json& j, const ClientResponse & response)
 {
     j = nlohmann::json{
         { "responseSize",   response.size         },
+        { "sequence",       response.sequence     },
         { "flashVersion",   response.flashVersion },
         { "currentClock",   response.currentClock },
         { "oldestPacket",   response.oldestPacket },
