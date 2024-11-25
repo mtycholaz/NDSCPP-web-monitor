@@ -295,7 +295,11 @@ private:
             _dataSentCount += totalSent;
         }
 
-        return ReadSocketResponse();
+        optional<ClientResponse> response = ReadSocketResponse();
+        if (!response)
+            return std::nullopt;
+            
+        return std::move(*response);
     }
 
     bool ConnectSocket()

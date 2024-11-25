@@ -30,7 +30,8 @@ public:
                uint32_t offsetY = 0,
                bool reversed = false,
                uint8_t channel = 0,
-               bool redGreenSwap = false)
+               bool redGreenSwap = false,
+               uint32_t clientBufferCount = 8)
         : _canvas(canvas),
           _width(width),
           _height(height),
@@ -39,19 +40,27 @@ public:
           _reversed(reversed),
           _channel(channel),
           _redGreenSwap(redGreenSwap),
+          _clientBufferCount(clientBufferCount),
           _socketChannel(hostName, friendlyName, port)
     {
     }
 
     // Accessor methods
-    uint32_t        Width()        const override { return _width; }
-    uint32_t        Height()       const override { return _height; }
-    uint32_t        OffsetX()      const override { return _offsetX; }
-    uint32_t        OffsetY()      const override { return _offsetY; }
-    bool            Reversed()     const override { return _reversed; }
-    uint8_t         Channel()      const override { return _channel; }
-    bool            RedGreenSwap() const override { return _redGreenSwap; }
+    uint32_t        Width()             const override { return _width; }
+    uint32_t        Height()            const override { return _height; }
+    uint32_t        OffsetX()           const override { return _offsetX; }
+    uint32_t        OffsetY()           const override { return _offsetY; }
+    bool            Reversed()          const override { return _reversed; }
+    uint8_t         Channel()           const override { return _channel; }
+    bool            RedGreenSwap()      const override { return _redGreenSwap; }
+    uint32_t        ClientBufferCount() const override { return _clientBufferCount; }
 
+    double TimeOffset () const override
+    {
+        constexpr auto kBufferFillRatio = 0.80;
+        return(_clientBufferCount * kBufferFillRatio) / _canvas->Effects().GetFPS();
+    }
+    
     virtual ISocketChannel & Socket() override 
     {
         return _socketChannel;
@@ -103,7 +112,7 @@ public:
         // Calculate epoch time
         auto now = system_clock::now();
         auto epoch = duration_cast<microseconds>(now.time_since_epoch()).count();
-        uint64_t seconds = epoch / 1'000'000 + 2;
+        uint64_t seconds = epoch / 1'000'000 + TimeOffset();
         uint64_t microseconds = epoch % 1'000'000;
 
         auto pixelData = GetPixelData();
@@ -113,7 +122,7 @@ public:
                                             Utilities::DWORDToBytes(_width * _height),
                                             Utilities::ULONGToBytes(seconds),
                                             Utilities::ULONGToBytes(microseconds),
-                                            pixelData);
+                                            std::move(pixelData));
     }
 
 private:
@@ -124,6 +133,7 @@ private:
     bool        _reversed;
     uint8_t     _channel;
     bool        _redGreenSwap;
+    uint32_t    _clientBufferCount;
     ICanvas   * _canvas; // Associated canvas
     SocketChannel _socketChannel;
 };

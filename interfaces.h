@@ -135,6 +135,8 @@ public:
     virtual bool     Reversed() const = 0;
     virtual uint8_t  Channel() const = 0;
     virtual bool     RedGreenSwap() const = 0;
+    virtual uint32_t ClientBufferCount() const = 0;
+    virtual double   TimeOffset () const = 0;
 
     // Data retrieval
     virtual vector<uint8_t> GetPixelData() const = 0;
@@ -164,4 +166,5 @@ public:
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;
     virtual IEffectsManager & Effects() = 0;
+    virtual const IEffectsManager & Effects() const = 0;
 };
