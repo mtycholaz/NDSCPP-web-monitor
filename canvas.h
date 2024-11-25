@@ -42,6 +42,11 @@ public:
         return _effects;
     }
 
+    const IEffectsManager & Effects() const override
+    {
+        return _effects;
+    }
+
     vector<unique_ptr<ILEDFeature>>& Features() override
     {
         return _features;
