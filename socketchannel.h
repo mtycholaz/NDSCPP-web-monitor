@@ -78,8 +78,8 @@ public:
             _running = false;
         }
 
-        if (_workerThread.joinable())
-            _workerThread.join();
+//        if (_workerThread.joinable())
+//            _workerThread.join();
 
         CloseSocket();
     }
@@ -131,7 +131,7 @@ public:
         lock_guard<mutex> lock(_queueMutex);
         if (_frameQueue.size() >= MaxQueueDepth)
         {
-            cout << "Queue is full, dropping frame and resetting socket" << endl;
+            cout << "Queue is full at " << _hostName << " dropping frame and resetting socket" << endl;
             CloseSocket();
             return false;
         }
@@ -184,7 +184,7 @@ private:
 
                 if (packetCount > 0)
                 {
-                    cout << "Sending " << packetCount << " packets, " << totalBytes << " bytes" << " at queue size " << _frameQueue.size() << endl;
+                    // cout << "Sending " << packetCount << " packets, " << totalBytes << " bytes" << " at queue size " << _frameQueue.size() << endl;
 
                     if (!combinedBuffer.empty())
                     {
@@ -213,7 +213,6 @@ private:
 
             this_thread::sleep_for(milliseconds(1));
         }
-        cout << "Leaving WorkerLoop..." << endl;
     }
 
     // ReadSocketResponse
@@ -239,7 +238,7 @@ private:
         {
             if (buffer[0] != static_cast<uint8_t>(cbToRead))
             {
-                cerr << "Invalid response size received from client" << endl;
+                // cerr << "Invalid response size received from client" << endl;
                 return nullopt;
             }
 
@@ -380,9 +379,6 @@ private:
 
     void CloseSocket()
     {
-        lock_guard<mutex> lock(_mutex);
-        cout << "Closing socket connection to " << _hostName << endl;
-        
         // Clear the queue
         {
             lock_guard<mutex> queueLock(_queueMutex);
@@ -390,8 +386,11 @@ private:
             _frameQueue.swap(empty);
         }
 
+        lock_guard<mutex> lock(_mutex);
+
         if (_socketFd != -1)
         {
+            cout << "Closing socket connection to " << _hostName << endl;
             close(_socketFd);
             _socketFd = -1;
         }
