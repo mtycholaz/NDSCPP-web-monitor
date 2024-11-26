@@ -47,10 +47,11 @@ This repository is designed for programmers familiar with modern C++ (C++20 and 
 
 This project is dependent on the libraries for asio (because Crow uses it), pthreads, z, avformat, avcodec, avutil, swscale and swresample.
 
-On the Mac, you'll have to install asio using Homebrew; the other required libraries are usually already installed _**(@@@ Is that true for the ffmpeg stuff as well?)**_
+On the Mac, you'll have to install asio and ffmpeg using Homebrew; the other required libraries are usually already installed:
 
 ```shell
 brew install asio
+brew install ffmpeg
 ```
 
 On Ubuntu, dev versions for all libraries except pthreads have to be installed:
