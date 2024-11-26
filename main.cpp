@@ -131,7 +131,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     auto featureWindow2 = make_unique<LEDFeature>(
         canvasWindow2.get(),  // Canvas pointer
         "192.168.8.9",        // Hostname
-        "Window1",            // Friendly Name
+        "Window2",            // Friendly Name
         49152,                // Port∏
         100, 1,               // Width, Height
         0, 0,                 // Offset X, Offset Y
@@ -151,7 +151,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     auto featureWindow3 = make_unique<LEDFeature>(
         canvasWindow3.get(),  // Canvas pointer
         "192.168.8.10",       // Hostname
-        "Window1",            // Friendly Name
+        "Window3",            // Friendly Name
         49152,                // Port∏
         100, 1,               // Width, Height
         0, 0,                 // Offset X, Offset Y
@@ -167,69 +167,139 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 
     //---------------------------------------------------------------------
 
-    constexpr auto start1 = 0, length1 = 300+200;
-    constexpr auto start2 = length1, length2 = 300+300;
-    constexpr auto start3 = length1+length2, length3 = 144;
-    constexpr auto start4 = length1+length2+length3, length4 = 144;
-    constexpr auto totalLength = length1 + length2 + length3 + length4;
+    // Cabinets - The shop cupboards in my shop
+    {
+        constexpr auto start1 = 0, length1 = 300+200;
+        constexpr auto start2 = length1, length2 = 300+300;
+        constexpr auto start3 = length1+length2, length3 = 144;
+        constexpr auto start4 = length1+length2+length3, length4 = 144;
+        constexpr auto totalLength = length1 + length2 + length3 + length4;
 
-    auto canvasCabinets = make_unique<Canvas>(totalLength, 1, 20);
-    auto featureCabinets1 = make_unique<LEDFeature>(
-        canvasCabinets.get(), // Canvas pointer
-        "192.168.8.12",       // Hostname
-        "Cupboard1",          // Friendly Name
-        49152,                // Port∏
-        length1, 1,           // Width, Height
-        start1, 0,            // Offset X, Offset Y
-        false,                // Reversed
-        0,                    // Channel
-        false,                // Red-Green Swap
-        21
-    );
-    auto featureCabinets2 = make_unique<LEDFeature>(
-        canvasCabinets.get(), // Canvas pointer
-        "192.168.8.29",       // Hostname
-        "Cupboard1",          // Friendly Name
-        49152,                // Port∏
-        length2, 1,           // Width, Height
-        start2, 0,            // Offset X, Offset Y
-        false,                // Reversed
-        0,                    // Channel
-        false,                // Red-Green Swap
-        21
-    );
-    auto featureCabinets3 = make_unique<LEDFeature>(
-        canvasCabinets.get(), // Canvas pointer
-        "192.168.8.30",       // Hostname
-        "Cupboard1",          // Friendly Name
-        49152,                // Port∏
-        length3, 1,           // Width, Height
-        start3, 0,            // Offset X, Offset Y
-        false,                // Reversed
-        0,                    // Channel
-        false,                // Red-Green Swap
-        21
-    );
-    auto featureCabinets4 = make_unique<LEDFeature>(
-        canvasCabinets.get(), // Canvas pointer
-        "192.168.8.15",       // Hostname
-        "Cupboard1",          // Friendly Name
-        49152,                // Port∏
-        length4, 1,           // Width, Height
-        start4, 0,            // Offset X, Offset Y
-        false,                // Reversed
-        0,                    // Channel
-        false,                // Red-Green Swap
-        21
-    );
-    
-    canvasCabinets->AddFeature(std::move(featureCabinets1));
-    canvasCabinets->AddFeature(std::move(featureCabinets2));
-    canvasCabinets->AddFeature(std::move(featureCabinets3));
-    canvasCabinets->AddFeature(std::move(featureCabinets4));
-    canvasCabinets->Effects().AddEffect(make_unique<SolidColorFill>("Green Test", CRGB::Green));
-    canvasCabinets->Effects().SetCurrentEffect(0, *canvasCabinets);
-    canvases.push_back(std::move(canvasCabinets));
+        auto canvasCabinets = make_unique<Canvas>(totalLength, 1, 20);
+        auto featureCabinets1 = make_unique<LEDFeature>(
+            canvasCabinets.get(), // Canvas pointer
+            "192.168.8.12",       // Hostname
+            "Cupboard1",          // Friendly Name
+            49152,                // Port∏
+            length1, 1,           // Width, Height
+            start1, 0,            // Offset X, Offset Y
+            false,                // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        auto featureCabinets2 = make_unique<LEDFeature>(
+            canvasCabinets.get(), // Canvas pointer
+            "192.168.8.29",       // Hostname
+            "Cupboard2",          // Friendly Name
+            49152,                // Port∏
+            length2, 1,           // Width, Height
+            start2, 0,            // Offset X, Offset Y
+            false,                // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        auto featureCabinets3 = make_unique<LEDFeature>(
+            canvasCabinets.get(), // Canvas pointer
+            "192.168.8.30",       // Hostname
+            "Cupboard3",          // Friendly Name
+            49152,                // Port∏
+            length3, 1,           // Width, Height
+            start3, 0,            // Offset X, Offset Y
+            false,                // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        auto featureCabinets4 = make_unique<LEDFeature>(
+            canvasCabinets.get(), // Canvas pointer
+            "192.168.8.15",       // Hostname
+            "Cupboard4",          // Friendly Name
+            49152,                // Port∏
+            length4, 1,           // Width, Height
+            start4, 0,            // Offset X, Offset Y
+            false,                // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        
+        canvasCabinets->AddFeature(std::move(featureCabinets1));
+        canvasCabinets->AddFeature(std::move(featureCabinets2));
+        canvasCabinets->AddFeature(std::move(featureCabinets3));
+        canvasCabinets->AddFeature(std::move(featureCabinets4));
+        canvasCabinets->Effects().AddEffect(make_unique<SolidColorFill>("Green Test", CRGB::Green));
+        canvasCabinets->Effects().SetCurrentEffect(0, *canvasCabinets);
+        canvases.push_back(std::move(canvasCabinets));
+    }
+
+    // Cabana - Christmas lights that wrap around my guest house
+    {
+        constexpr auto start1 = 0, length1 = (5 * 144 - 1) + (3 * 144);
+        constexpr auto start2 = length1, length2 = 5 * 144 + 55;
+        constexpr auto start3 = length1+length2, length3 = 6 * 144 + 62;
+        constexpr auto start4 = length1+length2+length3, length4 = 8 * 144 - 23;
+        constexpr auto totalLength = length1 + length2 + length3 + length4;
+
+        auto canvasCabana = make_unique<Canvas>(totalLength, 1, 28);
+        auto featureCabana1 = make_unique<LEDFeature>(
+            canvasCabana.get(),   // Canvas pointer
+            "192.168.8.36",       // Hostname
+            "CBWEST",             // Friendly Name
+            49152,                // Port∏
+            length1, 1,           // Width, Height
+            start1, 0,            // Offset X, Offset Y
+            false,                // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        auto featureCabana2 = make_unique<LEDFeature>(
+            canvasCabana.get(),   // Canvas pointer
+            "192.168.8.5",        // Hostname
+            "CBEAST1",            // Friendly Name
+            49152,                // Port∏
+            length2, 1,           // Width, Height
+            start2, 0,            // Offset X, Offset Y
+            true,                 // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        auto featureCabana3 = make_unique<LEDFeature>(
+            canvasCabana.get(), // Canvas pointer
+            "192.168.8.37",       // Hostname
+            "CBEAST2",            // Friendly Name
+            49152,                // Port∏
+            length3, 1,           // Width, Height
+            start3, 0,            // Offset X, Offset Y
+            false,                // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        auto featureCabana4 = make_unique<LEDFeature>(
+            canvasCabana.get(), // Canvas pointer
+            "192.168.8.31",       // Hostname
+            "CBEAST3",            // Friendly Name
+            49152,                // Port∏
+            length4, 1,           // Width, Height
+            start4, 0,            // Offset X, Offset Y
+            false,                // Reversed
+            0,                    // Channel
+            false,                // Red-Green Swap
+            21
+        );
+        
+        canvasCabana->AddFeature(std::move(featureCabana1));
+        canvasCabana->AddFeature(std::move(featureCabana2));
+        canvasCabana->AddFeature(std::move(featureCabana3));
+        canvasCabana->AddFeature(std::move(featureCabana4));
+        canvasCabana->Effects().AddEffect(make_unique<SolidColorFill>("Green Test", CRGB::Green));
+        canvasCabana->Effects().SetCurrentEffect(0, *canvasCabana);
+        canvases.push_back(std::move(canvasCabana));
+    }
 
     return canvases;
 }
@@ -286,6 +356,6 @@ int main(int, char *[])
             feature->Socket().Stop();
 
     cout << "Shut down complete." << endl;
-    
+
     return 0;
 }

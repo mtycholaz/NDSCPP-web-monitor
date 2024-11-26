@@ -126,18 +126,30 @@ public:
         );
     }
 
-    bool EnqueueFrame(vector<uint8_t>&& frameData) override
+bool EnqueueFrame(vector<uint8_t>&& frameData) override
+{
+    bool isQueueFull = false;
     {
         lock_guard<mutex> lock(_queueMutex);
         if (_frameQueue.size() >= MaxQueueDepth)
-        {
-            cout << "Queue is full at " << _hostName << " dropping frame and resetting socket" << endl;
-            CloseSocket();
-            return false;
-        }
-        _frameQueue.push(std::move(frameData));
-        return true;
+            isQueueFull = true;
+        else
+            _frameQueue.push(std::move(frameData));
     }
+
+    // If the queue is full, we reset the socket, but we make sure not to be holding the mutex when we do so
+    // because CloseSocket will also try to, and that would cause a deadlock.  It is not a re-entrant mutex.
+    
+    if (isQueueFull)
+    {
+        cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
+        CloseSocket(); // Called outside the lock
+        return false;
+    }
+
+    return true;
+}
+
 
 private:
 
@@ -372,7 +384,7 @@ private:
             }
         }
 
-        cout << "Connected to " << _hostName << ":" << _port << endl;
+        cout << "Connected to " << _hostName << ":" << _port << " [" << _friendlyName << "]" << endl;
         _socketFd = tempSocket;
         return true;
     }
@@ -390,7 +402,7 @@ private:
 
         if (_socketFd != -1)
         {
-            cout << "Closing socket connection to " << _hostName << endl;
+            cout << "Closing socket connection to " <<_hostName <<  " [" << _friendlyName << "]" << endl;
             close(_socketFd);
             _socketFd = -1;
         }
