@@ -35,9 +35,6 @@
 
 using namespace std;
 
-// Atomic flag to indicate whether the program should continue running.
-// Will be set to false when SIGINT is received.
-atomic<bool> running(true);
 
 // LoadCanvases
 //
@@ -56,7 +53,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     // Add LEDFeature
     auto feature1 = make_unique<LEDFeature>(
         canvasMesmerizer.get(),         // Canvas pointer
-        "192.168.1.138",      // Hostname
+        "192.168.8.161",      // Hostname
         "Mesmerizer",         // Friendly Name
         49152,                // Port
         64, 32,               // Width, Height
@@ -74,7 +71,6 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 
     canvases.push_back(std::move(canvasMesmerizer));
 
-/*
     // Define a Canvas for the Workbench Banner
 
     auto canvasBanner = make_unique<Canvas>(512, 32, 24);
@@ -99,7 +95,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     canvasBanner->Effects().SetCurrentEffect(0, *canvasBanner);
 
     //canvases.push_back(std::move(canvasBanner));
-*/
+
     return canvases;
 }
 
