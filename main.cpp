@@ -33,6 +33,7 @@
 #include "starfield.h"
 #include "videoeffect.h"
 #include "misceffects.h"
+#include "palette.h"
 
 using namespace std;
 

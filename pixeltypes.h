@@ -397,6 +397,14 @@ struct CRGB {
         return *this;
     }
 
+    CRGB blendWith(const CRGB &other, double blendFactor) const
+    {
+        return CRGB(
+            static_cast<uint8_t>(r * blendFactor + other.r * (1 - blendFactor)),
+            static_cast<uint8_t>(g * blendFactor + other.g * (1 - blendFactor)),
+            static_cast<uint8_t>(b * blendFactor + other.b * (1 - blendFactor)));
+    }
+    
     /// Allow assignment from red, green, and blue
     /// @param nr new red value
     /// @param ng new green value

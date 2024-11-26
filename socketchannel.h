@@ -46,7 +46,8 @@ public:
           _lastClientResponse(),
           _dataSentCount(0),
           _lastDataSentCountReset(system_clock::now()),
-          _lastConnectionAttempt(system_clock::now())
+          _lastConnectionAttempt(system_clock::now()),
+          _reconnectCount(0)
     {
     }
 
@@ -54,6 +55,11 @@ public:
     {
         Stop();
         CloseSocket();
+    }
+
+    uint32_t GetReconnectCount() const override
+    {
+        return _reconnectCount;
     }
 
     uint16_t Port() const override
@@ -139,7 +145,7 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
 
     // If the queue is full, we reset the socket, but we make sure not to be holding the mutex when we do so
     // because CloseSocket will also try to, and that would cause a deadlock.  It is not a re-entrant mutex.
-    
+
     if (isQueueFull)
     {
         cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
@@ -349,6 +355,7 @@ private:
         // Set socket to non-blocking mode
         if (!SetSocketNonBlocking(tempSocket))
         {
+            cerr << "Could not set socket to non-blocking mode for " << _friendlyName << endl;
             close(tempSocket);
             return false;
         }
@@ -383,8 +390,8 @@ private:
                 return false;
             }
         }
-
-        cout << "Connected to " << _hostName << ":" << _port << " [" << _friendlyName << "]" << endl;
+        ++_reconnectCount;
+        cout << "Connection number " << _reconnectCount << " to " << _hostName << ":" << _port << " [" << _friendlyName << "]" << endl;
         _socketFd = tempSocket;
         return true;
     }
@@ -453,6 +460,8 @@ private:
     system_clock::time_point _lastDataSentCountReset;
     system_clock::time_point _lastConnectionAttempt;
     uint32_t _dataSentCount;
+
+    uint32_t _reconnectCount;
     
     int _socketFd;
 };
