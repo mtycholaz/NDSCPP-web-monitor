@@ -83,7 +83,7 @@ public:
     // that the original ESP32 code expects
 
     // Converts a uint16_t to a vector of bytes in little-endian order
-    static vector<uint8_t> WORDToBytes(uint16_t value)
+    static constexpr array<uint8_t, 2> WORDToBytes(uint16_t value)
     {
         if constexpr (endian::native == endian::little)
         {
@@ -112,7 +112,7 @@ public:
     }
 
     // Converts a uint32_t to a vector of bytes in little-endian order
-    static vector<uint8_t> DWORDToBytes(uint32_t value)
+    static constexpr array<uint8_t, 4> DWORDToBytes(uint32_t value)
     {
         if constexpr (endian::native == endian::little)
         {
@@ -134,7 +134,7 @@ public:
     }
 
     // Converts a uint64_t to a vector of bytes in little-endian order
-    static vector<uint8_t> ULONGToBytes(uint64_t value)
+    static constexpr array<uint8_t, 8> ULONGToBytes(uint64_t value)
     {
         if constexpr (endian::native == endian::little)
         {
