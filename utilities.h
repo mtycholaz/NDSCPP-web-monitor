@@ -82,7 +82,7 @@ public:
     // The following XXXXToBytes functions produce a bytestream in the little-endian
     // that the original ESP32 code expects
 
-    // Converts a uint16_t to a vector of bytes in little-endian order
+    // Converts a uint16_t to an array of bytes in little-endian order
     static constexpr array<uint8_t, 2> WORDToBytes(uint16_t value)
     {
         if constexpr (endian::native == endian::little)
@@ -111,7 +111,7 @@ public:
         }
     }
 
-    // Converts a uint32_t to a vector of bytes in little-endian order
+    // Converts a uint32_t to an array of bytes in little-endian order
     static constexpr array<uint8_t, 4> DWORDToBytes(uint32_t value)
     {
         if constexpr (endian::native == endian::little)
@@ -133,7 +133,7 @@ public:
         }
     }
 
-    // Converts a uint64_t to a vector of bytes in little-endian order
+    // Converts a uint64_t to an array of bytes in little-endian order
     static constexpr array<uint8_t, 8> ULONGToBytes(uint64_t value)
     {
         if constexpr (endian::native == endian::little)
