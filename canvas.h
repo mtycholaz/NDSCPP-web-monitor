@@ -5,7 +5,7 @@ using namespace std;
 //
 // Represents the larger drawing surface that is made up from one or more LEDFeatures
 
-#include <nlohmann/json.hpp>
+#include "json.hpp"
 #include "interfaces.h"
 #include "basegraphics.h"
 #include "effectsmanager.h"

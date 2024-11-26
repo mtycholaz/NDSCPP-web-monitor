@@ -1,6 +1,5 @@
 #pragma once
 using namespace std;
-using namespace std;
 
 #include <iostream>
 #include <iostream>
@@ -18,7 +17,7 @@ using namespace std;
 #include <unistd.h>
 #include <poll.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <cerrno>
 #include "interfaces.h"
 #include "utilities.h"
 #include "pixeltypes.h"

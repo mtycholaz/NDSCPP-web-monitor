@@ -35,22 +35,6 @@
 
 using namespace std;
 
-// Atomic flag to indicate whether the program should continue running.
-// Will be set to false when SIGINT is received.
-atomic<bool> running(true);
-
-void handle_signal(int signal)
-{
-    if (signal == SIGINT)
-    {
-        running = false;
-        cerr << "Received SIGINT, exiting...\n" << flush;
-    }
-    else if (signal == SIGPIPE)
-    {
-        cerr << "Received SIGPIPE, ignoring...\n" << flush;
-    }
-}
 
 // LoadCanvases
 //
@@ -122,8 +106,6 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 
 int main(int, char *[])
 {
-    // Register signal handler for SIGINT
-    signal(SIGINT, handle_signal);
 
     cout << "Loading canvases..." << endl;
 
@@ -152,8 +134,6 @@ int main(int, char *[])
     webServer.Start();
     
     cout << "Shutting down..." << endl;
-
-    running = false;
 
     // Shut down rendering and communications
 
