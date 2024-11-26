@@ -39,19 +39,6 @@ using namespace std;
 // Will be set to false when SIGINT is received.
 atomic<bool> running(true);
 
-void handle_signal(int signal)
-{
-    if (signal == SIGINT)
-    {
-        running = false;
-        cerr << "Received SIGINT, exiting...\n" << flush;
-    }
-    else if (signal == SIGPIPE)
-    {
-        cerr << "Received SIGPIPE, ignoring...\n" << flush;
-    }
-}
-
 // LoadCanvases
 //
 // Creates and returns a vector of shared pointers to Canvas objects.  Each Canvas
@@ -69,7 +56,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     // Add LEDFeature
     auto feature1 = make_unique<LEDFeature>(
         canvasMesmerizer.get(),         // Canvas pointer
-        "192.168.8.161",      // Hostname
+        "192.168.1.138",      // Hostname
         "Mesmerizer",         // Friendly Name
         49152,                // Port
         64, 32,               // Width, Height
@@ -87,6 +74,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 
     canvases.push_back(std::move(canvasMesmerizer));
 
+/*
     // Define a Canvas for the Workbench Banner
 
     auto canvasBanner = make_unique<Canvas>(512, 32, 24);
@@ -111,7 +99,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
     canvasBanner->Effects().SetCurrentEffect(0, *canvasBanner);
 
     //canvases.push_back(std::move(canvasBanner));
-
+*/
     return canvases;
 }
 
@@ -122,8 +110,6 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 
 int main(int, char *[])
 {
-    // Register signal handler for SIGINT
-    signal(SIGINT, handle_signal);
 
     cout << "Loading canvases..." << endl;
 
@@ -152,8 +138,6 @@ int main(int, char *[])
     webServer.Start();
     
     cout << "Shutting down..." << endl;
-
-    running = false;
 
     // Shut down rendering and communications
 

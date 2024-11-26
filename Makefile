@@ -3,7 +3,7 @@ SHELL:=/bin/bash
 CC=clang++
 CFLAGS=-std=c++2a -g3 -O3 -Ieffects -I/opt/homebrew/include
 LDFLAGS=
-LIBS=-lcurl -lpthread -lmicrohttpd -lz -lavformat -lavcodec -lavutil -lswscale -lswresample
+LIBS=-lpthread -lz -lavformat -lavcodec -lavutil -lswscale -lswresample
 
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 
@@ -12,8 +12,6 @@ EXECUTABLE=ndscpp
 DEPDIR=.deps
 OBJECTS:=$(SOURCES:.cpp=.o)
 DEPFILES:=$(SOURCES:%.cpp=$(DEPDIR)/%.d)
-
-override DEFINES:=$(if $(ALLOW_IGNORE_CACHE),-DALLOW_IGNORE_CACHE=$(ALLOW_IGNORE_CACHE),)
 
 define helptext =
 Makefile for ndscpp
@@ -26,7 +24,6 @@ Usage:
 
 Examples:
 	$$ make all
-
 
 endef
 

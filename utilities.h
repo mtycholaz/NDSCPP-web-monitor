@@ -9,9 +9,11 @@ using namespace std;
 // it, and this class provides functions to convert the data into that format.
 
 #include <vector>
+#include <bit>
+#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <initializer_list>
-#include <zlib.h>
 #include <zlib.h>
 #include "pixeltypes.h"
 
@@ -81,7 +83,7 @@ public:
     // that the original ESP32 code expects
 
     // Converts a uint16_t to a vector of bytes in little-endian order
-    static constexpr vector<uint8_t> WORDToBytes(uint16_t value)
+    static vector<uint8_t> WORDToBytes(uint16_t value)
     {
         if constexpr (endian::native == endian::little)
         {
@@ -110,7 +112,7 @@ public:
     }
 
     // Converts a uint32_t to a vector of bytes in little-endian order
-    static constexpr vector<uint8_t> DWORDToBytes(uint32_t value)
+    static vector<uint8_t> DWORDToBytes(uint32_t value)
     {
         if constexpr (endian::native == endian::little)
         {
@@ -132,7 +134,7 @@ public:
     }
 
     // Converts a uint64_t to a vector of bytes in little-endian order
-    static constexpr vector<uint8_t> ULONGToBytes(uint64_t value)
+    static vector<uint8_t> ULONGToBytes(uint64_t value)
     {
         if constexpr (endian::native == endian::little)
         {
