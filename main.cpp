@@ -76,7 +76,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        180                    // Client Buffer Count    
+        180                   // Client Buffer Count    
     );
     canvasMesmerizer->AddFeature(std::move(feature1));
     canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("Starfield", "./media/mp4/rickroll.mp4"));
@@ -118,7 +118,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        21
+        500
     );
     canvasWindow1->AddFeature(std::move(featureWindow1));
     canvasWindow1->Effects().AddEffect(make_unique<SolidColorFill>("Yellow Window", CRGB(255, 112, 0)));
@@ -138,7 +138,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        21
+        500
     );
     canvasWindow2->AddFeature(std::move(featureWindow2));
     canvasWindow2->Effects().AddEffect(make_unique<SolidColorFill>("Blue Window", CRGB::Blue));
@@ -158,7 +158,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        21
+        500
     );
     canvasWindow3->AddFeature(std::move(featureWindow3));
     canvasWindow3->Effects().AddEffect(make_unique<SolidColorFill>("Green Window", CRGB::Green));
@@ -186,7 +186,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            21
+            500
         );
         auto featureCabinets2 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -198,7 +198,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            21
+            500
         );
         auto featureCabinets3 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -210,7 +210,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            21
+            500
         );
         auto featureCabinets4 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -222,7 +222,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            21
+            500
         );
         
         canvasCabinets->AddFeature(std::move(featureCabinets1));
