@@ -20,7 +20,6 @@
 #include <chrono>
 #include <thread>
 
-
 #include "global.h"
 #include "canvas.h"
 #include "interfaces.h"
@@ -68,7 +67,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
 
     auto canvasMesmerizer = make_unique<Canvas>(64, 32, 20);
     auto feature1 = make_unique<LEDFeature>(
-        canvasMesmerizer.get(),         // Canvas pointer
+        canvasMesmerizer.get(),// Canvas pointer
         "192.168.8.161",      // Hostname
         "Mesmerizer",         // Friendly Name
         49152,                // Port
@@ -98,7 +97,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         0, 0,                 // Offset X, Offset Y
         false,                // Reversed
         0,                    // Channel
-        false,                 // Red-Green Swap
+        false,                // Red-Green Swap
         300
     );
     canvasBanner->AddFeature(std::move(featureBanner));
@@ -293,7 +292,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             21
         );
         
-        canvasCabana->AddFeature(std::move(featureCabana1));
+        //canvasCabana->AddFeature(std::move(featureCabana1));
         canvasCabana->AddFeature(std::move(featureCabana2));
         canvasCabana->AddFeature(std::move(featureCabana3));
         canvasCabana->AddFeature(std::move(featureCabana4));

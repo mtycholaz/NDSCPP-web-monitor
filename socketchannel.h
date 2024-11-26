@@ -24,6 +24,11 @@ using namespace std;
 #include "pixeltypes.h"
 #include "serialization.h"
 
+// How long to wait for a connection to be established or data sent
+
+constexpr auto kConnectTimeout = 2000ms; 
+constexpr auto kSendTimeout    = 3000ms; 
+
 // SocketChannel
 //
 // Represents a socket connection to a NightDriverStrip client. Keeps a queue of frames and 
@@ -148,14 +153,13 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
 
     if (isQueueFull)
     {
-        cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
+        //cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
         CloseSocket(); // Called outside the lock
         return false;
     }
 
     return true;
 }
-
 
 private:
 
@@ -183,7 +187,9 @@ private:
                 auto now = steady_clock::now();
                 auto timeToSend = duration_cast<milliseconds>(now - lastSendTime) >= xMaxBatchDelay;
 
-                // Only start draining if it's time to send or the queue has reached the max size
+                // If the queue is not empty and we have enough frames to send, or it's time to send.
+                // So we can send on hitting the threshold of packets or delay
+
                 if (!_frameQueue.empty() && (_frameQueue.size() >= kMaxBatchSize || timeToSend))
                 {
                     unique_lock<mutex> lock(_queueMutex);
@@ -196,8 +202,6 @@ private:
                         combinedBuffer.insert(combinedBuffer.end(), frame.begin(), frame.end());
                         _frameQueue.pop();
                     }
-
-                    lastSendTime = steady_clock::now();
                 }
 
                 if (packetCount > 0)
@@ -206,6 +210,7 @@ private:
 
                     if (!combinedBuffer.empty())
                     {
+                        lastSendTime = steady_clock::now();
                         optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
                         if (response)
                         {
@@ -224,7 +229,8 @@ private:
                 auto now = system_clock::now();
                 if (duration_cast<milliseconds>(now - _lastConnectionAttempt) < reconnectDelay)
                 {
-                    this_thread::sleep_for(milliseconds(100));
+                    cout << "Waiting for " << duration_cast<milliseconds>(reconnectDelay - (now - _lastConnectionAttempt)).count() << "ms before reconnecting" << endl; 
+                    this_thread::sleep_for(reconnectDelay - (now - _lastConnectionAttempt));
                     continue;
                 }
             }
@@ -242,8 +248,8 @@ private:
     optional<ClientResponse> ReadSocketResponse() 
     {
         const size_t cbToRead = sizeof(ClientResponse);
-        vector<uint8_t> buffer(cbToRead);
 
+        // Poll for socket readiness
         pollfd pfd;
         pfd.fd = _socketFd;
         pfd.events = POLLIN;
@@ -251,15 +257,32 @@ private:
         if (poll(&pfd, 1, 0) <= 0) 
             return nullopt;
 
-        ssize_t readBytes = recv(_socketFd, buffer.data(), cbToRead, 0);
-        if (readBytes == static_cast<ssize_t>(cbToRead)) 
-        {
-            if (buffer[0] != static_cast<uint8_t>(cbToRead))
-            {
-                // cerr << "Invalid response size received from client" << endl;
-                return nullopt;
-            }
+        // Read the first byte to determine the byte count.  Older clients might send shorter packetts
+        // so we cannot just try to read a full "current version" packet out of an old client's stream,
+        // as there won't be enough bytes in the structure to satisfy the read.
 
+        uint8_t byteCount = 0;
+        ssize_t readBytes = recv(_socketFd, &byteCount, 1, MSG_PEEK);
+        if (readBytes <= 0)
+        {
+            // Socket error or no data
+            return nullopt;
+        }
+
+        // Compare the byte count to the expected size
+        if (byteCount != static_cast<uint8_t>(cbToRead))
+        {
+            // Invalid byte count; eat the contents
+            vector<uint8_t> tempBuffer(byteCount);
+            recv(_socketFd, tempBuffer.data(), byteCount, 0); // Consume the invalid response
+            return nullopt;
+        }
+
+        // Read the full response
+        vector<uint8_t> buffer(cbToRead);
+        readBytes = recv(_socketFd, buffer.data(), cbToRead, 0);
+        if (readBytes == static_cast<ssize_t>(cbToRead))
+        {
             ClientResponse response;
             memcpy(&response, buffer.data(), cbToRead);
             response.TranslateClientResponse();
@@ -276,6 +299,15 @@ private:
         return (fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) != -1);
     }
 
+    bool SetSocketSendTimeout(int socketFd, milliseconds timeout)
+    {
+        struct timeval timeouttv;
+        timeouttv.tv_sec = timeout.count() / 1000;
+        timeouttv.tv_usec = (timeout.count() % 1000) * 1000;
+
+        return setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, &timeouttv, sizeof(timeouttv)) == 0;
+    }
+
     optional<ClientResponse> SendFrame(const vector<uint8_t>&& frame)
     {
         if (_socketFd == -1)
@@ -286,24 +318,28 @@ private:
                 _isConnected = false;
                 return nullopt;
             }
+
+            // Set the send timeout (e.g., 5 seconds)
+            if (!SetSocketSendTimeout(_socketFd, kSendTimeout))
+            {
+                cerr << "Could not set send timeout for " << _friendlyName << endl;
+                CloseSocket();
+                lock_guard<mutex> lock(_mutex);
+                _isConnected = false;
+                return nullopt;
+            }
         }
 
         size_t totalSent = 0;
         while (totalSent < frame.size())
         {
             ssize_t sent = send(_socketFd, 
-                               frame.data() + totalSent, 
-                               frame.size() - totalSent, 
-                               MSG_NOSIGNAL | MSG_DONTWAIT);
+                                frame.data() + totalSent, 
+                                frame.size() - totalSent, 
+                                MSG_NOSIGNAL);
             
             if (sent == -1)
             {
-                if (errno == EAGAIN || errno == EWOULDBLOCK)
-                {
-                    // Socket buffer full, wait and retry
-                    this_thread::sleep_for(milliseconds(1));
-                    continue;
-                }
                 CloseSocket();
                 lock_guard<mutex> lock(_mutex);
                 _isConnected = false;
@@ -318,20 +354,18 @@ private:
             _dataSentCount += totalSent;
         }
 
-        // We read socket responses from the stream until there are none left, and then use the last valid
-        // one that we saw.  
-        
         optional<ClientResponse> lastValidResponse = nullopt;
-        for(;;)
+        for (;;)
         {
             optional<ClientResponse> response = ReadSocketResponse();
             if (!response)
-                break; // Exit the loop when nullopt is returned.
+                break;
 
-            lastValidResponse = std::move(response); // Update with the latest valid response.
+            lastValidResponse = std::move(response);
         }
-        return lastValidResponse; // Return the last valid response, if any.
+        return lastValidResponse;
     }
+
 
     bool ConnectSocket()
     {
@@ -366,6 +400,7 @@ private:
         {
             if (errno != EINPROGRESS)
             {
+                cerr << "Could not connect to " << _hostName << " [" << _friendlyName << "] errno=" << errno << endl;
                 close(tempSocket);
                 return false;
             }
@@ -375,8 +410,9 @@ private:
             pfd.fd = tempSocket;
             pfd.events = POLLOUT;
             
-            if (poll(&pfd, 1, 5000) <= 0) // 5 second timeout
+            if (poll(&pfd, 1, kConnectTimeout.count()) <= 0)
             {
+                cerr << "Connection timeout to " << _hostName << " [" << _friendlyName << "]" << endl;
                 close(tempSocket);
                 return false;
             }
@@ -391,7 +427,7 @@ private:
             }
         }
         ++_reconnectCount;
-        cout << "Connection number " << _reconnectCount << " to " << _hostName << ":" << _port << " [" << _friendlyName << "]" << endl;
+        cout << "Connection number " << _reconnectCount << " to " << _hostName << ":" << _port << " [" << _friendlyName << "] on thread " << this_thread::get_id() << endl; 
         _socketFd = tempSocket;
         return true;
     }
@@ -399,13 +435,9 @@ private:
     void CloseSocket()
     {
         // Clear the queue
-        {
-            lock_guard<mutex> queueLock(_queueMutex);
-            queue<vector<uint8_t>> empty;
-            _frameQueue.swap(empty);
-        }
-
-        lock_guard<mutex> lock(_mutex);
+        lock_guard<mutex> queueLock(_queueMutex);
+        queue<vector<uint8_t>> empty;
+        _frameQueue.swap(empty);
 
         if (_socketFd != -1)
         {
@@ -414,6 +446,7 @@ private:
             _socketFd = -1;
         }
         _isConnected = false;
+
     }
 
     uint32_t BytesPerSecond()
