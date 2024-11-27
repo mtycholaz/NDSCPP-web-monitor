@@ -20,7 +20,6 @@ class PaletteEffect : public LEDEffectBase
 private:
     double _iPixel = 0;
     double _iColor;
-    std::chrono::system_clock::time_point _lastDraw;
 
 public:
     Palette  _Palette;
@@ -45,7 +44,6 @@ public:
                   bool           mirrored = false)
         : _Palette(palette)
         , _iColor(0)
-        , _lastDraw(std::chrono::system_clock::now())
         , _LEDColorPerSecond(ledColorPerSecond)
         , _LEDScrollSpeed(ledScrollSpeed)
         , _Density(density)
@@ -61,14 +59,12 @@ public:
     void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
         auto dotcount = canvas.Graphics().Width() * canvas.Graphics().Height();
-
         canvas.Graphics().Clear(CRGB::Black);
 
-        // Calculate the number of pixels to scroll based on the elapsed time
-        auto now = std::chrono::system_clock::now();
-        double secondsElapsed = std::chrono::duration<double>(now - _lastDraw).count();
-        _lastDraw = now;
+        // Convert milliseconds to seconds for our calculations
+        double secondsElapsed = deltaTime.count() / 1000.0;
 
+        // Calculate the number of pixels to scroll based on the elapsed time
         double cPixelsToScroll = secondsElapsed * _LEDScrollSpeed;
         _iPixel += cPixelsToScroll;
         _iPixel = fmod(_iPixel, dotcount);
