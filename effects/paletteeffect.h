@@ -35,14 +35,14 @@ public:
 
     PaletteEffect(const string & name, 
                   const Palette& palette,
-                    double ledColorPerSecond = 3.0,
-                    double ledScrollSpeed = 0.0,
-                    double density = 1.0,
-                    double everyNthDot = 1.0,
-                    uint32_t dotSize = 1,
-                    bool rampedColor = false,
-                    double brightness = 1.0,
-                    bool mirrored = false)
+                  double         ledColorPerSecond = 3.0,
+                  double         ledScrollSpeed = 0.0,
+                  double         density = 1.0,
+                  double         everyNthDot = 1.0,
+                  uint32_t       dotSize = 1,
+                  bool           rampedColor = false,
+                  double         brightness = 1.0,
+                  bool           mirrored = false)
         : _Palette(palette)
         , _iColor(0)
         , _lastDraw(std::chrono::system_clock::now())
@@ -64,6 +64,7 @@ public:
 
         canvas.Graphics().Clear(CRGB::Black);
 
+        // Calculate the number of pixels to scroll based on the elapsed time
         auto now = std::chrono::system_clock::now();
         double secondsElapsed = std::chrono::duration<double>(now - _lastDraw).count();
         _lastDraw = now;
@@ -72,17 +73,19 @@ public:
         _iPixel += cPixelsToScroll;
         _iPixel = fmod(_iPixel, dotcount);
 
+        // Calculate the number of colors to scroll based on the elapsed time
         double cColorsToScroll = secondsElapsed * _LEDColorPerSecond;
         _iColor += cColorsToScroll / kPixelsPerMeter;
         _iColor -= floor(_iColor);
 
         double iColor = _iColor;
-
         uint32_t cLength = (_Mirrored ? dotcount / 2 : dotcount);
 
+        // Draw the scrolling colors
         for (double i = 0; i < cLength; i += _EveryNthDot) 
         {
             int count = 0;
+            // Draw the dots
             for (uint32_t j = 0; j < _DotSize && (i + j) < cLength; j++) 
             {
                 double iPixel = fmod(i + j + _iPixel, cLength);
