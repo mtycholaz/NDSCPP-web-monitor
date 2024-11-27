@@ -21,17 +21,17 @@ class LEDFeature : public ILEDFeature
 {
 public:
     LEDFeature(Canvas * canvas,
-               const string &hostName,
-               const string &friendlyName,
-               uint16_t port,
-               uint32_t width,
-               uint32_t height = 1,
-               uint32_t offsetX = 0,
-               uint32_t offsetY = 0,
-               bool reversed = false,
-               uint8_t channel = 0,
-               bool redGreenSwap = false,
-               uint32_t clientBufferCount = 8)
+               const string & hostName,
+               const string & friendlyName,
+               uint16_t       port,
+               uint32_t       width,
+               uint32_t       height = 1,
+               uint32_t       offsetX = 0,
+               uint32_t       offsetY = 0,
+               bool           reversed = false,
+               uint8_t        channel = 0,
+               bool           redGreenSwap = false,
+               uint32_t       clientBufferCount = 8)
         : _canvas(canvas),
           _width(width),
           _height(height),
@@ -66,45 +66,72 @@ public:
         return _socketChannel;
     }
 
-   // Data retrieval
-    vector<uint8_t> GetPixelData() const override
+    vector<uint8_t> GetPixelData() const override 
     {
+        static_assert(sizeof(CRGB) == 3, "CRGB must be 3 bytes in size for this code to work.");
+
         if (!_canvas)
             throw runtime_error("LEDFeature must be associated with a canvas to retrieve pixel data.");
 
         const auto& graphics = _canvas->Graphics();
 
-        // If the feature matches the canvas in size and position, directly return the canvas pixel data
-        if (_width == graphics.Width() && _height == graphics.Height() && _offsetX == 0 && _offsetY == 0)
-        {
-            return Utilities::ConvertPixelsToByteArray(
-                graphics.GetPixels(),
-                _reversed,
-                _redGreenSwap
-            );
-        }
+        // Fast path for full canvas.  We assume this is the default case and optimize for it by telling the compiler to expect it.
+        if (__builtin_expect(_width == graphics.Width() && _height == graphics.Height() && _offsetX == 0 && _offsetY == 0, 1))
+            return Utilities::ConvertPixelsToByteArray(graphics.GetPixels(), _reversed, _redGreenSwap);
 
-        // Otherwise, manually extract the feature's pixel data
-        vector<CRGB> featurePixels(_width * _height, CRGB::Magenta); // Initialize with Magenta by default
-
+        // Pre-calculate the final buffer size (3 bytes per pixel)
+        vector<uint8_t> result(_width * _height * sizeof(CRGB));
+        
+        // Direct byte manipulation instead of intermediate CRGB vector
         for (uint32_t y = 0; y < _height; ++y)
         {
             for (uint32_t x = 0; x < _width; ++x)
             {
-                // Map feature (local) coordinates to canvas (global) coordinates
                 uint32_t canvasX = x + _offsetX;
                 uint32_t canvasY = y + _offsetY;
-
-                // Calculate index for the current pixel in featurePixels
-                uint32_t featureIndex = y * _width + x;
-
-                // Ensure we don't exceed canvas boundaries
+                
+                // Calculate output position directly in bytes
+                uint32_t byteIndex = (y * _width + x) * sizeof(CRGB);
+                
                 if (canvasX < graphics.Width() && canvasY < graphics.Height())
-                    featurePixels[featureIndex] = graphics.GetPixel(canvasX, canvasY);
+                {
+                    const CRGB& pixel = graphics.GetPixel(canvasX, canvasY);
+                    if (_redGreenSwap)
+                    {
+                        result[byteIndex] = pixel.g;
+                        result[byteIndex + 1] = pixel.r;
+                        result[byteIndex + 2] = pixel.b;
+                    }
+                    else 
+                    {
+                        result[byteIndex] = pixel.r;
+                        result[byteIndex + 1] = pixel.g;
+                        result[byteIndex + 2] = pixel.b;
+                    }
+                }
+                else 
+                {
+                    // Magenta for out of bounds (0xFF, 0x00, 0xFF)
+                    result[byteIndex] = 0xFF;
+                    result[byteIndex + 1] = 0x00;
+                    result[byteIndex + 2] = 0xFF;
+                }
             }
         }
 
-        return Utilities::ConvertPixelsToByteArray(featurePixels, _reversed, _redGreenSwap);
+        if (_reversed)
+        {
+            // In-place reversal of RGB groups
+            for (size_t i = 0; i < result.size() / 2; i += sizeof(CRGB))
+            {
+                size_t j = result.size() - i - sizeof(CRGB);
+                std::swap(result[i], result[j]);
+                std::swap(result[i + 1], result[j + 1]);
+                std::swap(result[i + 2], result[j + 2]);
+            }
+        }
+
+        return result;
     }
 
     vector<uint8_t> GetDataFrame() const override
