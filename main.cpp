@@ -33,6 +33,7 @@
 #include "videoeffect.h"
 #include "misceffects.h"
 #include "palette.h"
+#include "paletteeffect.h"
 
 using namespace std;
 
@@ -102,7 +103,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        500
+        21
     );
     canvasWindow1->AddFeature(std::move(featureWindow1));
     canvasWindow1->Effects().AddEffect(make_unique<SolidColorFill>("Yellow Window", CRGB(255, 112, 0)));
@@ -122,7 +123,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        500
+        21
     );
     canvasWindow2->AddFeature(std::move(featureWindow2));
     canvasWindow2->Effects().AddEffect(make_unique<SolidColorFill>("Blue Window", CRGB::Blue));
@@ -142,7 +143,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        500
+        21
     );
     canvasWindow3->AddFeature(std::move(featureWindow3));
     canvasWindow3->Effects().AddEffect(make_unique<SolidColorFill>("Green Window", CRGB::Green));
@@ -182,7 +183,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            500
+            312
         );
         auto featureCabinets3 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -194,7 +195,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            500
+            312
         );
         auto featureCabinets4 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -213,7 +214,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         canvasCabinets->AddFeature(std::move(featureCabinets2));
         canvasCabinets->AddFeature(std::move(featureCabinets3));
         canvasCabinets->AddFeature(std::move(featureCabinets4));
-        canvasCabinets->Effects().AddEffect(make_unique<SolidColorFill>("Green Test", CRGB::Green));
+        canvasCabinets->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::Rainbow), 3.0, 0.0,  0.025/32 * kPixelsPerMeter));
         canvasCabinets->Effects().SetCurrentEffect(0, *canvasCabinets);
         canvases.push_back(std::move(canvasCabinets));
     }

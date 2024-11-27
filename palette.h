@@ -43,7 +43,7 @@ public:
             return color1;
 
         CRGB color2 = colorEntries[(index + 1) % colorEntries.size()];
-        return color1.blendWith(color2, 1 - fraction);
+        return color1.blendWith(color2, fraction);  
     }
 };
 

@@ -25,8 +25,8 @@ using namespace std;
 
 // How long to wait for a connection to be established or data sent
 
-constexpr auto kConnectTimeout = 2000ms; 
-constexpr auto kSendTimeout    = 3000ms; 
+constexpr auto kConnectTimeout = 3000ms; 
+constexpr auto kSendTimeout    = 5000ms; 
 
 // SocketChannel
 //
@@ -152,7 +152,7 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
 
     if (isQueueFull)
     {
-        //cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
+        cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
         CloseSocket(); // Called outside the lock
         return false;
     }
@@ -184,12 +184,12 @@ private:
                 size_t packetCount = 0;
 
                 auto now = steady_clock::now();
-                auto timeToSend = duration_cast<milliseconds>(now - lastSendTime) >= xMaxBatchDelay;
+                auto bTimeToSend = duration_cast<milliseconds>(now - lastSendTime) >= xMaxBatchDelay;
 
                 // If the queue is not empty and we have enough frames to send, or it's time to send.
                 // So we can send on hitting the threshold of packets or delay
 
-                if (!_frameQueue.empty() && (_frameQueue.size() >= kMaxBatchSize || timeToSend))
+                if (!_frameQueue.empty() && (_frameQueue.size() >= kMaxBatchSize || bTimeToSend))
                 {
                     unique_lock<mutex> lock(_queueMutex);
                     
