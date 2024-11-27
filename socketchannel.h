@@ -307,12 +307,13 @@ private:
         return setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, &timeouttv, sizeof(timeouttv)) == 0;
     }
 
-    optional<ClientResponse> SendFrame(const vector<uint8_t>&& frame)
+   optional<ClientResponse> SendFrame(const vector<uint8_t>&& frame)
     {
         if (_socketFd == -1)
         {
             if (!ConnectSocket())
             {
+                cerr << "Could not connect socket to " << _hostName << " [" << _friendlyName << "]" << endl;
                 lock_guard<mutex> lock(_mutex);
                 _isConnected = false;
                 return nullopt;
@@ -330,6 +331,9 @@ private:
         }
 
         size_t totalSent = 0;
+        const int maxRetries = 5;  // Maximum number of retries for EWOULDBLOCK/EAGAIN
+        const useconds_t retryDelay = 100000;  // 100ms delay between retries
+
         while (totalSent < frame.size())
         {
             ssize_t sent = send(_socketFd, 
@@ -339,12 +343,89 @@ private:
             
             if (sent == -1)
             {
-                CloseSocket();
-                lock_guard<mutex> lock(_mutex);
-                _isConnected = false;
-                return nullopt;
+                if (errno == EPIPE)
+                {
+                    // Peer has closed the connection - attempt to reconnect once
+                    cerr << "Connection broken (EPIPE) to " << _hostName 
+                        << " [" << _friendlyName << "] - attempting to reconnect" << endl;
+                    
+                    CloseSocket();
+                    if (!ConnectSocket())
+                    {
+                        cerr << "Reconnection failed to " << _hostName << " [" << _friendlyName << "]" << endl;
+                        lock_guard<mutex> lock(_mutex);
+                        _isConnected = false;
+                        return nullopt;
+                    }
+                    
+                    // Try the send again after reconnection
+                    sent = send(_socketFd, 
+                            frame.data() + totalSent, 
+                            frame.size() - totalSent, 
+                            MSG_NOSIGNAL);
+                            
+                    if (sent == -1)
+                    {
+                        cerr << "Send failed after reconnection to " << _hostName 
+                            << " [" << _friendlyName << "] errno=" << errno << endl;
+                        CloseSocket();
+                        lock_guard<mutex> lock(_mutex);
+                        _isConnected = false;
+                        return nullopt;
+                    }
+                }
+                else if (errno == EWOULDBLOCK || errno == EAGAIN)
+                {
+                    // Socket buffer is full, wait a bit and retry
+                    int retryCount = 0;
+                    while (retryCount < maxRetries)
+                    {
+                        usleep(retryDelay);
+                        sent = send(_socketFd, 
+                                frame.data() + totalSent, 
+                                frame.size() - totalSent, 
+                                MSG_NOSIGNAL);
+                        
+                        if (sent > 0)
+                            break;  // Successful send after retry
+                        
+                        if (sent == -1 && errno != EWOULDBLOCK && errno != EAGAIN)
+                        {
+                            cerr << "Fatal error sending data to " << _hostName 
+                                << " [" << _friendlyName << "] errno=" << errno << endl;
+                            CloseSocket();
+                            lock_guard<mutex> lock(_mutex);
+                            _isConnected = false;
+                            return nullopt;
+                        }
+                        
+                        retryCount++;
+                    }
+                    
+                    if (retryCount >= maxRetries)
+                    {
+                        cerr << "Max retries exceeded sending data to " << _hostName 
+                            << " [" << _friendlyName << "] - socket buffer full" << endl;
+                        CloseSocket();
+                        lock_guard<mutex> lock(_mutex);
+                        _isConnected = false;
+                        return nullopt;
+                    }
+                }
+                else
+                {
+                    // Handle other errors by closing the socket
+                    cerr << "Error sending data to " << _hostName 
+                        << " [" << _friendlyName << "] errno=" << errno << endl;
+                    CloseSocket();
+                    lock_guard<mutex> lock(_mutex);
+                    _isConnected = false;
+                    return nullopt;
+                }
             }
-            totalSent += sent;
+            
+            if (sent > 0)  // Only update if we actually sent data
+                totalSent += sent;
         }
 
         {

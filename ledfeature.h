@@ -21,17 +21,17 @@ class LEDFeature : public ILEDFeature
 {
 public:
     LEDFeature(Canvas * canvas,
-               const string &hostName,
-               const string &friendlyName,
-               uint16_t port,
-               uint32_t width,
-               uint32_t height = 1,
-               uint32_t offsetX = 0,
-               uint32_t offsetY = 0,
-               bool reversed = false,
-               uint8_t channel = 0,
-               bool redGreenSwap = false,
-               uint32_t clientBufferCount = 8)
+               const string & hostName,
+               const string & friendlyName,
+               uint16_t       port,
+               uint32_t       width,
+               uint32_t       height = 1,
+               uint32_t       offsetX = 0,
+               uint32_t       offsetY = 0,
+               bool           reversed = false,
+               uint8_t        channel = 0,
+               bool           redGreenSwap = false,
+               uint32_t       clientBufferCount = 8)
         : _canvas(canvas),
           _width(width),
           _height(height),
@@ -69,7 +69,7 @@ public:
     vector<uint8_t> GetPixelData() const override 
     {
         static_assert(sizeof(CRGB) == 3, "CRGB must be 3 bytes in size for this code to work.");
-        
+
         if (!_canvas)
             throw runtime_error("LEDFeature must be associated with a canvas to retrieve pixel data.");
 

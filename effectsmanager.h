@@ -150,6 +150,8 @@ public:
                     }
                 }
 
+                // We wait here while periodically checking _running
+                
                 auto now = steady_clock::now();
                 while (now < nextFrameTime && _running) {
                     this_thread::sleep_for(min(steady_clock::duration(10ms), nextFrameTime - now));
