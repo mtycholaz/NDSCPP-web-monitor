@@ -377,7 +377,7 @@ private:
         }
 
         size_t totalSent = 0;
-        while (totalSent < frame.size())
+        while (totalSent < frame.size() && _running)
         {
             auto startTime = steady_clock::now();
 
@@ -402,7 +402,7 @@ private:
                     continue;
                 }
                 
-                if ((errno == EWOULDBLOCK || errno == EAGAIN) && steady_clock::now() - startTime < kSendTimeout)
+                if ((errno == EWOULDBLOCK || errno == EAGAIN) && ((steady_clock::now() - startTime) < kSendTimeout))
                 {
                     this_thread::sleep_for(100ms);
                     continue;
@@ -491,7 +491,7 @@ private:
             close(tempSocket);
             return false;
         }
-        
+
         ++_reconnectCount;
         cout << "Connection number " << _reconnectCount << " to " << _hostName << ":" << _port << " [" << _friendlyName << "] on thread " << this_thread::get_id() << endl; 
         _socketFd = tempSocket;

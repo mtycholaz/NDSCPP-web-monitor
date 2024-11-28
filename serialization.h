@@ -100,7 +100,8 @@ inline void to_json(nlohmann::json &j, const unique_ptr<ILEDFeature> &feature)
         const auto &socket = feature->Socket();
 
         // Manually serialize fields from the ILEDFeature interface
-        j = nlohmann::json{
+        j = nlohmann::json
+        {
             {"hostName", socket.HostName()},
             {"friendlyName", socket.FriendlyName()},
             {"width", feature->Width()},
@@ -113,13 +114,13 @@ inline void to_json(nlohmann::json &j, const unique_ptr<ILEDFeature> &feature)
             {"clientBufferCount", feature->ClientBufferCount()},
             {"timeOffset", feature->TimeOffset()},
             {"bytesPerSecond", feature->Socket().BytesSentPerSecond()},
-            {"isConnected", feature->Socket().IsConnected()},
-            {"lastResponse", feature->Socket().LastClientResponse()}};
+            {"isConnected", feature->Socket().IsConnected()}
+        };
 
         const auto &response = socket.LastClientResponse();
         if (response.size == sizeof(ClientResponse))
         {
-            j["stats"] = response;
+            j["lastClientResponse"] = response;
         }
     }
     catch (const std::exception &e)

@@ -59,6 +59,7 @@ public:
                             socketJson["hostName"] = feature->Socket().HostName();
                             socketJson["friendlyName"] = feature->Socket().FriendlyName();
                             socketJson["featureId"] = featureId;
+                            //socjetJson["canvasId"] = canvasId;
                             socketJson["isConnected"] = feature->Socket().IsConnected();
                             socketJson["bytesPerSecond"] = feature->Socket().BytesSentPerSecond();
                             socketJson["port"] = feature->Socket().Port();
@@ -87,7 +88,7 @@ public:
                 const auto& feature = features[featureId];
                 nlohmann::json socketJson;
                 socketJson["id"] = id;
-                socketJson["canvasId"] = canvasId;
+                //socketJson["canvasId"] = canvasId;
                 socketJson["featureId"] = featureId;
                 socketJson["isConnected"] = feature->Socket().IsConnected();
                 socketJson["port"] = feature->Socket().Port();
