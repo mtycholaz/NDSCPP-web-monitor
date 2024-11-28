@@ -156,16 +156,17 @@ class ICanvas
 {
 public:
     virtual ~ICanvas() = default;
-    // Accessors for features
+    
+    virtual uint32_t Id() const = 0;
     virtual vector<unique_ptr<ILEDFeature>>& Features() = 0;
     virtual const vector<unique_ptr<ILEDFeature>>& Features() const = 0;
 
-    // Add or remove features
     virtual void AddFeature(unique_ptr<ILEDFeature> feature) = 0;
     virtual void RemoveFeature(unique_ptr<ILEDFeature> & feature) = 0;
 
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;
+
     virtual IEffectsManager & Effects() = 0;
     virtual const IEffectsManager & Effects() const = 0;
 };
