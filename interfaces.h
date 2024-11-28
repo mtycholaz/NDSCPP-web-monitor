@@ -44,7 +44,7 @@ public:
 // Provides APIs for interacting with its parent canvas and retrieving its assigned color data.
 
 
-class ClientResponse;
+struct ClientResponse;
 class ICanvas;
 
 // ILEDEffect

@@ -20,15 +20,6 @@ using namespace std;
 class Utilities
 {
 public:
-    static double ByteSwapDouble(double value)
-    {
-        // Helper function to swap bytes in a double
-        uint64_t temp;
-        memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
-        temp = __builtin_bswap64(temp);        // Byte swap the 64-bit integer
-        memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
-        return value;
-    }
 
     static vector<uint8_t> ConvertPixelsToByteArray(const vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
     {

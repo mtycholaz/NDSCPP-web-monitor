@@ -92,7 +92,7 @@ public:
 // to connect to the client if it is not already connected. The worker thread will also
 // attempt to reconnect if the connection is lost.
 
-class ClientResponse;
+struct ClientResponse;
 
 class SocketChannel : public ISocketChannel
 {
@@ -232,8 +232,8 @@ private:
     {
         steady_clock::time_point lastSendTime = steady_clock::now();
         constexpr auto kMaxBatchSize = 20;
-        constexpr auto xMaxBatchDelay = 250ms;
-        constexpr auto reconnectDelay = 1000ms; // 5 second delay between connection attempts
+        constexpr auto xMaxBatchDelay = 1000ms;
+        constexpr auto reconnectDelay = 1000ms; //delay between connection attempts
 
         while (_running)
         {
@@ -265,7 +265,7 @@ private:
 
                 if (packetCount > 0)
                 {
-                    // cout << "Sending " << packetCount << " packets, " << totalBytes << " bytes" << " at queue size " << _frameQueue.size() << endl;
+                    // cout << "Sending " << packetCount << " packets totalling " << totalBytes << " bytes" << " at queue size " << _frameQueue.size() << " to " << _hostName << endl;
 
                     if (!combinedBuffer.empty())
                     {
@@ -518,7 +518,7 @@ private:
     
 private:
     static constexpr uint16_t CommandPixelData = 3;
-    static constexpr size_t   MaxQueueDepth = 100;
+    static constexpr size_t   MaxQueueDepth = 500;
 
     string                   _hostName;
     string                   _friendlyName;

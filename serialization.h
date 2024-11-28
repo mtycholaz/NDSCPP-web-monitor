@@ -1,5 +1,7 @@
 #pragma once
+
 using namespace std;
+using namespace std::chrono;
 
 // Serialization
 //
@@ -9,6 +11,16 @@ using namespace std;
 
 #include "json.hpp"
 #include "interfaces.h"
+
+inline static double ByteSwapDouble(double value)
+{
+    // Helper function to swap bytes in a double
+    uint64_t temp;
+    memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
+    temp = __builtin_bswap64(temp);        // Byte swap the 64-bit integer
+    memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
+    return value;
+}
 
 // Note that in theory, for proper separation of concerns, these functions should NOT need
 // access to headers that are not part of the interfaces - i.e., everything we need should
@@ -49,11 +61,11 @@ struct ClientResponse
         size = __builtin_bswap32(size);
         sequence = __builtin_bswap64(sequence); // Added missing sequence swap
         flashVersion = __builtin_bswap32(flashVersion);
-        currentClock = Utilities::ByteSwapDouble(currentClock);
-        oldestPacket = Utilities::ByteSwapDouble(oldestPacket);
-        newestPacket = Utilities::ByteSwapDouble(newestPacket);
-        brightness = Utilities::ByteSwapDouble(brightness);
-        wifiSignal = Utilities::ByteSwapDouble(wifiSignal);
+        currentClock = ByteSwapDouble(currentClock);
+        oldestPacket = ByteSwapDouble(oldestPacket);
+        newestPacket = ByteSwapDouble(newestPacket);
+        brightness = ByteSwapDouble(brightness);
+        wifiSignal = ByteSwapDouble(wifiSignal);
         bufferSize = __builtin_bswap32(bufferSize);
         bufferPos = __builtin_bswap32(bufferPos);
         fpsDrawing = __builtin_bswap32(fpsDrawing);

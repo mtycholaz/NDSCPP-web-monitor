@@ -4,6 +4,7 @@ using namespace std::chrono;
 
 #include "json.hpp"
 
+
 // LEDFeature
 //
 // Represents one rectangular section of the canvas and is responsible for producing the
@@ -20,7 +21,7 @@ using namespace std::chrono;
 class LEDFeature : public ILEDFeature
 {
 public:
-    LEDFeature(Canvas * canvas,
+    LEDFeature(const Canvas * canvas,
                const string & hostName,
                const string & friendlyName,
                uint16_t       port,
@@ -161,6 +162,6 @@ private:
     uint8_t     _channel;
     bool        _redGreenSwap;
     uint32_t    _clientBufferCount;
-    ICanvas   * _canvas; // Associated canvas
+    const ICanvas   * _canvas; // Associated canvas
     SocketChannel _socketChannel;
 };

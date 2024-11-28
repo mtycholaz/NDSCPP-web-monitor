@@ -309,7 +309,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         auto canvasTree = make_unique<Canvas>(32, 1, 30);
         auto featureTree = make_unique<LEDFeature>(
             canvasTree.get(),     // Canvas pointer
-            "192.168.8.33",       // Hostname
+            "192.168.8.77",       // Hostname
             "Tree",               // Friendly Name
             49152,                // Port
             32, 1,                // Width, Height
@@ -317,10 +317,10 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            500                   // Client Buffer Count    
+            312                   // Client Buffer Count    
         );
         canvasTree->AddFeature(std::move(featureTree));
-        canvasTree->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::Rainbow), 30.0, 0.0,  0.025/16 * kPixelsPerMeter, 4));
+        canvasTree->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::Rainbow), 10.0, 0.0, 8, 1));
         canvasTree->Effects().SetCurrentEffect(0, *canvasTree);
         canvases.push_back(std::move(canvasTree));        
     }
