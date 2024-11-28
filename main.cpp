@@ -283,7 +283,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         canvasCabana->AddFeature(std::move(featureCabana4));
         canvasCabana->Effects().AddEffect(make_unique<SolidColorFill>("Green Test", CRGB::Green));
         canvasCabana->Effects().SetCurrentEffect(0, *canvasCabana);
-        canvases.push_back(std::move(canvasCabana));
+        //canvases.push_back(std::move(canvasCabana));
     }
     {
         auto canvasCeiling = make_unique<Canvas>(144*5+38, 1, 30);
@@ -300,7 +300,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             500                   // Client Buffer Count    
         );
         canvasCeiling->AddFeature(std::move(featureCeiling));
-        canvasCeiling->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::Rainbow), 30.0, 0.0,  0.025/16 * kPixelsPerMeter));
+        canvasCeiling->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::Rainbow), 30.0, 0.0,  0.025/16 * kPixelsPerMeter, 4));
         canvasCeiling->Effects().SetCurrentEffect(0, *canvasCeiling);
         canvases.push_back(std::move(canvasCeiling));        
     }
@@ -320,7 +320,7 @@ int main(int, char *[])
 
     // Load the canvases and features
 
-    const auto allCanvases = LoadCanvases();
+    auto allCanvases = LoadCanvases();
 
     cout << "Connecting to clients..." << endl;
 
@@ -356,6 +356,8 @@ int main(int, char *[])
             feature->Socket().Stop();
 
     cout << "Shut down complete." << endl;
+
+    allCanvases.clear();
 
     return 0;
 }

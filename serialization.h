@@ -109,7 +109,12 @@ inline void to_json(nlohmann::json &j, const unique_ptr<ILEDFeature> &feature)
             {"offsetY", feature->OffsetY()},
             {"reversed", feature->Reversed()},
             {"channel", feature->Channel()},
-            {"redGreenSwap", feature->RedGreenSwap()}};
+            {"redGreenSwap", feature->RedGreenSwap()},
+            {"clientBufferCount", feature->ClientBufferCount()},
+            {"timeOffset", feature->TimeOffset()},
+            {"bytesPerSecond", feature->Socket().BytesSentPerSecond()},
+            {"isConnected", feature->Socket().IsConnected()},
+            {"lastResponse", feature->Socket().LastClientResponse()}};
 
         const auto &response = socket.LastClientResponse();
         if (response.size == sizeof(ClientResponse))

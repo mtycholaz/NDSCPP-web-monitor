@@ -26,7 +26,64 @@ using namespace std;
 // How long to wait for a connection to be established or data sent
 
 constexpr auto kConnectTimeout = 3000ms; 
-constexpr auto kSendTimeout    = 5000ms; 
+constexpr auto kSendTimeout    = 5000ms;
+
+// SpeedTracker
+// 
+// A class that tracks the speed of data transfer over a given time window.  It is used to
+// calculate the bytes per second that are being sent to the client.  The class uses a
+// weighted average to smooth out the data and provide a more accurate representation of
+// the speed.
+
+class SpeedTracker
+{
+private:
+    static constexpr milliseconds kSpeedWindowMS{1000}; // 1 second window
+    static constexpr double kPreviousWindowWeight{0.3}; // Weight for previous window in average
+
+    uint64_t _currentWindowBytes{0};
+    uint64_t _previousWindowBytes{0};
+    system_clock::time_point _windowStartTime;
+
+public:
+    SpeedTracker() : _windowStartTime(system_clock::now()) {}
+
+    void AddBytes(uint64_t bytes)
+    {
+        _currentWindowBytes += bytes;
+    }
+
+    uint64_t BytesPerSecond()
+    {
+        auto now = system_clock::now();
+        auto elapsed = duration_cast<milliseconds>(now - _windowStartTime);
+
+        // If we haven't completed a window yet, calculate based on partial window
+        if (elapsed < kSpeedWindowMS)
+        {
+            if (elapsed.count() == 0)
+                return 0; // Avoid division by zero
+
+            // Scale up partial window to full second
+            double currentRate = (_currentWindowBytes * 1000.0) / elapsed.count();
+
+            // Blend with previous window data
+            double previousRate = (_previousWindowBytes * 1000.0) / kSpeedWindowMS.count();
+            return static_cast<uint64_t>(
+                (currentRate * (1.0 - kPreviousWindowWeight)) +
+                (previousRate * kPreviousWindowWeight));
+        }
+
+        // Window complete - rotate windows
+        _previousWindowBytes = _currentWindowBytes;
+        _currentWindowBytes = 0;
+        _windowStartTime = now;
+
+        // Calculate blended rate
+        double previousRate = (_previousWindowBytes * 1000.0) / kSpeedWindowMS.count();
+        return static_cast<uint64_t>(previousRate);
+    }
+};
 
 // SocketChannel
 //
@@ -48,8 +105,6 @@ public:
           _running(false),
           _socketFd(-1),
           _lastClientResponse(),
-          _dataSentCount(0),
-          _lastDataSentCountReset(system_clock::now()),
           _lastConnectionAttempt(system_clock::now()),
           _reconnectCount(0)
     {
@@ -64,6 +119,11 @@ public:
     uint32_t GetReconnectCount() const override
     {
         return _reconnectCount;
+    }
+
+    virtual uint64_t BytesSentPerSecond() override
+    {
+        return _speedTracker.BytesPerSecond();
     }
 
     uint16_t Port() const override
@@ -88,8 +148,8 @@ public:
             _running = false;
         }
 
-//        if (_workerThread.joinable())
-//            _workerThread.join();
+        if (_workerThread.joinable())
+            _workerThread.join();
 
         CloseSocket();
     }
@@ -307,143 +367,60 @@ private:
         return setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, &timeouttv, sizeof(timeouttv)) == 0;
     }
 
-   optional<ClientResponse> SendFrame(const vector<uint8_t>&& frame)
+    optional<ClientResponse> SendFrame(const vector<uint8_t>&& frame)
     {
-        if (_socketFd == -1)
+        if (_socketFd == -1 && !ConnectSocket())
         {
-            if (!ConnectSocket())
-            {
-                cerr << "Could not connect socket to " << _hostName << " [" << _friendlyName << "]" << endl;
-                lock_guard<mutex> lock(_mutex);
-                _isConnected = false;
-                return nullopt;
-            }
-
-            // Set the send timeout (e.g., 5 seconds)
-            if (!SetSocketSendTimeout(_socketFd, kSendTimeout))
-            {
-                cerr << "Could not set send timeout for " << _friendlyName << endl;
-                CloseSocket();
-                lock_guard<mutex> lock(_mutex);
-                _isConnected = false;
-                return nullopt;
-            }
+            lock_guard<mutex> lock(_mutex);
+            _isConnected = false;
+            return nullopt;
         }
 
         size_t totalSent = 0;
-        const int maxRetries = 5;  // Maximum number of retries for EWOULDBLOCK/EAGAIN
-        const useconds_t retryDelay = 100000;  // 100ms delay between retries
-
         while (totalSent < frame.size())
         {
+            auto startTime = steady_clock::now();
+
             ssize_t sent = send(_socketFd, 
-                                frame.data() + totalSent, 
-                                frame.size() - totalSent, 
-                                MSG_NOSIGNAL);
+                            frame.data() + totalSent, 
+                            frame.size() - totalSent, 
+                            MSG_NOSIGNAL);
             
+            if (sent > 0)
+            {
+                totalSent += sent;
+                continue;
+            }
+
             if (sent == -1)
             {
                 if (errno == EPIPE)
                 {
-                    // Peer has closed the connection - attempt to reconnect once
-                    cerr << "Connection broken (EPIPE) to " << _hostName 
-                        << " [" << _friendlyName << "] - attempting to reconnect" << endl;
-                    
                     CloseSocket();
-                    if (!ConnectSocket())
-                    {
-                        cerr << "Reconnection failed to " << _hostName << " [" << _friendlyName << "]" << endl;
-                        lock_guard<mutex> lock(_mutex);
-                        _isConnected = false;
+                    if (!ConnectSocket()) 
                         return nullopt;
-                    }
-                    
-                    // Try the send again after reconnection
-                    sent = send(_socketFd, 
-                            frame.data() + totalSent, 
-                            frame.size() - totalSent, 
-                            MSG_NOSIGNAL);
-                            
-                    if (sent == -1)
-                    {
-                        cerr << "Send failed after reconnection to " << _hostName 
-                            << " [" << _friendlyName << "] errno=" << errno << endl;
-                        CloseSocket();
-                        lock_guard<mutex> lock(_mutex);
-                        _isConnected = false;
-                        return nullopt;
-                    }
+                    continue;
                 }
-                else if (errno == EWOULDBLOCK || errno == EAGAIN)
+                
+                if ((errno == EWOULDBLOCK || errno == EAGAIN) && steady_clock::now() - startTime < kSendTimeout)
                 {
-                    // Socket buffer is full, wait a bit and retry
-                    int retryCount = 0;
-                    while (retryCount < maxRetries)
-                    {
-                        usleep(retryDelay);
-                        sent = send(_socketFd, 
-                                frame.data() + totalSent, 
-                                frame.size() - totalSent, 
-                                MSG_NOSIGNAL);
-                        
-                        if (sent > 0)
-                            break;  // Successful send after retry
-                        
-                        if (sent == -1 && errno != EWOULDBLOCK && errno != EAGAIN)
-                        {
-                            cerr << "Fatal error sending data to " << _hostName 
-                                << " [" << _friendlyName << "] errno=" << errno << endl;
-                            CloseSocket();
-                            lock_guard<mutex> lock(_mutex);
-                            _isConnected = false;
-                            return nullopt;
-                        }
-                        
-                        retryCount++;
-                    }
-                    
-                    if (retryCount >= maxRetries)
-                    {
-                        cerr << "Max retries exceeded sending data to " << _hostName 
-                            << " [" << _friendlyName << "] - socket buffer full" << endl;
-                        CloseSocket();
-                        lock_guard<mutex> lock(_mutex);
-                        _isConnected = false;
-                        return nullopt;
-                    }
+                    this_thread::sleep_for(100ms);
+                    continue;
                 }
-                else
-                {
-                    // Handle other errors by closing the socket
-                    cerr << "Error sending data to " << _hostName 
-                        << " [" << _friendlyName << "] errno=" << errno << endl;
-                    CloseSocket();
-                    lock_guard<mutex> lock(_mutex);
-                    _isConnected = false;
-                    return nullopt;
-                }
+                cerr << "Socket timed out for " << _hostName << " [" << _friendlyName << "] errno=" << errno << endl;
+
+                CloseSocket();
+                return nullopt;
             }
-            
-            if (sent > 0)  // Only update if we actually sent data
-                totalSent += sent;
         }
 
         {
             lock_guard<mutex> lock(_mutex);
             _isConnected = true;
-            _dataSentCount += totalSent;
+            _speedTracker.AddBytes(totalSent);
         }
 
-        optional<ClientResponse> lastValidResponse = nullopt;
-        for (;;)
-        {
-            optional<ClientResponse> response = ReadSocketResponse();
-            if (!response)
-                break;
-
-            lastValidResponse = std::move(response);
-        }
-        return lastValidResponse;
+        return ReadSocketResponse();
     }
 
 
@@ -505,7 +482,16 @@ private:
                 close(tempSocket);
                 return false;
             }
+
+            
         }
+
+        if (!SetSocketSendTimeout(tempSocket, kSendTimeout))
+        {
+            close(tempSocket);
+            return false;
+        }
+        
         ++_reconnectCount;
         cout << "Connection number " << _reconnectCount << " to " << _hostName << ":" << _port << " [" << _friendlyName << "] on thread " << this_thread::get_id() << endl; 
         _socketFd = tempSocket;
@@ -514,67 +500,45 @@ private:
 
     void CloseSocket()
     {
-        // Clear the queue
-        lock_guard<mutex> queueLock(_queueMutex);
-        queue<vector<uint8_t>> empty;
-        _frameQueue.swap(empty);
+        lock_guard<mutex> lock(_mutex);  // Add lock
+        
+        {
+            lock_guard<mutex> queueLock(_queueMutex);
+            queue<vector<uint8_t>> empty;
+            _frameQueue.swap(empty);
+        }
 
         if (_socketFd != -1)
         {
-            cout << "Closing socket connection to " <<_hostName <<  " [" << _friendlyName << "]" << endl;
             close(_socketFd);
             _socketFd = -1;
         }
         _isConnected = false;
-
-    }
-
-    uint32_t BytesPerSecond()
-    {
-        lock_guard<mutex> lock(_mutex);
-        
-        system_clock::time_point now = system_clock::now();
-        auto elapsed = duration_cast<duration<double>>(now - _lastDataSentCountReset).count();
-
-        if (elapsed == 0.0)
-            return 0;
-
-        uint32_t bytesPerSecond = static_cast<uint32_t>(_dataSentCount / elapsed);
-
-        constexpr auto bpsResetTimer = 3.0;
-        if (elapsed >= bpsResetTimer)
-        {
-            _lastDataSentCountReset = now;
-            _dataSentCount = 0;
-        }
-
-        return bytesPerSecond;
     }
     
 private:
     static constexpr uint16_t CommandPixelData = 3;
     static constexpr size_t   MaxQueueDepth = 100;
 
-    string _hostName;
-    string _friendlyName;
-    uint16_t _port;
+    string                   _hostName;
+    string                   _friendlyName;
+    uint16_t                 _port;
 
-    mutable mutex _mutex;
-    mutable mutex _queueMutex;
-    mutable mutex _responseMutex;
+    mutable mutex            _mutex;
+    mutable mutex            _queueMutex;
+    mutable mutex            _responseMutex;
     
-    atomic<bool> _isConnected;
-    atomic<bool> _running;
+    atomic<bool>             _isConnected;
+    atomic<bool>             _running;
 
-    queue<vector<uint8_t>> _frameQueue;
-    thread _workerThread;
+    queue<vector<uint8_t>>   _frameQueue;
+    thread                   _workerThread;
 
-    ClientResponse _lastClientResponse;
-    system_clock::time_point _lastDataSentCountReset;
+    ClientResponse           _lastClientResponse;
     system_clock::time_point _lastConnectionAttempt;
-    uint32_t _dataSentCount;
+    SpeedTracker             _speedTracker; 
 
-    uint32_t _reconnectCount;
+    uint32_t                 _reconnectCount;
     
     int _socketFd;
 };

@@ -43,6 +43,60 @@ public:
 
     void Start()
     {
+        // Define the `/api/sockets` endpoint
+        CROW_ROUTE(_crowApp, "/api/sockets")
+            .methods(crow::HTTPMethod::GET)([&]() -> crow::response
+            {
+                auto socketsJson = nlohmann::json::array();
+                for (size_t canvasId = 0; canvasId < _allCanvases.size(); ++canvasId)
+                {
+                    if (_allCanvases[canvasId]) // Ensure canvas exists
+                    {
+                        for (size_t featureId = 0; featureId < _allCanvases[canvasId]->Features().size(); ++featureId)
+                        {
+                            const auto& feature = _allCanvases[canvasId]->Features()[featureId];
+                            nlohmann::json socketJson;
+                            socketJson["hostName"] = feature->Socket().HostName();
+                            socketJson["friendlyName"] = feature->Socket().FriendlyName();
+                            socketJson["featureId"] = featureId;
+                            socketJson["isConnected"] = feature->Socket().IsConnected();
+                            socketJson["bytesPerSecond"] = feature->Socket().BytesSentPerSecond();
+                            socketJson["port"] = feature->Socket().Port();
+                            socketsJson.push_back(socketJson);
+                        }
+                    }
+                }
+                return socketsJson.dump();
+            });
+
+        // Define the `/api/sockets/:id` endpoint
+        CROW_ROUTE(_crowApp, "/api/sockets/<int>")
+            .methods(crow::HTTPMethod::GET)([&](int id) -> crow::response
+            {
+                // Extract canvas and feature IDs from the socket ID
+                int canvasId = id / 1000;
+                int featureId = id % 1000;
+
+                if (canvasId < 0 || canvasId >= _allCanvases.size() || !_allCanvases[canvasId])
+                    return {crow::NOT_FOUND, R"({"error": "Socket not found - invalid canvas"})"};
+
+                const auto& features = _allCanvases[canvasId]->Features();
+                if (featureId < 0 || featureId >= features.size())
+                    return {crow::NOT_FOUND, R"({"error": "Socket not found - invalid feature"})"};
+
+                const auto& feature = features[featureId];
+                nlohmann::json socketJson;
+                socketJson["id"] = id;
+                socketJson["canvasId"] = canvasId;
+                socketJson["featureId"] = featureId;
+                socketJson["isConnected"] = feature->Socket().IsConnected();
+                socketJson["port"] = feature->Socket().Port();
+                
+                // Add more detailed information for single socket view
+                socketJson["bytesPerSecond"] = feature->Socket().BytesSentPerSecond();
+                
+                return socketJson.dump();
+            });        
         // Define the `/api/canvases` endpoint
         CROW_ROUTE(_crowApp, "/api/canvases")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
