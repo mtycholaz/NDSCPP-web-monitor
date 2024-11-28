@@ -420,7 +420,7 @@ private:
             _speedTracker.AddBytes(totalSent);
         }
 
-        return ReadSocketResponse();
+        return _running ? ReadSocketResponse() : nullopt;
     }
 
 
