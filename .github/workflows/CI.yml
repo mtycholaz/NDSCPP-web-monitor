@@ -1,0 +1,22 @@
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update 
+        sudo apt-get install -y libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
+
+    - name: Create secrets.h
+      run: cp secrets.example.h secrets.h
+
+    - name: Build project
+      run: make all

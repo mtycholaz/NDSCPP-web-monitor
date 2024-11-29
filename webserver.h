@@ -18,7 +18,6 @@ private:
 
         void before_handle(crow::request& req, crow::response& res, context& ctx)
         {
-            res.manual_length_header = true;
         }
 
         void after_handle(crow::request& req, crow::response& res, context& ctx)

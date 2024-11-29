@@ -123,7 +123,7 @@ public:
 
     uint32_t GetReconnectCount() const override
     {
-        lock_guard<mutex> lock(_mutex);
+        lock_guard lock(_mutex);
         return _reconnectCount;
     }
 
@@ -139,7 +139,7 @@ public:
 
     void Start() override
     {
-        lock_guard<mutex> lock(_mutex);
+        lock_guard lock(_mutex);
         if (!_running)
         {
             _running = true;
@@ -150,7 +150,7 @@ public:
     void Stop() override
     {
         {
-            lock_guard<mutex> lock(_mutex);
+            lock_guard lock(_mutex);
             _running = false;
         }
 
@@ -162,7 +162,7 @@ public:
 
     bool IsConnected() const override
     {
-        lock_guard<mutex> lock(_mutex);
+        lock_guard lock(_mutex);
         return _isConnected;
     }
     
@@ -175,7 +175,7 @@ public:
     
     ClientResponse LastClientResponse() const override  // Changed to return by value
     { 
-        lock_guard<mutex> lock(_responseMutex);
+        lock_guard lock(_responseMutex);
         return _lastClientResponse; 
     }
 
@@ -206,7 +206,7 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
 {
     bool isQueueFull = false;
     {
-        lock_guard<mutex> lock(_queueMutex);
+        lock_guard lock(_queueMutex);
         size_t newTotalBytes = _totalQueuedBytes + frameData.size();
         if (_frameQueue.size() >= MaxQueueDepth || newTotalBytes > MaxQueuedBytes)
             isQueueFull = true;
@@ -223,7 +223,7 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
     {
         cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
         CloseSocket();
-        lock_guard<mutex> lock(_queueMutex);
+        lock_guard lock(_queueMutex);
         _frameQueue = queue<vector<uint8_t>>(); // Clear the queue
         return false;
     }
@@ -299,7 +299,7 @@ private:
                         optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
                         if (response)
                         {
-                            lock_guard<mutex> lock(_responseMutex);
+                            lock_guard lock(_responseMutex);
                             _lastClientResponse = std::move(*response);
                         }
                     }
@@ -396,7 +396,7 @@ private:
     {
         if (_socketFd == -1 && !ConnectSocket())
         {
-            lock_guard<mutex> lock(_mutex);
+            lock_guard lock(_mutex);
             _isConnected = false;
             return nullopt;
         }
@@ -440,7 +440,7 @@ private:
         }
 
         {
-            lock_guard<mutex> lock(_mutex);
+            lock_guard lock(_mutex);
             _isConnected = true;
             _speedTracker.AddBytes(totalSent);
         }
@@ -525,10 +525,10 @@ private:
 
     void CloseSocket()
     {
-        lock_guard<mutex> lock(_mutex);  // Add lock
+        lock_guard lock(_mutex);  // Add lock
         
         {
-            lock_guard<mutex> queueLock(_queueMutex);
+            lock_guard queueLock(_queueMutex);
             queue<vector<uint8_t>> empty;
             _frameQueue.swap(empty);
         }
