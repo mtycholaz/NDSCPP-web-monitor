@@ -1,6 +1,3 @@
-// Quick and dirty ncurses-based monitor for the NDSCPP LED Matrix REST API server just to make sure
-// it works and that we can serialize the data correctly.
-
 #include <ncurses.h>
 #include <curl/curl.h>
 #include <chrono>
@@ -11,7 +8,6 @@
 #include <string>
 
 // Our only interface to NDSCPP comes through the REST api and this serialization helper code
-
 #include "../serialization.h"
 #include "../interfaces.h"
 
@@ -48,7 +44,6 @@ std::string httpGet(const std::string &url)
 // Format helpers
 std::string formatBytes(double bytes)
 {
-    // Let's be optimistic and assume we won't need to format more than GB/s
     const char *units[] = {"B/s", "KB/s", "MB/s", "GB/s"};
     int unit = 0;
     while (bytes >= 1024 && unit < 3)
@@ -72,18 +67,18 @@ std::string formatWifiSignal(double signal)
 constexpr int HEADER_HEIGHT = 3;
 constexpr int FOOTER_HEIGHT = 2;
 
-// Flashback to the original TaskManager prototype :-)
+// Optimized column widths based on actual data requirements
 const std::vector<std::pair<std::string, int>> COLUMNS = 
 {
-    {"Canvas", 8},
-    {"Feature", 15},
-    {"Host", 16},
-    {"Size", 12},
-    {"FPS", 5},
-    {"Buffer", 10},
-    {"Signal", 8},
-    {"B/W", 10},
-    {"Status", 8}
+    {"Can", 3},          // Reduced from 4 (3 digits sufficient)
+    {"Feature", 12},     // Reduced from 15 (most names shown are shorter)
+    {"Host", 14},        // Reduced from 16 (IP addresses fit in 14)
+    {"Size", 8},         // Reduced from 12 (format: XXXxYY)
+    {"FPS", 4},          // Reduced from 5 (2-3 digits typically)
+    {"Buf", 7},          // Renamed and reduced from 10 (format: XX/YYY)
+    {"Signal", 8},       // Kept at 8 (format: -XX.XdBm)
+    {"B/W", 9},          // Reduced from 10 (typical bandwidth strings fit)
+    {"Status", 6}        // Reduced from 8 (ONLINE/OFFLINE)
 };
 
 class Monitor
@@ -96,10 +91,8 @@ class Monitor
     std::string baseUrl = "http://localhost:7777";
 
 public:
-
     Monitor()
     {
-        // Initialize ncurses
         initscr();
         start_color();
         cbreak();
@@ -108,13 +101,11 @@ public:
         curs_set(0);
         refresh();
 
-        // Set up colors
-        init_pair(1, COLOR_GREEN, COLOR_BLACK);  // Connected
-        init_pair(2, COLOR_RED, COLOR_BLACK);    // Disconnected
-        init_pair(3, COLOR_YELLOW, COLOR_BLACK); // Headers
-        init_pair(4, COLOR_CYAN, COLOR_BLACK);   // Highlights
+        init_pair(1, COLOR_GREEN, COLOR_BLACK);   // Connected
+        init_pair(2, COLOR_RED, COLOR_BLACK);     // Disconnected
+        init_pair(3, COLOR_YELLOW, COLOR_BLACK);  // Headers
+        init_pair(4, COLOR_CYAN, COLOR_BLACK);    // Highlights
 
-        // Create windows
         int maxY, maxX;
         getmaxyx(stdscr, maxY, maxX);
         contentHeight = maxY - HEADER_HEIGHT - FOOTER_HEIGHT;
@@ -123,7 +114,6 @@ public:
         contentWin = newwin(contentHeight, maxX, HEADER_HEIGHT, 0);
         footerWin = newwin(FOOTER_HEIGHT, maxX, maxY - FOOTER_HEIGHT, 0);
 
-        // Enable scrolling for content window
         scrollok(contentWin, TRUE);
         keypad(contentWin, TRUE);
     }
@@ -142,7 +132,6 @@ public:
         box(headerWin, 0, 0);
         mvwprintw(headerWin, 0, 2, " LED Matrix Monitor ");
 
-        // Draw column headers
         int x = 1;
         wattron(headerWin, COLOR_PAIR(3));
         for (const auto &col : COLUMNS)
@@ -161,7 +150,6 @@ public:
 
         try
         {
-            // Fetch canvas data
             std::string response = httpGet(baseUrl + "/api/canvases");
             auto j = json::parse(response);
 
@@ -178,59 +166,67 @@ public:
 
                         // Canvas ID
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                  COLUMNS[0].second, canvasId.c_str());
+                                 COLUMNS[0].second, canvasId.c_str());
                         x += COLUMNS[0].second + 1;
 
                         // Feature name
+                        std::string featureName = featureJson["friendlyName"].get<std::string>();
+                        if (featureName.length() > (size_t) COLUMNS[1].second)
+                            featureName = featureName.substr(0, COLUMNS[1].second);
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                  COLUMNS[1].second, featureJson["friendlyName"].get<std::string>().c_str());
+                                 COLUMNS[1].second, featureName.c_str());
                         x += COLUMNS[1].second + 1;
 
                         // Hostname
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                  COLUMNS[2].second, featureJson["hostName"].get<std::string>().c_str());
+                                 COLUMNS[2].second, featureJson["hostName"].get<std::string>().c_str());
                         x += COLUMNS[2].second + 1;
 
                         // Size
                         std::string size = std::to_string(featureJson["width"].get<size_t>()) + "x" +
-                                           std::to_string(featureJson["height"].get<size_t>());
+                                         std::to_string(featureJson["height"].get<size_t>());
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                  COLUMNS[3].second, size.c_str());
+                                 COLUMNS[3].second, size.c_str());
                         x += COLUMNS[3].second + 1;
 
-                        // Get client response data if available
-                        if (featureJson.contains("lastClientResponse"))
+                        // Status position for offline devices
+                        int statusX = x;
+                        for (size_t i = 4; i < COLUMNS.size() - 1; i++)
+                            statusX += COLUMNS[i].second + 1;
+
+                        bool isConnected = featureJson["isConnected"].get<bool>();
+                        
+                        if (isConnected && featureJson.contains("lastClientResponse"))
                         {
                             const auto &stats = featureJson["lastClientResponse"];
 
                             // FPS
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
-                                      COLUMNS[4].second, stats["fpsDrawing"].get<int>());
+                                     COLUMNS[4].second, stats["fpsDrawing"].get<int>());
                             x += COLUMNS[4].second + 1;
 
                             // Buffer usage
                             std::string buffer = std::to_string(stats["bufferPos"].get<size_t>()) + "/" +
-                                                 std::to_string(stats["bufferSize"].get<size_t>());
+                                               std::to_string(stats["bufferSize"].get<size_t>());
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                      COLUMNS[5].second, buffer.c_str());
+                                     COLUMNS[5].second, buffer.c_str());
                             x += COLUMNS[5].second + 1;
 
                             // WiFi Signal
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                      COLUMNS[6].second, formatWifiSignal(stats["wifiSignal"].get<double>()).c_str());
+                                     COLUMNS[6].second, formatWifiSignal(stats["wifiSignal"].get<double>()).c_str());
                             x += COLUMNS[6].second + 1;
 
                             // Bandwidth
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                      COLUMNS[7].second, formatBytes(featureJson["bytesPerSecond"].get<double>()).c_str());
+                                     COLUMNS[7].second, formatBytes(featureJson["bytesPerSecond"].get<double>()).c_str());
                             x += COLUMNS[7].second + 1;
                         }
 
-                        // Connection status with color
-                        bool isConnected = featureJson["isConnected"].get<bool>();
+                        // Connection status with color in rightmost column
                         wattron(contentWin, COLOR_PAIR(isConnected ? 1 : 2));
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                  COLUMNS[8].second, isConnected ? "ONLINE" : "OFFLINE");
+                        mvwprintw(contentWin, row - scrollOffset, statusX, "%-*s",
+                                 COLUMNS[8].second, isConnected ? "ONLINE" : "OFFLINE");
                         wattroff(contentWin, COLOR_PAIR(isConnected ? 1 : 2));
                     }
                     row++;
@@ -257,7 +253,6 @@ public:
     void run()
     {
         bool running = true;
-
         while (running)
         {
             drawHeader();
@@ -267,24 +262,23 @@ public:
             int ch = wgetch(contentWin);
             switch (ch)
             {
-            case 'q':
-            case 'Q':
-                running = false;
-                break;
-            case KEY_UP:
-                if (scrollOffset > 0)
-                    scrollOffset--;
-                break;
-            case KEY_DOWN:
-                scrollOffset++;
-                break;
-            case 'r':
-            case 'R':
-                // Refresh will happen on next loop
-                break;
+                case 'q':
+                case 'Q':
+                    running = false;
+                    break;
+                case KEY_UP:
+                    if (scrollOffset > 0)
+                        scrollOffset--;
+                    break;
+                case KEY_DOWN:
+                    scrollOffset++;
+                    break;
+                case 'r':
+                case 'R':
+                    // Refresh will happen on next loop
+                    break;
             }
 
-            // Add a small delay to prevent hammering the API
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
@@ -292,14 +286,9 @@ public:
 
 int main(int, char *[])
 {
-    // Initialize CURL
     curl_global_init(CURL_GLOBAL_ALL);
-
-    // Run the monitor
     Monitor monitor;
     monitor.run();
-
-    // Cleanup
     curl_global_cleanup();
     return 0;
 }

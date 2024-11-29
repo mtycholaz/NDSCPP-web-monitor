@@ -50,7 +50,11 @@ public:
 
     void AddBytes(uint64_t bytes)
     {
-        _currentWindowBytes += bytes;
+        // Check for overflow before adding.  No idea if overflow is a practical
+        // concern, but I'd feel weird not checking.
+
+        if (_currentWindowBytes <= (std::numeric_limits<uint64_t>::max() - bytes))
+            _currentWindowBytes += bytes;
     }
 
     uint64_t BytesPerSecond()
@@ -106,7 +110,8 @@ public:
           _socketFd(-1),
           _lastClientResponse(),
           _lastConnectionAttempt(system_clock::now()),
-          _reconnectCount(0)
+          _reconnectCount(0),
+          _totalQueuedBytes(0)
     {
     }
 
@@ -118,6 +123,7 @@ public:
 
     uint32_t GetReconnectCount() const override
     {
+        lock_guard<mutex> lock(_mutex);
         return _reconnectCount;
     }
 
@@ -167,7 +173,7 @@ public:
     // 
     // A copy of the last success/stats packet we got back from the client
     
-    const ClientResponse& LastClientResponse() const override 
+    ClientResponse LastClientResponse() const override  // Changed to return by value
     { 
         lock_guard<mutex> lock(_responseMutex);
         return _lastClientResponse; 
@@ -201,10 +207,13 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
     bool isQueueFull = false;
     {
         lock_guard<mutex> lock(_queueMutex);
-        if (_frameQueue.size() >= MaxQueueDepth)
+        size_t newTotalBytes = _totalQueuedBytes + frameData.size();
+        if (_frameQueue.size() >= MaxQueueDepth || newTotalBytes > MaxQueuedBytes)
             isQueueFull = true;
-        else
+        else {
+            _totalQueuedBytes += frameData.size();
             _frameQueue.push(std::move(frameData));
+        }
     }
 
     // If the queue is full, we reset the socket, but we make sure not to be holding the mutex when we do so
@@ -213,7 +222,9 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
     if (isQueueFull)
     {
         cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
-        CloseSocket(); // Called outside the lock
+        CloseSocket();
+        lock_guard<mutex> lock(_queueMutex);
+        _frameQueue = queue<vector<uint8_t>>(); // Clear the queue
         return false;
     }
 
@@ -232,8 +243,8 @@ private:
     {
         steady_clock::time_point lastSendTime = steady_clock::now();
         constexpr auto kMaxBatchSize = 20;
-        constexpr auto xMaxBatchDelay = 1000ms;
-        constexpr auto reconnectDelay = 1000ms; //delay between connection attempts
+        constexpr auto kMaxBatchDelay = 1000ms;  // Fixed variable name
+        constexpr auto reconnectDelay = 1000ms;
 
         while (_running)
         {
@@ -244,10 +255,24 @@ private:
                 size_t packetCount = 0;
 
                 auto now = steady_clock::now();
-                auto bTimeToSend = duration_cast<milliseconds>(now - lastSendTime) >= xMaxBatchDelay;
+                auto bTimeToSend = duration_cast<milliseconds>(now - lastSendTime) >= kMaxBatchDelay;
 
-                // If the queue is not empty and we have enough frames to send, or it's time to send.
-                // So we can send on hitting the threshold of packets or delay
+                // Calculate total bytes first to preallocate buffer
+                {
+                    unique_lock<mutex> lock(_queueMutex);
+                    size_t tempCount = 0;
+                    size_t tempBytes = 0;
+                    auto queueCopy = _frameQueue;
+                    while (!queueCopy.empty() && tempCount < kMaxBatchSize)
+                    {
+                        tempBytes += queueCopy.front().size();
+                        tempCount++;
+                        queueCopy.pop();
+                    }
+                    if (tempBytes > 0) {
+                        combinedBuffer.reserve(tempBytes);
+                    }
+                }
 
                 if (!_frameQueue.empty() && (_frameQueue.size() >= kMaxBatchSize || bTimeToSend))
                 {
@@ -259,6 +284,7 @@ private:
                         totalBytes += frame.size();
                         packetCount++;
                         combinedBuffer.insert(combinedBuffer.end(), frame.begin(), frame.end());
+                        _totalQueuedBytes -= frame.size();
                         _frameQueue.pop();
                     }
                 }
@@ -308,7 +334,6 @@ private:
     {
         const size_t cbToRead = sizeof(ClientResponse);
 
-        // Poll for socket readiness
         pollfd pfd;
         pfd.fd = _socketFd;
         pfd.events = POLLIN;
@@ -333,7 +358,7 @@ private:
         {
             // Invalid byte count; eat the contents
             vector<uint8_t> tempBuffer(byteCount);
-            recv(_socketFd, tempBuffer.data(), byteCount, 0); // Consume the invalid response
+            recv(_socketFd, tempBuffer.data(), byteCount, 0);
             return nullopt;
         }
 
@@ -518,27 +543,28 @@ private:
     
 private:
     static constexpr uint16_t CommandPixelData = 3;
-    static constexpr size_t   MaxQueueDepth = 500;
+    static constexpr size_t MaxQueueDepth = 500;
+    static constexpr size_t MaxQueuedBytes = 1024 * 1024 * 10;  // 10MB memory limit
 
-    string                   _hostName;
-    string                   _friendlyName;
-    uint16_t                 _port;
+    string _hostName;
+    string _friendlyName;
+    uint16_t _port;
 
-    mutable mutex            _mutex;
-    mutable mutex            _queueMutex;
-    mutable mutex            _responseMutex;
+    mutable mutex _mutex;
+    mutable mutex _queueMutex;
+    mutable mutex _responseMutex;
     
-    atomic<bool>             _isConnected;
-    atomic<bool>             _running;
+    atomic<bool> _isConnected;
+    atomic<bool> _running;
 
-    queue<vector<uint8_t>>   _frameQueue;
-    thread                   _workerThread;
+    queue<vector<uint8_t>> _frameQueue;
+    size_t _totalQueuedBytes;  // Track total memory usage
+    thread _workerThread;
 
-    ClientResponse           _lastClientResponse;
+    ClientResponse _lastClientResponse;
     system_clock::time_point _lastConnectionAttempt;
-    SpeedTracker             _speedTracker; 
+    SpeedTracker _speedTracker;
 
-    uint32_t                 _reconnectCount;
-    
+    uint32_t _reconnectCount;
     int _socketFd;
 };

@@ -114,7 +114,7 @@ public:
     // Connection status
     virtual bool IsConnected() const = 0;
     virtual uint64_t BytesSentPerSecond() = 0;
-    virtual const ClientResponse & LastClientResponse() const = 0;
+    virtual ClientResponse LastClientResponse() const = 0;
     virtual uint32_t GetReconnectCount() const = 0;
 
     // Start and stop operations
