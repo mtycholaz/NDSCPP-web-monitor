@@ -13,10 +13,12 @@ jobs:
     - name: Set up dependencies
       run: |
         sudo apt-get update 
-        sudo apt-get install -y libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
+        sudo apt-get install -y libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev libcurl4-gnutls-dev
 
     - name: Create secrets.h
       run: cp secrets.example.h secrets.h
 
     - name: Build project
-      run: make all
+      run: |
+        make all
+        make -C monitor
