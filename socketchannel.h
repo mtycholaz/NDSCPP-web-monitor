@@ -38,7 +38,7 @@ constexpr auto kSendTimeout    = 5000ms;
 class SpeedTracker
 {
 private:
-    static constexpr milliseconds kSpeedWindowMS{1000}; // 1 second window
+    static constexpr milliseconds kSpeedWindowMS{3000}; // 3 second window
     static constexpr double kPreviousWindowWeight{0.3}; // Weight for previous window in average
 
     uint64_t _currentWindowBytes{0};
@@ -216,15 +216,13 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
         }
     }
 
-    // If the queue is full, we reset the socket, but we make sure not to be holding the mutex when we do so
-    // because CloseSocket will also try to, and that would cause a deadlock.  It is not a re-entrant mutex.
+    // If the queue is full, we reset the socket and drop the frames in the queue
 
     if (isQueueFull)
     {
-        cout << "Queue is full at " << _hostName << "[" << _friendlyName << "] dropping frame and resetting socket" << endl;
+        cout << "Queue is full at " << _hostName << " [" << _friendlyName << "] dropping frame and resetting socket" << endl;
         CloseSocket();
-        lock_guard<mutex> lock(_queueMutex);
-        _frameQueue = queue<vector<uint8_t>>(); // Clear the queue
+        EmptyQueue();
         return false;
     }
 
@@ -523,16 +521,20 @@ private:
         return true;
     }
 
-    void CloseSocket()
+    void EmptyQueue()
     {
-        lock_guard<mutex> lock(_mutex);  // Add lock
-        
+        lock_guard<mutex> lock(_mutex);  // Add lock    
         {
             lock_guard<mutex> queueLock(_queueMutex);
             queue<vector<uint8_t>> empty;
             _frameQueue.swap(empty);
-        }
+            _totalQueuedBytes = 0;
+        }        
+    }
 
+    void CloseSocket()
+    {
+        lock_guard<mutex> lock(_mutex);  // Add lock    
         if (_socketFd != -1)
         {
             close(_socketFd);

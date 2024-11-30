@@ -270,3 +270,4 @@ private:
         bytes.push_back(color.b);
     }
 };
+
