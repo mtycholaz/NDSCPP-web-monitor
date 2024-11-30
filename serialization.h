@@ -172,6 +172,10 @@ inline void to_json(nlohmann::json &j, const ISocketChannel &socket)
     {
         j["hostName"] = socket.HostName();
         j["friendlyName"] = socket.FriendlyName();
+        j["isConnected"] = socket.IsConnected();
+        j["reconnectCount"] = socket.GetReconnectCount();
+        j["queueDepth"] = socket.GetCurrentQueueDepth();
+        j["queueMaxSize"] = socket.GetQueueMaxSize();
 
         const auto &lastResponse = socket.LastClientResponse();
         if (lastResponse.size == sizeof(ClientResponse))

@@ -118,6 +118,8 @@ public:
     virtual uint64_t BytesSentPerSecond() = 0;
     virtual ClientResponse LastClientResponse() const = 0;
     virtual uint32_t GetReconnectCount() const = 0;
+    virtual size_t GetCurrentQueueDepth() const = 0;
+    virtual size_t GetQueueMaxSize() const = 0;
 
     // Start and stop operations
     virtual void Start() = 0;

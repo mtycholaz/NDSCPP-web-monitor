@@ -127,6 +127,17 @@ public:
         return _id; 
     }
 
+    size_t GetCurrentQueueDepth() const override
+    {
+        lock_guard lock(_queueMutex);
+        return _frameQueue.size();  
+    }
+
+    size_t GetQueueMaxSize() const override
+    {
+        return MaxQueueDepth;
+    }
+
     uint32_t GetReconnectCount() const override
     {
         lock_guard lock(_mutex);

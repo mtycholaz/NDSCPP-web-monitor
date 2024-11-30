@@ -82,11 +82,12 @@ const std::vector<std::pair<std::string, int>> COLUMNS =
     {"Host", 14},        // Hostname
     {"Size", 8},         // Dimensions
     {"FPS", 4},          // Frames per second
+    {"Queue", 7},        // Queue depth
     {"Buf", 7},          // Buffer usage
     {"Signal", 8},       // WiFi signal
     {"B/W", 9},          // Bandwidth
     {"Delta", 7},        // Clock delta
-    {"Seq", 6},         // Sequence number
+    {"Seq", 6},          // Sequence number
     {"Flash", 5},        // Flash version
     {"Status", 6}        // Connection status
 };
@@ -154,168 +155,196 @@ public:
         wrefresh(headerWin);
     }
 
- void drawContent()
-{
-    werase(contentWin);
-
-    try
+    void drawContent()
     {
-        std::string response = httpGet(baseUrl + "/api/canvases");
-        auto j = json::parse(response);
-        auto currentTime = std::chrono::system_clock::now().time_since_epoch().count() / 1000000; // Current time in ms
+        werase(contentWin);
 
-        int row = 0;
-        for (const auto &canvasJson : j)
+        try
         {
-            std::string canvasId = std::to_string(canvasJson["id"].get<size_t>());
+            std::string response = httpGet(baseUrl + "/api/canvases");
+            auto j = json::parse(response);
+            auto currentTime = std::chrono::system_clock::now().time_since_epoch().count() / 1000000; // Current time in ms
 
-            for (const auto &featureJson : canvasJson["features"])
+            int row = 0;
+            for (const auto &canvasJson : j)
             {
-                if (row >= scrollOffset && row < scrollOffset + contentHeight)
+                std::string canvasId = std::to_string(canvasJson["id"].get<size_t>());
+
+                for (const auto &featureJson : canvasJson["features"])
                 {
-                    int x = 1;
-
-                    // Canvas ID
-                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                             COLUMNS[0].second, canvasId.c_str());
-                    x += COLUMNS[0].second + 1;
-
-                    // Feature name
-                    std::string featureName = featureJson["friendlyName"].get<std::string>();
-                    if (featureName.length() > (size_t) COLUMNS[1].second)
-                        featureName = featureName.substr(0, COLUMNS[1].second);
-                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                             COLUMNS[1].second, featureName.c_str());
-                    x += COLUMNS[1].second + 1;
-
-                    // Hostname
-                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                             COLUMNS[2].second, featureJson["hostName"].get<std::string>().c_str());
-                    x += COLUMNS[2].second + 1;
-
-                    // Size
-                    std::string size = std::to_string(featureJson["width"].get<size_t>()) + "x" +
-                                     std::to_string(featureJson["height"].get<size_t>());
-                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                             COLUMNS[3].second, size.c_str());
-                    x += COLUMNS[3].second + 1;
-
-                    bool isConnected = featureJson["isConnected"].get<bool>();
-                    
-                    if (isConnected && featureJson.contains("lastClientResponse"))
+                    if (row >= scrollOffset && row < scrollOffset + contentHeight)
                     {
-                        const auto &stats = featureJson["lastClientResponse"];
+                        int x = 1;
 
-                        // FPS
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
-                                 COLUMNS[4].second, stats["fpsDrawing"].get<int>());
+                        // Canvas ID
+                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                COLUMNS[0].second, canvasId.c_str());
+                        x += COLUMNS[0].second + 1;
+
+                        // Feature name
+                        std::string featureName = featureJson["friendlyName"].get<std::string>();
+                        if (featureName.length() > (size_t) COLUMNS[1].second)
+                            featureName = featureName.substr(0, COLUMNS[1].second);
+                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                COLUMNS[1].second, featureName.c_str());
+                        x += COLUMNS[1].second + 1;
+
+                        // Hostname
+                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                COLUMNS[2].second, featureJson["hostName"].get<std::string>().c_str());
+                        x += COLUMNS[2].second + 1;
+
+                        // Size
+                        std::string size = std::to_string(featureJson["width"].get<size_t>()) + "x" +
+                                        std::to_string(featureJson["height"].get<size_t>());
+                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                COLUMNS[3].second, size.c_str());
+                        x += COLUMNS[3].second + 1;
+
+                        bool isConnected = featureJson["isConnected"].get<bool>();
+
+                        // FPS (only if connected and has client response)
+                        if (isConnected && featureJson.contains("lastClientResponse"))
+                        {
+                            const auto &stats = featureJson["lastClientResponse"];
+                            mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
+                                    COLUMNS[4].second, stats["fpsDrawing"].get<int>());
+                        }
+                        else
+                        {
+                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                    COLUMNS[4].second, "---");
+                        }
                         x += COLUMNS[4].second + 1;
 
-                        // Buffer usage
-                        std::string buffer = std::to_string(stats["bufferPos"].get<size_t>()) + "/" +
-                                           std::to_string(stats["bufferSize"].get<size_t>());
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[5].second, buffer.c_str());
+                        // Queue depth (when available from server)
+                        if (!featureJson.is_null() && featureJson.contains("queueDepth") && featureJson.contains("queueMaxSize")) {
+                            try {
+                                std::string queueStatus = std::to_string(featureJson["queueDepth"].get<size_t>()) + "/" +
+                                                        std::to_string(featureJson["queueMaxSize"].get<size_t>());
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                        COLUMNS[5].second, queueStatus.c_str());
+                            } catch (const json::exception&) {
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                        COLUMNS[5].second, "---");
+                            }
+                        } else {
+                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                    COLUMNS[5].second, "---");
+                        }
                         x += COLUMNS[5].second + 1;
 
-                        // WiFi Signal
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[6].second, formatWifiSignal(stats["wifiSignal"].get<double>()).c_str());
-                        x += COLUMNS[6].second + 1;
 
-                        // Bandwidth
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[7].second, formatBytes(featureJson["bytesPerSecond"].get<double>()).c_str());
-                        x += COLUMNS[7].second + 1;
+                        // Rest of the columns (only if connected and has client response)
+                        if (isConnected && featureJson.contains("lastClientResponse"))
+                        {
+                            const auto &stats = featureJson["lastClientResponse"];
 
-                        // Clock Delta
-                        if (stats.contains("currentClock")) {
-                            try {
-                                int64_t clockDelta = stats["currentClock"].get<int64_t>() - currentTime;
-                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                         COLUMNS[8].second, formatTimeDelta(clockDelta).c_str());
-                            } catch (const json::exception&) {
-                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                         COLUMNS[8].second, "---");
-                            }
-                        } else {
+                            // Buffer usage
+                            std::string buffer = std::to_string(stats["bufferPos"].get<size_t>()) + "/" +
+                                            std::to_string(stats["bufferSize"].get<size_t>());
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                     COLUMNS[8].second, "---");
-                        }
-                        x += COLUMNS[8].second + 1;
+                                    COLUMNS[6].second, buffer.c_str());
+                            x += COLUMNS[6].second + 1;
 
-                        // Sequence Number
-                        if (stats.contains("sequenceNumber")) {
-                            try {
-                                int seqNum = stats["sequenceNumber"].get<int>();
-                                mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
-                                         COLUMNS[9].second, seqNum);
-                            } catch (const json::exception&) {
-                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                         COLUMNS[9].second, "---");
-                            }
-                        } else {
+                            // WiFi Signal
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                     COLUMNS[9].second, "---");
-                        }
-                        x += COLUMNS[9].second + 1;
+                                    COLUMNS[7].second, formatWifiSignal(stats["wifiSignal"].get<double>()).c_str());
+                            x += COLUMNS[7].second + 1;
 
-                        // Flash Version
-                        if (stats.contains("flashVersion")) {
-                            try {
-                                std::string flashVer;
-                                if (stats["flashVersion"].is_string()) {
-                                    flashVer = stats["flashVersion"].get<std::string>();
-                                } else if (stats["flashVersion"].is_number()) {
-                                    flashVer = std::to_string(stats["flashVersion"].get<int>());
-                                } else {
-                                    flashVer = "---";
+                            // Bandwidth
+                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                    COLUMNS[8].second, formatBytes(featureJson["bytesPerSecond"].get<double>()).c_str());
+                            x += COLUMNS[8].second + 1;
+
+                            // Clock Delta
+                            if (stats.contains("currentClock")) {
+                                try {
+                                    int64_t clockDelta = stats["currentClock"].get<int64_t>() - currentTime;
+                                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                            COLUMNS[9].second, formatTimeDelta(clockDelta).c_str());
+                                } catch (const json::exception&) {
+                                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                            COLUMNS[9].second, "---");
                                 }
+                            } else {
                                 mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                         COLUMNS[10].second, flashVer.c_str());
-                            } catch (const json::exception&) {
-                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                         COLUMNS[10].second, "---");
+                                        COLUMNS[9].second, "---");
                             }
-                        } else {
-                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                     COLUMNS[10].second, "---");
-                        }
-                        x += COLUMNS[10].second + 1;
+                            x += COLUMNS[9].second + 1;
 
-                        // Connection status with color
-                        wattron(contentWin, COLOR_PAIR(1));
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[11].second, "ONLINE");
-                        wattroff(contentWin, COLOR_PAIR(1));
-                    }
-                    else
-                    {
-                        // Fill empty spaces for offline devices
-                        for (size_t i = 4; i <= 10; i++) {
-                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                     COLUMNS[i].second, "---");
-                            x += COLUMNS[i].second + 1;
-                        }
+                            // Sequence Number
+                            if (stats.contains("sequenceNumber")) {
+                                try {
+                                    int seqNum = stats["sequenceNumber"].get<int>();
+                                    mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
+                                            COLUMNS[10].second, seqNum);
+                                } catch (const json::exception&) {
+                                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                            COLUMNS[10].second, "---");
+                                }
+                            } else {
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                        COLUMNS[10].second, "---");
+                            }
+                            x += COLUMNS[10].second + 1;
 
-                        // Connection status with color
-                        wattron(contentWin, COLOR_PAIR(2));
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[11].second, "OFFLINE");
-                        wattroff(contentWin, COLOR_PAIR(2));
+                            // Flash Version
+                            if (stats.contains("flashVersion")) {
+                                try {
+                                    std::string flashVer;
+                                    if (stats["flashVersion"].is_string()) {
+                                        flashVer = stats["flashVersion"].get<std::string>();
+                                    } else if (stats["flashVersion"].is_number()) {
+                                        flashVer = std::to_string(stats["flashVersion"].get<int>());
+                                    } else {
+                                        flashVer = "---";
+                                    }
+                                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                            COLUMNS[11].second, flashVer.c_str());
+                                } catch (const json::exception&) {
+                                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                            COLUMNS[11].second, "---");
+                                }
+                            } else {
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                        COLUMNS[11].second, "---");
+                            }
+                            x += COLUMNS[11].second + 1;
+
+                            // Connection status with color
+                            wattron(contentWin, COLOR_PAIR(1));
+                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                    COLUMNS[12].second, "ONLINE");
+                            wattroff(contentWin, COLOR_PAIR(1));
+                        }
+                        else
+                        {
+                            // Fill empty spaces for offline devices
+                            for (size_t i = 6; i <= 11; i++) {
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                        COLUMNS[i].second, "---");
+                                x += COLUMNS[i].second + 1;
+                            }
+
+                            // Connection status with color
+                            wattron(contentWin, COLOR_PAIR(2));
+                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                    COLUMNS[12].second, "OFFLINE");
+                            wattroff(contentWin, COLOR_PAIR(2));
+                        }
                     }
+                    row++;
                 }
-                row++;
             }
         }
-    }
-    catch (const std::exception &e)
-    {
-        mvwprintw(contentWin, 0, 1, "Error fetching data: %s", e.what());
-    }
+        catch (const std::exception &e)
+        {
+            mvwprintw(contentWin, 0, 1, "Error fetching data: %s", e.what());
+        }
 
-    wrefresh(contentWin);
-}
+        wrefresh(contentWin);
+    }
 
     void drawFooter()
     {
