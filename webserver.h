@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <ranges>
 #include "json.hpp"
 #include "crow_all.h"
 #include "interfaces.h" // Assuming ICanvas is defined here
@@ -69,35 +70,11 @@ public:
                 return socketsJson.dump();
             });
 
-        // Define the `/api/sockets/:id` endpoint
-        CROW_ROUTE(_crowApp, "/api/sockets/<int>")
-            .methods(crow::HTTPMethod::GET)([&](int id) -> crow::response
-            {
-                // Extract canvas and feature IDs from the socket ID
-                int canvasId = id / 1000;
-                int featureId = id % 1000;
+            // Define the `/api/sockets/:id` endpoint
+            CROW_ROUTE(_crowApp, "/api/sockets/<int>")
+                .methods(crow::HTTPMethod::GET)([&](int id) -> crow::response {
 
-                if (canvasId < 0 || canvasId >= _allCanvases.size() || !_allCanvases[canvasId])
-                    return {crow::NOT_FOUND, R"({"error": "Socket not found - invalid canvas"})"};
-
-                const auto& features = _allCanvases[canvasId]->Features();
-                if (featureId < 0 || featureId >= features.size())
-                    return {crow::NOT_FOUND, R"({"error": "Socket not found - invalid feature"})"};
-
-                const auto& feature = features[featureId];
-                nlohmann::json socketJson;
-                socketJson["id"] = id;
-                socketJson["canvasId"] = _allCanvases[canvasId]->Id();
-                socketJson["featureId"] = featureId;
-                socketJson["isConnected"] = feature->Socket().IsConnected();
-                socketJson["port"] = feature->Socket().Port();
-                
-                // Add more detailed information for single socket view
-                socketJson["bytesPerSecond"] = feature->Socket().BytesSentPerSecond();
-                
-                return socketJson.dump();
-            });        
-        // Define the `/api/canvases` endpoint
+                });        // Define the `/api/canvases` endpoint
         CROW_ROUTE(_crowApp, "/api/canvases")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
             {

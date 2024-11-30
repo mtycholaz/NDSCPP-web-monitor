@@ -107,6 +107,8 @@ public:
     virtual const string& FriendlyName() const = 0;
     virtual uint16_t Port() const = 0;
 
+    virtual uint32_t Id() const = 0;
+
     // Data transfer methods
     virtual bool EnqueueFrame(vector<uint8_t>&& frameData) = 0;
     virtual vector<uint8_t> CompressFrame(const vector<uint8_t>& data) = 0;
@@ -128,6 +130,8 @@ class ILEDFeature
 public:
     virtual ~ILEDFeature() = default;
 
+    virtual uint32_t Id() const = 0;
+    
     // Accessor methods
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;

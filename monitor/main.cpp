@@ -252,34 +252,49 @@ public:
 
     void run()
     {
+        // Make content window non-blocking
+        nodelay(contentWin, TRUE);
+        
         bool running = true;
+        auto lastUpdate = std::chrono::steady_clock::now();
+        
         while (running)
         {
-            drawHeader();
-            drawContent();
-            drawFooter();
-
-            int ch = wgetch(contentWin);
-            switch (ch)
-            {
-                case 'q':
-                case 'Q':
-                    running = false;
-                    break;
-                case KEY_UP:
-                    if (scrollOffset > 0)
-                        scrollOffset--;
-                    break;
-                case KEY_DOWN:
-                    scrollOffset++;
-                    break;
-                case 'r':
-                case 'R':
-                    // Refresh will happen on next loop
-                    break;
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate);
+            
+            // Update display every 100ms
+            if (elapsed.count() >= 100) {
+                drawHeader();
+                drawContent();
+                drawFooter();
+                lastUpdate = now;
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            int ch = wgetch(contentWin);
+            if (ch != ERR) {  // Only process if we actually got input
+                switch (ch)
+                {
+                    case 'q':
+                    case 'Q':
+                        running = false;
+                        break;
+                    case KEY_UP:
+                        if (scrollOffset > 0)
+                            scrollOffset--;
+                        break;
+                    case KEY_DOWN:
+                        scrollOffset++;
+                        break;
+                    case 'r':
+                    case 'R':
+                        lastUpdate = std::chrono::steady_clock::time_point::min(); // Force immediate refresh
+                        break;
+                }
+            }
+            
+            // Small sleep to prevent CPU spinning
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
     }
 };

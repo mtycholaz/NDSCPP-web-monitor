@@ -105,6 +105,7 @@ public:
         : _hostName(hostName),
           _friendlyName(friendlyName),
           _port(port),
+          _id(_nextId++),
           _isConnected(false),
           _running(false),
           _socketFd(-1),
@@ -119,6 +120,11 @@ public:
     {
         Stop();
         CloseSocket();
+    }
+
+    uint32_t Id() const override 
+    { 
+        return _id; 
     }
 
     uint32_t GetReconnectCount() const override
@@ -552,6 +558,9 @@ private:
     string _hostName;
     string _friendlyName;
     uint16_t _port;
+
+    static atomic<uint32_t> _nextId;
+    uint32_t _id;
 
     mutable mutex _mutex;
     mutable mutex _queueMutex;

@@ -37,7 +37,9 @@
 
 using namespace std;
 
-atomic<uint32_t> Canvas::_nextId{0};                // Initialize the static member variable for Canvas.h
+atomic<uint32_t> Canvas::_nextId{0};                    // Initialize the static member variable for Canvas.h
+atomic<uint32_t> LEDFeature::_nextId{0};                // Initialize the static member variable for Canvas.h
+atomic<uint32_t> SocketChannel::_nextId{0};             // Initialize the static member variable for Canvas.h
 
 // LoadCanvases
 //

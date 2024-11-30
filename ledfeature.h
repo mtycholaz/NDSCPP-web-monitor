@@ -42,8 +42,14 @@ public:
           _channel(channel),
           _redGreenSwap(redGreenSwap),
           _clientBufferCount(clientBufferCount),
-          _socketChannel(hostName, friendlyName, port)
+          _socketChannel(hostName, friendlyName, port),
+          _id(_nextId++)
     {
+    }
+
+    uint32_t Id() const override 
+    { 
+        return _id; 
     }
 
     // Accessor methods
@@ -164,4 +170,6 @@ private:
     uint32_t    _clientBufferCount;
     const ICanvas   * _canvas; // Associated canvas
     SocketChannel _socketChannel;
+    static atomic<uint32_t> _nextId;
+    uint32_t _id;    
 };
