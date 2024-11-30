@@ -63,22 +63,32 @@ std::string formatWifiSignal(double signal)
     return oss.str();
 }
 
+std::string formatTimeDelta(int64_t delta)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << (delta / 1000.0) << "s";
+    return oss.str();
+}
+
 // Screen layout constants
 constexpr int HEADER_HEIGHT = 3;
 constexpr int FOOTER_HEIGHT = 2;
 
-// Optimized column widths based on actual data requirements
+// Updated columns with new information
 const std::vector<std::pair<std::string, int>> COLUMNS = 
 {
-    {"Can", 3},          // Reduced from 4 (3 digits sufficient)
-    {"Feature", 12},     // Reduced from 15 (most names shown are shorter)
-    {"Host", 14},        // Reduced from 16 (IP addresses fit in 14)
-    {"Size", 8},         // Reduced from 12 (format: XXXxYY)
-    {"FPS", 4},          // Reduced from 5 (2-3 digits typically)
-    {"Buf", 7},          // Renamed and reduced from 10 (format: XX/YYY)
-    {"Signal", 8},       // Kept at 8 (format: -XX.XdBm)
-    {"B/W", 9},          // Reduced from 10 (typical bandwidth strings fit)
-    {"Status", 6}        // Reduced from 8 (ONLINE/OFFLINE)
+    {"Can", 3},          // Canvas ID
+    {"Feature", 12},     // Feature name
+    {"Host", 14},        // Hostname
+    {"Size", 8},         // Dimensions
+    {"FPS", 4},          // Frames per second
+    {"Buf", 7},          // Buffer usage
+    {"Signal", 8},       // WiFi signal
+    {"B/W", 9},          // Bandwidth
+    {"Delta", 7},        // Clock delta
+    {"Seq", 6},         // Sequence number
+    {"Flash", 5},        // Flash version
+    {"Status", 6}        // Connection status
 };
 
 class Monitor
@@ -88,7 +98,7 @@ class Monitor
     WINDOW *footerWin;
     int contentHeight;
     int scrollOffset = 0;
-    std::string baseUrl = "http://localhost:7777";
+    std::string baseUrl = "http://m2macpro:7777";
 
 public:
     Monitor()
@@ -144,102 +154,168 @@ public:
         wrefresh(headerWin);
     }
 
-    void drawContent()
+ void drawContent()
+{
+    werase(contentWin);
+
+    try
     {
-        werase(contentWin);
+        std::string response = httpGet(baseUrl + "/api/canvases");
+        auto j = json::parse(response);
+        auto currentTime = std::chrono::system_clock::now().time_since_epoch().count() / 1000000; // Current time in ms
 
-        try
+        int row = 0;
+        for (const auto &canvasJson : j)
         {
-            std::string response = httpGet(baseUrl + "/api/canvases");
-            auto j = json::parse(response);
+            std::string canvasId = std::to_string(canvasJson["id"].get<size_t>());
 
-            int row = 0;
-            for (const auto &canvasJson : j)
+            for (const auto &featureJson : canvasJson["features"])
             {
-                std::string canvasId = std::to_string(canvasJson["id"].get<size_t>());
-
-                for (const auto &featureJson : canvasJson["features"])
+                if (row >= scrollOffset && row < scrollOffset + contentHeight)
                 {
-                    if (row >= scrollOffset && row < scrollOffset + contentHeight)
+                    int x = 1;
+
+                    // Canvas ID
+                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                             COLUMNS[0].second, canvasId.c_str());
+                    x += COLUMNS[0].second + 1;
+
+                    // Feature name
+                    std::string featureName = featureJson["friendlyName"].get<std::string>();
+                    if (featureName.length() > (size_t) COLUMNS[1].second)
+                        featureName = featureName.substr(0, COLUMNS[1].second);
+                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                             COLUMNS[1].second, featureName.c_str());
+                    x += COLUMNS[1].second + 1;
+
+                    // Hostname
+                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                             COLUMNS[2].second, featureJson["hostName"].get<std::string>().c_str());
+                    x += COLUMNS[2].second + 1;
+
+                    // Size
+                    std::string size = std::to_string(featureJson["width"].get<size_t>()) + "x" +
+                                     std::to_string(featureJson["height"].get<size_t>());
+                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                             COLUMNS[3].second, size.c_str());
+                    x += COLUMNS[3].second + 1;
+
+                    bool isConnected = featureJson["isConnected"].get<bool>();
+                    
+                    if (isConnected && featureJson.contains("lastClientResponse"))
                     {
-                        int x = 1;
+                        const auto &stats = featureJson["lastClientResponse"];
 
-                        // Canvas ID
+                        // FPS
+                        mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
+                                 COLUMNS[4].second, stats["fpsDrawing"].get<int>());
+                        x += COLUMNS[4].second + 1;
+
+                        // Buffer usage
+                        std::string buffer = std::to_string(stats["bufferPos"].get<size_t>()) + "/" +
+                                           std::to_string(stats["bufferSize"].get<size_t>());
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[0].second, canvasId.c_str());
-                        x += COLUMNS[0].second + 1;
+                                 COLUMNS[5].second, buffer.c_str());
+                        x += COLUMNS[5].second + 1;
 
-                        // Feature name
-                        std::string featureName = featureJson["friendlyName"].get<std::string>();
-                        if (featureName.length() > (size_t) COLUMNS[1].second)
-                            featureName = featureName.substr(0, COLUMNS[1].second);
+                        // WiFi Signal
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[1].second, featureName.c_str());
-                        x += COLUMNS[1].second + 1;
+                                 COLUMNS[6].second, formatWifiSignal(stats["wifiSignal"].get<double>()).c_str());
+                        x += COLUMNS[6].second + 1;
 
-                        // Hostname
+                        // Bandwidth
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[2].second, featureJson["hostName"].get<std::string>().c_str());
-                        x += COLUMNS[2].second + 1;
+                                 COLUMNS[7].second, formatBytes(featureJson["bytesPerSecond"].get<double>()).c_str());
+                        x += COLUMNS[7].second + 1;
 
-                        // Size
-                        std::string size = std::to_string(featureJson["width"].get<size_t>()) + "x" +
-                                         std::to_string(featureJson["height"].get<size_t>());
-                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                 COLUMNS[3].second, size.c_str());
-                        x += COLUMNS[3].second + 1;
-
-                        // Status position for offline devices
-                        int statusX = x;
-                        for (size_t i = 4; i < COLUMNS.size() - 1; i++)
-                            statusX += COLUMNS[i].second + 1;
-
-                        bool isConnected = featureJson["isConnected"].get<bool>();
-                        
-                        if (isConnected && featureJson.contains("lastClientResponse"))
-                        {
-                            const auto &stats = featureJson["lastClientResponse"];
-
-                            // FPS
-                            mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
-                                     COLUMNS[4].second, stats["fpsDrawing"].get<int>());
-                            x += COLUMNS[4].second + 1;
-
-                            // Buffer usage
-                            std::string buffer = std::to_string(stats["bufferPos"].get<size_t>()) + "/" +
-                                               std::to_string(stats["bufferSize"].get<size_t>());
+                        // Clock Delta
+                        if (stats.contains("currentClock")) {
+                            try {
+                                int64_t clockDelta = stats["currentClock"].get<int64_t>() - currentTime;
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                         COLUMNS[8].second, formatTimeDelta(clockDelta).c_str());
+                            } catch (const json::exception&) {
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                         COLUMNS[8].second, "---");
+                            }
+                        } else {
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                     COLUMNS[5].second, buffer.c_str());
-                            x += COLUMNS[5].second + 1;
+                                     COLUMNS[8].second, "---");
+                        }
+                        x += COLUMNS[8].second + 1;
 
-                            // WiFi Signal
+                        // Sequence Number
+                        if (stats.contains("sequenceNumber")) {
+                            try {
+                                int seqNum = stats["sequenceNumber"].get<int>();
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*d",
+                                         COLUMNS[9].second, seqNum);
+                            } catch (const json::exception&) {
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                         COLUMNS[9].second, "---");
+                            }
+                        } else {
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                     COLUMNS[6].second, formatWifiSignal(stats["wifiSignal"].get<double>()).c_str());
-                            x += COLUMNS[6].second + 1;
+                                     COLUMNS[9].second, "---");
+                        }
+                        x += COLUMNS[9].second + 1;
 
-                            // Bandwidth
+                        // Flash Version
+                        if (stats.contains("flashVersion")) {
+                            try {
+                                std::string flashVer;
+                                if (stats["flashVersion"].is_string()) {
+                                    flashVer = stats["flashVersion"].get<std::string>();
+                                } else if (stats["flashVersion"].is_number()) {
+                                    flashVer = std::to_string(stats["flashVersion"].get<int>());
+                                } else {
+                                    flashVer = "---";
+                                }
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                         COLUMNS[10].second, flashVer.c_str());
+                            } catch (const json::exception&) {
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                         COLUMNS[10].second, "---");
+                            }
+                        } else {
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                     COLUMNS[7].second, formatBytes(featureJson["bytesPerSecond"].get<double>()).c_str());
-                            x += COLUMNS[7].second + 1;
+                                     COLUMNS[10].second, "---");
+                        }
+                        x += COLUMNS[10].second + 1;
+
+                        // Connection status with color
+                        wattron(contentWin, COLOR_PAIR(1));
+                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                 COLUMNS[11].second, "ONLINE");
+                        wattroff(contentWin, COLOR_PAIR(1));
+                    }
+                    else
+                    {
+                        // Fill empty spaces for offline devices
+                        for (size_t i = 4; i <= 10; i++) {
+                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                     COLUMNS[i].second, "---");
+                            x += COLUMNS[i].second + 1;
                         }
 
-                        // Connection status with color in rightmost column
-                        wattron(contentWin, COLOR_PAIR(isConnected ? 1 : 2));
-                        mvwprintw(contentWin, row - scrollOffset, statusX, "%-*s",
-                                 COLUMNS[8].second, isConnected ? "ONLINE" : "OFFLINE");
-                        wattroff(contentWin, COLOR_PAIR(isConnected ? 1 : 2));
+                        // Connection status with color
+                        wattron(contentWin, COLOR_PAIR(2));
+                        mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
+                                 COLUMNS[11].second, "OFFLINE");
+                        wattroff(contentWin, COLOR_PAIR(2));
                     }
-                    row++;
                 }
+                row++;
             }
         }
-        catch (const std::exception &e)
-        {
-            mvwprintw(contentWin, 0, 1, "Error fetching data: %s", e.what());
-        }
-
-        wrefresh(contentWin);
     }
+    catch (const std::exception &e)
+    {
+        mvwprintw(contentWin, 0, 1, "Error fetching data: %s", e.what());
+    }
+
+    wrefresh(contentWin);
+}
 
     void drawFooter()
     {
