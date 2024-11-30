@@ -115,7 +115,7 @@ public:
 
     // Connection status
     virtual bool IsConnected() const = 0;
-    virtual uint64_t BytesSentPerSecond() = 0;
+    virtual uint64_t GetLastBytesPerSecond() const = 0;
     virtual ClientResponse LastClientResponse() const = 0;
     virtual uint32_t GetReconnectCount() const = 0;
     virtual size_t GetCurrentQueueDepth() const = 0;
@@ -133,7 +133,7 @@ public:
     virtual ~ILEDFeature() = default;
 
     virtual uint32_t Id() const = 0;
-    
+
     // Accessor methods
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
@@ -150,6 +150,7 @@ public:
     virtual vector<uint8_t> GetDataFrame() const = 0;    
 
     virtual ISocketChannel & Socket() = 0;
+    virtual const ISocketChannel & Socket() const = 0;
 
 };
 

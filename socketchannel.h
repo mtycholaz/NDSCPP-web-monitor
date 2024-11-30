@@ -57,7 +57,7 @@ public:
             _currentWindowBytes += bytes;
     }
 
-    uint64_t BytesPerSecond()
+    uint64_t UpdateBytesPerSecond()
     {
         auto now = system_clock::now();
         auto elapsed = duration_cast<milliseconds>(now - _windowStartTime);
@@ -86,6 +86,11 @@ public:
         // Calculate blended rate
         double previousRate = (_previousWindowBytes * 1000.0) / kSpeedWindowMS.count();
         return static_cast<uint64_t>(previousRate);
+    }
+
+    uint64_t GetLastBytesPerSecond() const
+    {
+        return (_previousWindowBytes * 1000) / kSpeedWindowMS.count();
     }
 };
 
@@ -144,9 +149,9 @@ public:
         return _reconnectCount;
     }
 
-    virtual uint64_t BytesSentPerSecond() override
+    virtual uint64_t GetLastBytesPerSecond() const override
     {
-        return _speedTracker.BytesPerSecond();
+        return _speedTracker.GetLastBytesPerSecond();
     }
 
     uint16_t Port() const override
@@ -317,6 +322,7 @@ private:
                             lock_guard lock(_responseMutex);
                             _lastClientResponse = std::move(*response);
                         }
+                        _speedTracker.UpdateBytesPerSecond();
                     }
                 }
             }
@@ -356,7 +362,7 @@ private:
         if (poll(&pfd, 1, 0) <= 0) 
             return nullopt;
 
-        // Read the first byte to determine the byte count.  Older clients might send shorter packetts
+        // Read the first byte to determine the byte count.  Older clients might send shorter packets
         // so we cannot just try to read a full "current version" packet out of an old client's stream,
         // as there won't be enough bytes in the structure to satisfy the read.
 
@@ -368,9 +374,25 @@ private:
             return nullopt;
         }
 
-        // Compare the byte count to the expected size
+        // Compare the byte count to the expected size.  If it's an older packet, we translate it
+        // to the new format right here
+
         if (byteCount != static_cast<uint8_t>(cbToRead))
         {
+            if (byteCount == sizeof(OldClientResponse))
+            {
+                // Old client response; translate it
+                OldClientResponse oldResponse;
+                readBytes = recv(_socketFd, &oldResponse, sizeof(OldClientResponse), 0);
+                if (readBytes == sizeof(OldClientResponse))
+                {
+                    ClientResponse response;
+                    response = oldResponse;
+                    response.TranslateClientResponse();
+                    return response;
+                }
+            }
+
             // Invalid byte count; eat the contents
             vector<uint8_t> tempBuffer(byteCount);
             recv(_socketFd, tempBuffer.data(), byteCount, 0);

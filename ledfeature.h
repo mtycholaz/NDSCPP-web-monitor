@@ -73,6 +73,11 @@ public:
         return _socketChannel;
     }
 
+    virtual const ISocketChannel & Socket() const override 
+    {
+        return _socketChannel;
+    }
+    
     vector<uint8_t> GetPixelData() const override 
     {
         static_assert(sizeof(CRGB) == 3, "CRGB must be 3 bytes in size for this code to work.");

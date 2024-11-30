@@ -19,7 +19,7 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
-
+#include "crow_all.h"
 #include "global.h"
 #include "canvas.h"
 #include "interfaces.h"
@@ -362,6 +362,7 @@ int main(int, char *[])
 
     // Start the web server
     
+    crow::logger::setLogLevel(crow::LogLevel::WARNING);
     WebServer webServer(allCanvases);
     webServer.Start();
     

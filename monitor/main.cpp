@@ -52,21 +52,22 @@ std::string formatBytes(double bytes)
         unit++;
     }
     std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << bytes << units[unit];
+    oss << std::fixed << std::setprecision(0) << bytes << units[unit]; // Removed decimal places
     return oss.str();
 }
 
 std::string formatWifiSignal(double signal)
 {
     std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << signal << "dBm";
+    oss << std::abs((int)signal) << "dBm"; // Added abs() and removed decimal places
     return oss.str();
 }
 
 std::string formatTimeDelta(int64_t delta)
 {
+    double deltaSeconds = delta / 1000.0;
     std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << (delta / 1000.0) << "s";
+    oss << std::fixed << std::setprecision(1) << deltaSeconds << "s";
     return oss.str();
 }
 
@@ -82,7 +83,7 @@ const std::vector<std::pair<std::string, int>> COLUMNS =
     {"Host", 14},        // Hostname
     {"Size", 8},         // Dimensions
     {"FPS", 4},          // Frames per second
-    {"Queue", 7},        // Queue depth
+    {"Queue", 5},        // Queue depth
     {"Buf", 7},          // Buffer usage
     {"Signal", 8},       // WiFi signal
     {"B/W", 9},          // Bandwidth
@@ -116,6 +117,8 @@ public:
         init_pair(2, COLOR_RED, COLOR_BLACK);     // Disconnected
         init_pair(3, COLOR_YELLOW, COLOR_BLACK);  // Headers
         init_pair(4, COLOR_CYAN, COLOR_BLACK);    // Highlights
+        init_pair(5, COLOR_RED, COLOR_BLACK);     // High delta
+        init_pair(6, COLOR_YELLOW, COLOR_BLACK);  // Warning level
 
         int maxY, maxX;
         getmaxyx(stdscr, maxY, maxX);
@@ -218,12 +221,19 @@ public:
                         x += COLUMNS[4].second + 1;
 
                         // Queue depth (when available from server)
-                        if (!featureJson.is_null() && featureJson.contains("queueDepth") && featureJson.contains("queueMaxSize")) {
+                    
+                        if (featureJson.contains("queueDepth") && !featureJson["queueDepth"].is_null()) {
                             try {
-                                std::string queueStatus = std::to_string(featureJson["queueDepth"].get<size_t>()) + "/" +
-                                                        std::to_string(featureJson["queueMaxSize"].get<size_t>());
-                                mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                        COLUMNS[5].second, queueStatus.c_str());
+                                size_t queueDepth = featureJson["queueDepth"].get<size_t>();
+                                int queueColor;
+                                if (queueDepth < 100) queueColor = 1;      // Green for low queue
+                                else if (queueDepth < 250) queueColor = 6; // Yellow for medium queue
+                                else queueColor = 2;                       // Red for high queue
+                                
+                                wattron(contentWin, COLOR_PAIR(queueColor));
+                                mvwprintw(contentWin, row - scrollOffset, x, "%-*zu",
+                                        COLUMNS[5].second, queueDepth);
+                                wattroff(contentWin, COLOR_PAIR(queueColor));
                             } catch (const json::exception&) {
                                 mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
                                         COLUMNS[5].second, "---");
@@ -234,22 +244,38 @@ public:
                         }
                         x += COLUMNS[5].second + 1;
 
-
                         // Rest of the columns (only if connected and has client response)
                         if (isConnected && featureJson.contains("lastClientResponse"))
                         {
                             const auto &stats = featureJson["lastClientResponse"];
 
-                            // Buffer usage
-                            std::string buffer = std::to_string(stats["bufferPos"].get<size_t>()) + "/" +
-                                            std::to_string(stats["bufferSize"].get<size_t>());
-                            mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                    COLUMNS[6].second, buffer.c_str());
+                            // Buffer usage with color coding
+                            size_t bufferPos = stats["bufferPos"].get<size_t>();
+                            size_t bufferSize = stats["bufferSize"].get<size_t>();
+                            double ratio = static_cast<double>(bufferPos) / bufferSize;
+                            
+                            // First part with color
+                            wattron(contentWin, COLOR_PAIR(ratio > 0.9 ? 2 : 1));
+                            mvwprintw(contentWin, row - scrollOffset, x, "%zu",
+                                    bufferPos);
+                            wattroff(contentWin, COLOR_PAIR(ratio > 0.9 ? 2 : 1));
+                            
+                            // Second part without color
+                            mvwprintw(contentWin, row - scrollOffset, x + std::to_string(bufferPos).length(),
+                                    "/%zu", bufferSize);
                             x += COLUMNS[6].second + 1;
 
-                            // WiFi Signal
+                            // WiFi Signal with color coding
+                            double signal = std::abs(stats["wifiSignal"].get<double>());
+                            int signalColor;
+                            if (signal < 70) signalColor = 1;      // Green for good signal
+                            else if (signal < 80) signalColor = 6; // Yellow for warning
+                            else signalColor = 2;                  // Red for poor signal
+                            
+                            wattron(contentWin, COLOR_PAIR(signalColor));
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
                                     COLUMNS[7].second, formatWifiSignal(stats["wifiSignal"].get<double>()).c_str());
+                            wattroff(contentWin, COLOR_PAIR(signalColor));
                             x += COLUMNS[7].second + 1;
 
                             // Bandwidth
@@ -257,12 +283,21 @@ public:
                                     COLUMNS[8].second, formatBytes(featureJson["bytesPerSecond"].get<double>()).c_str());
                             x += COLUMNS[8].second + 1;
 
-                            // Clock Delta
+                            // Clock Delta with color
                             if (stats.contains("currentClock")) {
                                 try {
                                     int64_t clockDelta = stats["currentClock"].get<int64_t>() - currentTime;
+                                    double deltaSeconds = std::abs(clockDelta / 1000.0);
+                                    int deltaColor;
+                                    if (deltaSeconds < 1.0) deltaColor = 1;      // Green for low delta
+                                    else if (deltaSeconds < 2.0) deltaColor = 6; // Yellow for medium delta
+                                    else deltaColor = 2;                         // Red for high delta
+
+                                    std::string deltaStr = formatTimeDelta(clockDelta);
+                                    wattron(contentWin, COLOR_PAIR(deltaColor));
                                     mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
-                                            COLUMNS[9].second, formatTimeDelta(clockDelta).c_str());
+                                            COLUMNS[9].second, deltaStr.c_str());
+                                    wattroff(contentWin, COLOR_PAIR(deltaColor));
                                 } catch (const json::exception&) {
                                     mvwprintw(contentWin, row - scrollOffset, x, "%-*s",
                                             COLUMNS[9].second, "---");
@@ -289,14 +324,14 @@ public:
                             }
                             x += COLUMNS[10].second + 1;
 
-                            // Flash Version
+                            // Flash Version (with 'v' prefix)
                             if (stats.contains("flashVersion")) {
                                 try {
-                                    std::string flashVer;
+                                    std::string flashVer = "v";
                                     if (stats["flashVersion"].is_string()) {
-                                        flashVer = stats["flashVersion"].get<std::string>();
+                                        flashVer += stats["flashVersion"].get<std::string>();
                                     } else if (stats["flashVersion"].is_number()) {
-                                        flashVer = std::to_string(stats["flashVersion"].get<int>());
+                                        flashVer += std::to_string(stats["flashVersion"].get<int>());
                                     } else {
                                         flashVer = "---";
                                     }

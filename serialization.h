@@ -33,6 +33,21 @@ inline static double ByteSwapDouble(double value)
 // The packed attribute is required to ensure correct network communication but may cause
 // alignment issues on some architectures.
 
+struct OldClientResponse
+{
+    uint32_t size;         // 4
+    uint32_t flashVersion; // 4
+    double currentClock;   // 8
+    double oldestPacket;   // 8
+    double newestPacket;   // 8
+    double brightness;     // 8
+    double wifiSignal;     // 8
+    uint32_t bufferSize;   // 4
+    uint32_t bufferPos;    // 4
+    uint32_t fpsDrawing;   // 4
+    uint32_t watts;        // 4
+};
+
 struct ClientResponse
 {
     uint32_t size;         // 4
@@ -47,6 +62,23 @@ struct ClientResponse
     uint32_t bufferPos;    // 4
     uint32_t fpsDrawing;   // 4
     uint32_t watts;        // 4
+
+    ClientResponse& operator=(const OldClientResponse& old)
+    {
+        size = sizeof(ClientResponse);;
+        sequence = 0;  // New field, initialize to 0
+        flashVersion = old.flashVersion;
+        currentClock = old.currentClock;
+        oldestPacket = old.oldestPacket;
+        newestPacket = old.newestPacket;
+        brightness = old.brightness;
+        wifiSignal = old.wifiSignal;
+        bufferSize = old.bufferSize;
+        bufferPos = old.bufferPos;
+        fpsDrawing = old.fpsDrawing;
+        watts = old.watts;
+        return *this;
+    }
 
     // Member function to translate the structure from the ESP32 little endian
     // to whatever the current running system is
@@ -98,35 +130,32 @@ inline void to_json(nlohmann::json &j, const ClientResponse &response)
     SerializeClientResponseStats(j, response);
 }
 
-inline void to_json(nlohmann::json &j, const unique_ptr<ILEDFeature> &feature)
+inline void to_json(nlohmann::json &j, const ILEDFeature &feature)
 {
-    if (!feature)
-    {
-        j = nullptr;
-        return;
-    }
-
     try
     {
         // Safely access Socket() first
-        const auto &socket = feature->Socket();
+        auto &socket = feature.Socket();
 
         // Manually serialize fields from the ILEDFeature interface
         j = nlohmann::json
         {
             {"hostName", socket.HostName()},
             {"friendlyName", socket.FriendlyName()},
-            {"width", feature->Width()},
-            {"height", feature->Height()},
-            {"offsetX", feature->OffsetX()},
-            {"offsetY", feature->OffsetY()},
-            {"reversed", feature->Reversed()},
-            {"channel", feature->Channel()},
-            {"redGreenSwap", feature->RedGreenSwap()},
-            {"clientBufferCount", feature->ClientBufferCount()},
-            {"timeOffset", feature->TimeOffset()},
-            {"bytesPerSecond", feature->Socket().BytesSentPerSecond()},
-            {"isConnected", feature->Socket().IsConnected()}
+            {"port", feature.Socket().Port()},
+            {"width", feature.Width()},
+            {"height", feature.Height()},
+            {"offsetX", feature.OffsetX()},
+            {"offsetY", feature.OffsetY()},
+            {"reversed", feature.Reversed()},
+            {"channel", feature.Channel()},
+            {"redGreenSwap", feature.RedGreenSwap()},
+            {"clientBufferCount", feature.ClientBufferCount()},
+            {"timeOffset", feature.TimeOffset()},
+            {"bytesPerSecond", feature.Socket().GetLastBytesPerSecond()},
+            {"isConnected", feature.Socket().IsConnected()},
+            {"queueDepth", feature.Socket().GetCurrentQueueDepth()},
+            {"queueMaxSize", feature.Socket().GetQueueMaxSize()},
         };
 
         const auto &response = socket.LastClientResponse();
@@ -151,7 +180,7 @@ inline void to_json(nlohmann::json &j, const ICanvas &canvas)
         for (const auto &feature : canvas.Features())
         {
             nlohmann::json featureJson;
-            to_json(featureJson, feature);
+            to_json(featureJson, *feature);
             featuresJson.push_back(std::move(featureJson));
         }
 
@@ -170,12 +199,17 @@ inline void to_json(nlohmann::json &j, const ISocketChannel &socket)
 {
     try
     {
-        j["hostName"]       = socket.HostName();
-        j["friendlyName"]   = socket.FriendlyName();
-        j["isConnected"]    = socket.IsConnected();
+        j["hostName"] = socket.HostName();
+        j["friendlyName"] = socket.FriendlyName();
+        j["isConnected"] = socket.IsConnected();
         j["reconnectCount"] = socket.GetReconnectCount();
-        j["queueDepth"]     = socket.GetCurrentQueueDepth();
-        j["queueMaxSize"]   = socket.GetQueueMaxSize();
+        j["queueDepth"] = socket.GetCurrentQueueDepth();
+        j["queueMaxSize"] = socket.GetQueueMaxSize();
+        j["bytesPerSecond"] = socket.GetLastBytesPerSecond();
+        j["port"] = socket.Port();
+        
+        // Note: featureId and canvasId can't be included here since they're not
+        // properties of the socket itself but rather of its container objects
 
         const auto &lastResponse = socket.LastClientResponse();
         if (lastResponse.size == sizeof(ClientResponse))
@@ -186,19 +220,5 @@ inline void to_json(nlohmann::json &j, const ISocketChannel &socket)
     catch (const std::exception &e)
     {
         j = nullptr;
-    }
-}
-
-inline void to_json(nlohmann::json &j, const std::vector<std::unique_ptr<ISocketChannel>> &sockets)
-{
-    j = nlohmann::json::array();
-    for (const auto &socket : sockets)
-    {
-        if (socket)
-        {
-            nlohmann::json socketJson;
-            to_json(socketJson, *socket);
-            j.push_back(socketJson);
-        }
     }
 }

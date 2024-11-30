@@ -45,28 +45,28 @@ public:
     {
         // Define the `/api/sockets` endpoint
         CROW_ROUTE(_crowApp, "/api/sockets")
-            .methods(crow::HTTPMethod::GET)([&]() -> crow::response
-            {
+            .methods(crow::HTTPMethod::GET)([&]() -> crow::response {
                 auto socketsJson = nlohmann::json::array();
-                for (size_t canvasId = 0; canvasId < _allCanvases.size(); ++canvasId)
-                {
-                    if (_allCanvases[canvasId]) // Ensure canvas exists
-                    {
-                        for (size_t featureId = 0; featureId < _allCanvases[canvasId]->Features().size(); ++featureId)
-                        {
-                            const auto& feature = _allCanvases[canvasId]->Features()[featureId];
-                            nlohmann::json socketJson;
-                            socketJson["hostName"] = feature->Socket().HostName();
-                            socketJson["friendlyName"] = feature->Socket().FriendlyName();
-                            socketJson["featureId"] = featureId;
-                            socketJson["canvasId"] = _allCanvases[canvasId]->Id();
-                            socketJson["isConnected"] = feature->Socket().IsConnected();
-                            socketJson["bytesPerSecond"] = feature->Socket().BytesSentPerSecond();
-                            socketJson["port"] = feature->Socket().Port();
-                            socketsJson.push_back(socketJson);
-                        }
+                
+                for (size_t canvasId = 0; canvasId < _allCanvases.size(); ++canvasId) {
+                    if (!_allCanvases[canvasId]) {
+                        continue;
+                    }
+
+                    for (size_t featureId = 0; featureId < _allCanvases[canvasId]->Features().size(); ++featureId) {
+                        const auto& feature = _allCanvases[canvasId]->Features()[featureId];
+                        
+                        nlohmann::json socketJson;
+                        to_json(socketJson, feature->Socket());
+                        
+                        // Only add these two fields here since they're contextual
+                        socketJson["featureId"] = featureId;
+                        socketJson["canvasId"] = _allCanvases[canvasId]->Id();
+
+                        socketsJson.push_back(socketJson);
                     }
                 }
+                
                 return socketsJson.dump();
             });
 
