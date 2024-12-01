@@ -12,16 +12,17 @@ using namespace std;
 class WebServer
 {
 private:
-    struct HeaderMiddleware {
-        struct context 
+    struct HeaderMiddleware
+    {
+        struct context
         {
         };
 
-        void before_handle(crow::request& req, crow::response& res, context& ctx)
+        void before_handle(crow::request &req, crow::response &res, context &ctx)
         {
         }
 
-        void after_handle(crow::request& req, crow::response& res, context& ctx)
+        void after_handle(crow::request &req, crow::response &res, context &ctx)
         {
             res.set_header("Content-Type", "application/json");
             res.add_header("Access-Control-Allow-Origin", "*");
@@ -45,7 +46,8 @@ public:
     {
         // Define the `/api/sockets` endpoint
         CROW_ROUTE(_crowApp, "/api/sockets")
-            .methods(crow::HTTPMethod::GET)([&]() -> crow::response {
+            .methods(crow::HTTPMethod::GET)([&]() -> crow::response
+            {
                 auto socketsJson = nlohmann::json::array();
                 
                 for (size_t canvasId = 0; canvasId < _allCanvases.size(); ++canvasId) {
@@ -54,68 +56,64 @@ public:
                     }
 
                     for (size_t featureId = 0; featureId < _allCanvases[canvasId]->Features().size(); ++featureId) {
-                        const auto& feature = _allCanvases[canvasId]->Features()[featureId];
-                        
                         nlohmann::json socketJson;
-                        to_json(socketJson, feature->Socket());
-                        
-                        // Only add these two fields here since they're contextual
+                        to_json(socketJson, _allCanvases[canvasId]->Features()[featureId]->Socket());
                         socketJson["featureId"] = featureId;
                         socketJson["canvasId"] = _allCanvases[canvasId]->Id();
-
                         socketsJson.push_back(socketJson);
                     }
                 }
                 
-                return socketsJson.dump();
+                return socketsJson.dump(); 
             });
 
-            // Define the `/api/sockets/:id` endpoint
-            CROW_ROUTE(_crowApp, "/api/sockets/<int>")
-                .methods(crow::HTTPMethod::GET)([&](int socketId) -> crow::response {
-                    // Search through all canvases and features to find the matching socket
-                    for (size_t canvasId = 0; canvasId < _allCanvases.size(); ++canvasId) {
-                        if (!_allCanvases[canvasId]) {
-                            continue;
-                        }
+        // Define the `/api/sockets/:id` endpoint
+        CROW_ROUTE(_crowApp, "/api/sockets/<int>")
+            .methods(crow::HTTPMethod::GET)([&](int socketId) -> crow::response
+            {
+                // Search through all canvases and features to find the matching socket
+                for (size_t canvasId = 0; canvasId < _allCanvases.size(); ++canvasId) {
+                    if (!_allCanvases[canvasId]) {
+                        continue;
+                    }
 
-                        for (size_t featureId = 0; featureId < _allCanvases[canvasId]->Features().size(); ++featureId) {
-                            const auto& feature = _allCanvases[canvasId]->Features()[featureId];
+                    for (size_t featureId = 0; featureId < _allCanvases[canvasId]->Features().size(); ++featureId) {
+                        const auto& feature = _allCanvases[canvasId]->Features()[featureId];
+                        
+                        // Check if this socket matches the requested ID
+                        if (feature->Socket().Id() == socketId) {
+                            nlohmann::json socketJson;
+                            to_json(socketJson, feature->Socket());
                             
-                            // Check if this socket matches the requested ID
-                            if (feature->Socket().Id() == socketId) {
-                                nlohmann::json socketJson;
-                                to_json(socketJson, feature->Socket());
-                                
-                                // Add the contextual fields
-                                socketJson["featureId"] = featureId;
-                                socketJson["canvasId"] = _allCanvases[canvasId]->Id();
+                            // Add the contextual fields
+                            socketJson["featureId"] = featureId;
+                            socketJson["canvasId"] = _allCanvases[canvasId]->Id();
 
-                                return socketJson.dump();
-                            }
+                            return socketJson.dump();
                         }
                     }
-                    
-                    // If we didn't find the socket, return a 404
-                    return crow::response(404, "Socket not found");
-                });
+                }
+                
+                // If we didn't find the socket, return a 404
+                return crow::response(404, "Socket not found"); 
+            });
 
-            CROW_ROUTE(_crowApp, "/api/canvases")
-                .methods(crow::HTTPMethod::GET)([&]() -> crow::response
+        CROW_ROUTE(_crowApp, "/api/canvases")
+            .methods(crow::HTTPMethod::GET)([&]() -> crow::response
+            {
+                auto canvasesJson = nlohmann::json::array();
+                for (size_t i = 0; i < _allCanvases.size(); ++i)
                 {
-                    auto canvasesJson = nlohmann::json::array();
-                    for (size_t i = 0; i < _allCanvases.size(); ++i)
+                    if (_allCanvases[i]) // Ensure the canvas pointer is valid
                     {
-                        if (_allCanvases[i]) // Ensure the canvas pointer is valid
-                        {
-                            nlohmann::json canvasJson;
-                            to_json(canvasJson, *_allCanvases[i]); // Use the utility function
-                            canvasJson["id"] = i; // Add ID for reference
-                            canvasesJson.push_back(canvasJson);
-                        }
+                        nlohmann::json canvasJson;
+                        to_json(canvasJson, *_allCanvases[i]); // Use the utility function
+                        canvasJson["id"] = i; // Add ID for reference
+                        canvasesJson.push_back(canvasJson);
                     }
-                    return canvasesJson.dump();
-                });
+                }
+                return canvasesJson.dump(); 
+            });
 
         // Define the `/api/canvases/:id` endpoint
         CROW_ROUTE(_crowApp, "/api/canvases/<int>")
@@ -127,7 +125,7 @@ public:
                 nlohmann::json canvasJson;
                 to_json(canvasJson, *_allCanvases[id]); // Use the utility function
                 canvasJson["id"] = id; // Include ID in the details
-                return canvasJson.dump();
+                return canvasJson.dump(); 
             });
 
         // Start the server
