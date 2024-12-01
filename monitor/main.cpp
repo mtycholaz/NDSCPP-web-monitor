@@ -59,7 +59,12 @@ std::string formatBytes(double bytes)
 std::string formatWifiSignal(double signal)
 {
     std::ostringstream oss;
-    oss << std::abs((int)signal) << "dBm"; // Added abs() and removed decimal places
+    if (signal == 1000)
+        oss << "1Gb/s";
+    else if (signal == 10000)
+        oss << "10Gb/s";
+    else
+        oss << std::abs((int)signal) << "dBm"; // Added abs() and removed decimal places
     return oss.str();
 }
 
@@ -84,11 +89,11 @@ const std::vector<std::pair<std::string, int>> COLUMNS =
     {"Size", 8},         // Dimensions
     {"FPS", 4},          // Frames per second
     {"Queue", 5},        // Queue depth
-    {"Buf", 7},          // Buffer usage
+    {"Buf", 9},          // Buffer usage
     {"Signal", 8},       // WiFi signal
-    {"B/W", 9},          // Bandwidth
+    {"Data", 9},         // Bandwidth
     {"Delta", 7},        // Clock delta
-    {"Seq", 6},          // Sequence number
+    {"Seq", 8},          // Sequence number
     {"Flash", 5},        // Flash version
     {"Status", 6}        // Connection status
 };
@@ -254,11 +259,21 @@ public:
                             size_t bufferSize = stats["bufferSize"].get<size_t>();
                             double ratio = static_cast<double>(bufferPos) / bufferSize;
                             
+                            // Determine color based on ratio ranges
+                            int colorPair;
+                            if (ratio >= 0.25 && ratio <= 0.85) {
+                                colorPair = 1;  // green
+                            } else if (ratio > 0.95) {
+                                colorPair = 2;  // red
+                            } else {
+                                colorPair = 3;  // yellow for outside optimal range but not critical
+                            }
+                            
                             // First part with color
-                            wattron(contentWin, COLOR_PAIR(ratio > 0.9 ? 2 : 1));
+                            wattron(contentWin, COLOR_PAIR(colorPair));
                             mvwprintw(contentWin, row - scrollOffset, x, "%zu",
                                     bufferPos);
-                            wattroff(contentWin, COLOR_PAIR(ratio > 0.9 ? 2 : 1));
+                            wattroff(contentWin, COLOR_PAIR(colorPair));
                             
                             // Second part without color
                             mvwprintw(contentWin, row - scrollOffset, x + std::to_string(bufferPos).length(),
@@ -268,9 +283,14 @@ public:
                             // WiFi Signal with color coding
                             double signal = std::abs(stats["wifiSignal"].get<double>());
                             int signalColor;
-                            if (signal < 70) signalColor = 1;      // Green for good signal
-                            else if (signal < 80) signalColor = 6; // Yellow for warning
-                            else signalColor = 2;                  // Red for poor signal
+                            if (signal >= 100)
+                                signalColor = 0;
+                            else if (signal < 70) 
+                                signalColor = 1;                  // Green for good signal
+                            else if (signal < 80) 
+                                signalColor = 6; // Yellow for warning
+                            else 
+                                signalColor = 2;                  // Red for poor signal
                             
                             wattron(contentWin, COLOR_PAIR(signalColor));
                             mvwprintw(contentWin, row - scrollOffset, x, "%-*s",

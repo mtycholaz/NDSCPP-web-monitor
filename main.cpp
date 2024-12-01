@@ -86,7 +86,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         false,                // Reversed
         0,                    // Channel
         false,                // Red-Green Swap
-        300
+        500
     );
     canvasBanner->AddFeature(std::move(featureBanner));
     canvasBanner->Effects().AddEffect(make_unique<StarfieldEffect>("Starfield", 100));
@@ -174,7 +174,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            500
+            180
         );
         auto featureCabinets2 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -186,7 +186,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            312
+            180
         );
         auto featureCabinets3 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -198,7 +198,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            312
+            180
         );
         auto featureCabinets4 = make_unique<LEDFeature>(
             canvasCabinets.get(), // Canvas pointer
@@ -210,7 +210,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            500
+            180
         );
         
         canvasCabinets->AddFeature(std::move(featureCabinets1));
@@ -230,7 +230,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         constexpr auto start4 = length1+length2+length3, length4 = 8 * 144 - 23;
         constexpr auto totalLength = length1 + length2 + length3 + length4;
 
-        auto canvasCabana = make_unique<Canvas>(totalLength, 1, 28);
+        auto canvasCabana = make_unique<Canvas>(totalLength, 1, 24);
         auto featureCabana1 = make_unique<LEDFeature>(
             canvasCabana.get(),   // Canvas pointer
             "192.168.8.33",       // Hostname
@@ -241,7 +241,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            312
+            180
         );
         auto featureCabana2 = make_unique<LEDFeature>(
             canvasCabana.get(),   // Canvas pointer
@@ -253,7 +253,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             true,                 // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            312
+            180
         );
         auto featureCabana3 = make_unique<LEDFeature>(
             canvasCabana.get(), // Canvas pointer
@@ -265,7 +265,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            312
+            180
         );
         auto featureCabana4 = make_unique<LEDFeature>(
             canvasCabana.get(), // Canvas pointer
@@ -277,7 +277,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            312
+            180
         );
         
         canvasCabana->AddFeature(std::move(featureCabana1));
@@ -311,7 +311,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         auto canvasTree = make_unique<Canvas>(32, 1, 30);
         auto featureTree = make_unique<LEDFeature>(
             canvasTree.get(),     // Canvas pointer
-            "192.168.8.77",       // Hostname
+            "192.168.8.167",      // Hostname
             "Tree",               // Friendly Name
             49152,                // Port
             32, 1,                // Width, Height
@@ -319,12 +319,12 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             false,                // Reversed
             0,                    // Channel
             false,                // Red-Green Swap
-            312                   // Client Buffer Count    
+            180                   // Client Buffer Count    
         );
         canvasTree->AddFeature(std::move(featureTree));
-        canvasTree->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::Rainbow), 10.0, 0.0, 8, 1));
+        canvasTree->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::Rainbow), 0.25, 0.0, 1, 1));
         canvasTree->Effects().SetCurrentEffect(0, *canvasTree);
-        //canvases.push_back(std::move(canvasTree));        
+        canvases.push_back(std::move(canvasTree));        
     }
 
 

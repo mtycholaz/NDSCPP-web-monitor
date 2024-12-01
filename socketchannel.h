@@ -26,7 +26,7 @@ using namespace std;
 // How long to wait for a connection to be established or data sent
 
 constexpr auto kConnectTimeout = 3000ms; 
-constexpr auto kSendTimeout    = 5000ms;
+constexpr auto kSendTimeout    = 2000ms;
 
 // SpeedTracker
 // 
@@ -197,7 +197,12 @@ public:
     
     ClientResponse LastClientResponse() const override  // Changed to return by value
     { 
+        constexpr auto kMaxResponseAge = 2s;
+
         lock_guard lock(_responseMutex);
+        if (_lastResponseTime - system_clock::now() > kMaxResponseAge)
+            return ClientResponse {}; // Return empty response if too old
+
         return _lastClientResponse; 
     }
 
@@ -321,6 +326,7 @@ private:
                         {
                             lock_guard lock(_responseMutex);
                             _lastClientResponse = std::move(*response);
+                            _lastResponseTime = system_clock::now();
                         }
                         _speedTracker.UpdateBytesPerSecond();
                     }
@@ -345,79 +351,95 @@ private:
         }
     }
 
-    // ReadSocketResponse
-    //
-    // When we send a frame to the client, it sends us a stats/result packet back.  This function reads
-    // the response from the socket and returns it as a ClientResponse object.  If the response is invalid
-    // or the socket is closed, nullopt is returned.
-
     optional<ClientResponse> ReadSocketResponse() 
     {
         const size_t cbToRead = sizeof(ClientResponse);
+        optional<ClientResponse> lastResponse;
 
         pollfd pfd;
         pfd.fd = _socketFd;
         pfd.events = POLLIN;
 
-        if (poll(&pfd, 1, 0) <= 0) 
-            return nullopt;
-
-        // Read the first byte to determine the byte count.  Older clients might send shorter packets
-        // so we cannot just try to read a full "current version" packet out of an old client's stream,
-        // as there won't be enough bytes in the structure to satisfy the read.
-
-        uint8_t byteCount = 0;
-        ssize_t readBytes = recv(_socketFd, &byteCount, 1, MSG_PEEK);
-        if (readBytes <= 0)
+        // Keep reading while there's data available
+        while (poll(&pfd, 1, 0) > 0)
         {
-            // Socket error or no data
-            return nullopt;
-        }
+            uint8_t byteCount = 0;
+            ssize_t readBytes = recv(_socketFd, &byteCount, 1, MSG_PEEK);
+            if (readBytes <= 0)
+                break;
 
-        // Compare the byte count to the expected size.  If it's an older packet, we translate it
-        // to the new format right here
-
-        if (byteCount != static_cast<uint8_t>(cbToRead))
-        {
-            if (byteCount == sizeof(OldClientResponse))
+            if (byteCount != static_cast<uint8_t>(cbToRead))
             {
-                // Old client response; translate it
-                OldClientResponse oldResponse;
-                readBytes = recv(_socketFd, &oldResponse, sizeof(OldClientResponse), 0);
-                if (readBytes == sizeof(OldClientResponse))
+                if (byteCount == sizeof(OldClientResponse))
                 {
-                    ClientResponse response;
-                    response = oldResponse;
-                    response.TranslateClientResponse();
-                    return response;
+                    OldClientResponse oldResponse;
+                    readBytes = recv(_socketFd, &oldResponse, sizeof(OldClientResponse), 0);
+                    if (readBytes == sizeof(OldClientResponse))
+                    {
+                        ClientResponse response;
+                        response = oldResponse;
+                        response.TranslateClientResponse();
+                        lastResponse = response;
+                        continue;  // Check for more data
+                    }
                 }
+
+                // Invalid byte count; eat the contents
+                vector<uint8_t> tempBuffer(byteCount);
+                recv(_socketFd, tempBuffer.data(), byteCount, 0);
+                continue;  // Check for more data
             }
 
-            // Invalid byte count; eat the contents
-            vector<uint8_t> tempBuffer(byteCount);
-            recv(_socketFd, tempBuffer.data(), byteCount, 0);
-            return nullopt;
+            // Read the full response
+            vector<uint8_t> buffer(cbToRead);
+            readBytes = recv(_socketFd, buffer.data(), cbToRead, 0);
+            if (readBytes == static_cast<ssize_t>(cbToRead))
+            {
+                ClientResponse response;
+                memcpy(&response, buffer.data(), cbToRead);
+                response.TranslateClientResponse();
+                lastResponse = response;
+                continue;  // Check for more data
+            }
+
+            break;  // Error reading data
         }
 
-        // Read the full response
-        vector<uint8_t> buffer(cbToRead);
-        readBytes = recv(_socketFd, buffer.data(), cbToRead, 0);
-        if (readBytes == static_cast<ssize_t>(cbToRead))
-        {
-            ClientResponse response;
-            memcpy(&response, buffer.data(), cbToRead);
-            response.TranslateClientResponse();
-            return response;
-        }
-
-        return nullopt;
+        return lastResponse;
     }
 
-    bool SetSocketNonBlocking(int socketFd)
+    bool SetSocketOptions(int socketFd)
     {
+        // Set socket to non-blocking mode
+
         int flags = fcntl(socketFd, F_GETFL, 0);
-        if (flags == -1) return false;
-        return (fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) != -1);
+        if (flags == -1) 
+        return false;
+        
+        if (!(fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) != -1))
+            return false;
+
+        // Enable TCP keepalive on the socket
+
+        int keepalive = 1;
+        int keepcnt = 3;          // Number of keepalive probes before declaring dead
+        int keepidle = 1;         // Time in seconds before sending keepalive probes
+        int keepintvl = 1;        // Time in seconds between keepalive probes
+
+        if (setsockopt(socketFd, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive)) < 0 ||
+            setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt)) < 0 ||
+            #ifdef __APPLE__
+                setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPALIVE, &keepidle, sizeof(keepidle)) < 0 ||
+            #else
+                setsockopt(tempSocket, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle)) < 0 ||
+            #endif
+            setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPINTVL, &keepintvl, sizeof(keepintvl)) < 0)
+        {
+            cerr << "Could not set keepalive options for " << _friendlyName << endl;
+            return false;
+        }           
+            
+        return true;
     }
 
     bool SetSocketSendTimeout(int socketFd, milliseconds timeout)
@@ -506,7 +528,7 @@ private:
         }
 
         // Set socket to non-blocking mode
-        if (!SetSocketNonBlocking(tempSocket))
+        if (!SetSocketOptions(tempSocket))
         {
             cerr << "Could not set socket to non-blocking mode for " << _friendlyName << endl;
             close(tempSocket);
@@ -544,8 +566,6 @@ private:
                 close(tempSocket);
                 return false;
             }
-
-            
         }
 
         if (!SetSocketSendTimeout(tempSocket, kSendTimeout))
@@ -554,7 +574,7 @@ private:
             return false;
         }
 
-        ++_reconnectCount;
+        _reconnectCount++;
         cout << "Connection number " << _reconnectCount << " to " << _hostName << ":" << _port << " [" << _friendlyName << "] on thread " << this_thread::get_id() << endl; 
         _socketFd = tempSocket;
         return true;
@@ -563,7 +583,6 @@ private:
     void EmptyQueue()
     {
         lock_guard<mutex> lock(_mutex);  // Add lock
-        
         {
             lock_guard queueLock(_queueMutex);
             queue<vector<uint8_t>> empty;
@@ -595,7 +614,7 @@ private:
     static atomic<uint32_t> _nextId;
     uint32_t _id;
 
-    mutable mutex _mutex;
+    mutable mutex _mutex;                       // 
     mutable mutex _queueMutex;
     mutable mutex _responseMutex;
     
@@ -607,6 +626,7 @@ private:
     thread _workerThread;
 
     ClientResponse _lastClientResponse;
+    system_clock::time_point _lastResponseTime;
     system_clock::time_point _lastConnectionAttempt;
     SpeedTracker _speedTracker;
 

@@ -46,22 +46,22 @@ struct OldClientResponse
     uint32_t bufferPos;    // 4
     uint32_t fpsDrawing;   // 4
     uint32_t watts;        // 4
-};
+} __attribute__((packed)); // Packed attribute required for network protocol compatibility
 
 struct ClientResponse
 {
-    uint32_t size;         // 4
-    uint64_t sequence;     // 8
-    uint32_t flashVersion; // 4
-    double currentClock;   // 8
-    double oldestPacket;   // 8
-    double newestPacket;   // 8
-    double brightness;     // 8
-    double wifiSignal;     // 8
-    uint32_t bufferSize;   // 4
-    uint32_t bufferPos;    // 4
-    uint32_t fpsDrawing;   // 4
-    uint32_t watts;        // 4
+    uint32_t size = sizeof(ClientResponse);         // 4
+    uint64_t sequence = 0;                          // 8
+    uint32_t flashVersion = 0;                      // 4
+    double currentClock = 0;                        // 8
+    double oldestPacket = 0;                        // 8
+    double newestPacket = 0;                        // 8
+    double brightness = 0;                          // 8
+    double wifiSignal = 0;                          // 8
+    uint32_t bufferSize = 0;                        // 4
+    uint32_t bufferPos = 0;                         // 4
+    uint32_t fpsDrawing = 0;                        // 4
+    uint32_t watts = 0;                             // 4
 
     ClientResponse& operator=(const OldClientResponse& old)
     {
@@ -111,7 +111,7 @@ inline void SerializeClientResponseStats(nlohmann::json &j, const ClientResponse
     j =
         {
             {"responseSize", response.size},
-            {"sequence", response.sequence},
+            {"sequenceNumber", response.sequence},
             {"flashVersion", response.flashVersion},
             {"currentClock", response.currentClock},
             {"oldestPacket", response.oldestPacket},
