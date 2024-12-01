@@ -431,14 +431,14 @@ private:
             #ifdef __APPLE__
                 setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPALIVE, &keepidle, sizeof(keepidle)) < 0 ||
             #else
-                setsockopt(tempSocket, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle)) < 0 ||
+                setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle)) < 0 ||
             #endif
             setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPINTVL, &keepintvl, sizeof(keepintvl)) < 0)
         {
             cerr << "Could not set keepalive options for " << _friendlyName << endl;
             return false;
         }           
-            
+
         return true;
     }
 
