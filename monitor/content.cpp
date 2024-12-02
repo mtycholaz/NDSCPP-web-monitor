@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <vector>
 #include <string>
+#include <wchar.h>
 
 // Our only interface to NDSCPP comes through the REST api and this serialization helper code
 #include "../serialization.h"
@@ -42,6 +43,33 @@ std::string buildMeter(double value, double threshold, int width = 21)
     }
     return meter;
 }
+
+std::string buildProgressBar(double value, double maximum, int width = 10) 
+{
+    static const std::array<const char*, 9> blocks = {
+        " ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"
+    };
+    
+    double percentage = std::min(1.0, std::max(0.0, value / maximum));
+    double exactBlocks = percentage * width;
+    int fullBlocks = static_cast<int>(exactBlocks);
+    int remainder = static_cast<int>((exactBlocks - fullBlocks) * 8);
+    
+    std::string bar;
+    bar.reserve(width * 3);
+    
+    for (int i = 0; i < fullBlocks; i++) {
+        bar += blocks[8];
+    }
+    
+    if (fullBlocks < width) {
+        bar += blocks[remainder];
+        bar.append(width - fullBlocks - 1, blocks[0][0]);
+    }
+    return bar;
+}
+
+
 
 // Helper to make HTTP requests
 std::string httpGet(const std::string &url)
@@ -105,7 +133,7 @@ const std::vector<std::pair<std::string, int>> COLUMNS =
         {"Feature", 10},  // Feature name 
         {"Host", 14},     // Hostname
         {"Size", 7},      // Dimensions
-        {"Con", 4},       // Reconnects
+        {"Cx", 3},        // Reconnects
         {"FPS", 6},       // Frames per second (X/Y format)
         {"Queue", 5},     // Queue depth
         {"Buf", 8},       // Buffer usage
@@ -170,9 +198,9 @@ void Monitor::drawContent()
                     if (featureJson.contains("reconnectCount") && !featureJson["reconnectCount"].is_null())
                     {
                         int reconnects = featureJson["reconnectCount"].get<int>();
-                        int colorPair = (reconnects == 0) ? 1 : // Green for 0
-                                      (reconnects < 3) ? 6 :    // Yellow for 1-2
-                                      2;                        // Red for 3+
+                        int colorPair = (reconnects < 3) ? 1 : // Green for 0
+                                        (reconnects < 10) ? 6 :    // Yellow for 1-2
+                                        2;                        // Red for 3+
                         wattron(contentWin, COLOR_PAIR(colorPair));
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*d", COLUMNS[4].second, reconnects);
                         wattroff(contentWin, COLOR_PAIR(colorPair));
@@ -206,14 +234,23 @@ void Monitor::drawContent()
                     // Queue depth
                     if (featureJson.contains("queueDepth") && !featureJson["queueDepth"].is_null())
                     {
+                        constexpr auto kFatQueue = 25;
                         try
                         {
                             size_t queueDepth = featureJson["queueDepth"].get<size_t>();
                             int queueColor = queueDepth < 100 ? 1 : 
                                            queueDepth < 250 ? 6 : 2;
 
+                            string bar = buildProgressBar(queueDepth, kFatQueue, 6);
                             wattron(contentWin, COLOR_PAIR(queueColor));
-                            mvwprintw(contentWin, row - scrollOffset, x, "%-*zu", COLUMNS[6].second, queueDepth);
+                            mvwprintw(contentWin, row - scrollOffset, x, bar.c_str(), COLUMNS[6].second, queueDepth);
+                            // If the queue is too big to show by bar alone, add a numeric indicator atop it
+                            if (queueDepth > kFatQueue)
+                            {
+                                wattron(contentWin, A_REVERSE);
+                                mvwprintw(contentWin, row - scrollOffset, x, " %-*zu", COLUMNS[6].second, queueDepth);
+                                wattroff(contentWin, A_REVERSE);
+                            }
                             wattroff(contentWin, COLOR_PAIR(queueColor));
                         }
                         catch (const json::exception &)

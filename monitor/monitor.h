@@ -1,3 +1,5 @@
+ #define _XOPEN_SOURCE_EXTENDED 1
+#include <locale.h>
 #include <ncurses.h>
 #include <curl/curl.h>
 #include <chrono>
@@ -34,6 +36,7 @@ public:
         : baseUrl(std::string("http://") + hostname + ":" + std::to_string(port)),
           _fps(fps)
     {
+        setlocale(LC_ALL, "");
         initscr();
         start_color();
         cbreak();
