@@ -27,10 +27,12 @@ class Monitor
     int contentHeight;
     int scrollOffset = 0;
     std::string baseUrl;
+    double _fps;
 
 public:
-    Monitor(const std::string& hostname = "localhost", int port = 7777)
-        : baseUrl(std::string("http://") + hostname + ":" + std::to_string(port))
+    Monitor(const std::string& hostname = "localhost", int port = 7777, double fps = 10.0)
+        : baseUrl(std::string("http://") + hostname + ":" + std::to_string(port)),
+          _fps(fps)
     {
         initscr();
         start_color();
@@ -140,7 +142,7 @@ public:
             }
             
             // Small sleep to prevent CPU spinning
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(_fps > 0 ? static_cast<int>(1000.0 / _fps) : 100));
         }
     }
 };

@@ -19,20 +19,22 @@ using json = nlohmann::json;
 
 void print_usage(const char *program_name)
 {
-    fprintf(stderr, "Usage: %s [-s hostname] [-p port]\n", program_name);
+    fprintf(stderr, "Usage: %s [-s hostname] [-p port] [-f fps]\n", program_name);
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "  -s <hostname>  Specify the hostname to connect to (default: localhost)\n");
     fprintf(stderr, "  -p <port>      Specify the port to connect to (default: 7777)\n");
+    fprintf(stderr, "  -f <fps>       Specify refresh rate in frames per second (default: 10)\n");
 }
 
 int main(int argc, char *argv[])
 {
     std::string hostname = "localhost"; // default hostname
-    int port = 7777;                    // default port
+    int port = 7777;                   // default port
+    double fps = 10.0;                 // default refresh rate
     int opt;
-
+    
     // Parse command line options
-    while ((opt = getopt(argc, argv, "s:p:h")) != -1)
+    while ((opt = getopt(argc, argv, "s:p:f:h")) != -1)
     {
         switch (opt)
         {
@@ -55,6 +57,22 @@ int main(int argc, char *argv[])
                 exit(1);
             }
             break;
+        case 'f':
+            try
+            {
+                fps = std::stod(optarg);
+                if (fps <= 0.0)
+                {
+                    fprintf(stderr, "Error: FPS must be greater than 0\n");
+                    exit(1);
+                }
+            }
+            catch (const std::exception &e)
+            {
+                fprintf(stderr, "Error: Invalid FPS value\n");
+                exit(1);
+            }
+            break;
         case 'h':
             print_usage(argv[0]);
             exit(0);
@@ -66,8 +84,7 @@ int main(int argc, char *argv[])
 
     curl_global_init(CURL_GLOBAL_ALL);
 
-    // Pass hostname and port to Monitor constructor
-    Monitor monitor(hostname, port);
+    Monitor monitor(hostname, port, fps);
     monitor.run();
 
     curl_global_cleanup();
