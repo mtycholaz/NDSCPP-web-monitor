@@ -19,15 +19,22 @@ class Canvas : public ICanvas
     uint32_t _id;
     BaseGraphics _graphics;
     EffectsManager _effects;
-    
+    string _name;
+
 public:
-    Canvas(uint32_t width, uint32_t height, uint16_t fps = 30) : 
+    Canvas(string name, uint32_t width, uint32_t height, uint16_t fps = 30) : 
         _id(_nextId++),
         _width(width), 
         _height(height), 
         _graphics(width, height), 
-        _effects(fps)
+        _effects(fps),
+        _name(name)
     {
+    }
+
+    string Name() const override
+    {
+        return _name;
     }
 
     uint32_t Id() const override 

@@ -187,6 +187,8 @@ inline void to_json(nlohmann::json &j, const ICanvas &canvas)
         j = nlohmann::json{
             {"width", canvas.Graphics().Width()},
             {"height", canvas.Graphics().Height()},
+            {"name", canvas.Name()},
+            {"fps", canvas.Effects().GetFPS()},
             {"features", featuresJson}};
     }
     catch (const std::exception &e)

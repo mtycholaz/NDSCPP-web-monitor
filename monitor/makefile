@@ -10,7 +10,7 @@ LIBS = -lncurses -lcurl
 TARGET = ledmon
 
 # Source files
-SOURCES = main.cpp
+SOURCES = main.cpp content.cpp
 
 # Object files
 OBJECTS = $(SOURCES:.cpp=.o)

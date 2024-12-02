@@ -165,6 +165,7 @@ public:
     virtual ~ICanvas() = default;
     
     virtual uint32_t Id() const = 0;
+    virtual string Name() const = 0;
     virtual vector<unique_ptr<ILEDFeature>>& Features() = 0;
     virtual const vector<unique_ptr<ILEDFeature>>& Features() const = 0;
 
