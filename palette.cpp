@@ -20,7 +20,6 @@ const std::vector<CRGB> Palette::ChristmasLights =
     CRGB::Red,    // Red
     CRGB::Green,  // Green
     CRGB::Blue,   // Blue
-    CRGB::Orange, // Orange
     CRGB::Purple  // Purple
 };
 

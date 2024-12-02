@@ -44,7 +44,7 @@ public:
 // Provides APIs for interacting with its parent canvas and retrieving its assigned color data.
 
 
-class ClientResponse;
+struct ClientResponse;
 class ICanvas;
 
 // ILEDEffect
@@ -107,15 +107,19 @@ public:
     virtual const string& FriendlyName() const = 0;
     virtual uint16_t Port() const = 0;
 
+    virtual uint32_t Id() const = 0;
+
     // Data transfer methods
     virtual bool EnqueueFrame(vector<uint8_t>&& frameData) = 0;
     virtual vector<uint8_t> CompressFrame(const vector<uint8_t>& data) = 0;
 
     // Connection status
     virtual bool IsConnected() const = 0;
-
-    virtual const ClientResponse & LastClientResponse() const = 0;
+    virtual uint64_t GetLastBytesPerSecond() const = 0;
+    virtual ClientResponse LastClientResponse() const = 0;
     virtual uint32_t GetReconnectCount() const = 0;
+    virtual size_t GetCurrentQueueDepth() const = 0;
+    virtual size_t GetQueueMaxSize() const = 0;
 
     // Start and stop operations
     virtual void Start() = 0;
@@ -127,6 +131,8 @@ class ILEDFeature
 {
 public:
     virtual ~ILEDFeature() = default;
+
+    virtual uint32_t Id() const = 0;
 
     // Accessor methods
     virtual uint32_t Width() const = 0;
@@ -144,6 +150,7 @@ public:
     virtual vector<uint8_t> GetDataFrame() const = 0;    
 
     virtual ISocketChannel & Socket() = 0;
+    virtual const ISocketChannel & Socket() const = 0;
 
 };
 
@@ -156,16 +163,18 @@ class ICanvas
 {
 public:
     virtual ~ICanvas() = default;
-    // Accessors for features
+    
+    virtual uint32_t Id() const = 0;
+    virtual string Name() const = 0;
     virtual vector<unique_ptr<ILEDFeature>>& Features() = 0;
     virtual const vector<unique_ptr<ILEDFeature>>& Features() const = 0;
 
-    // Add or remove features
     virtual void AddFeature(unique_ptr<ILEDFeature> feature) = 0;
     virtual void RemoveFeature(unique_ptr<ILEDFeature> & feature) = 0;
 
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;
+
     virtual IEffectsManager & Effects() = 0;
     virtual const IEffectsManager & Effects() const = 0;
 };

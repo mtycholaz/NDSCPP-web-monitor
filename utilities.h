@@ -9,6 +9,7 @@ using namespace std;
 // it, and this class provides functions to convert the data into that format.
 
 #include <vector>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <cstdint>
@@ -20,15 +21,6 @@ using namespace std;
 class Utilities
 {
 public:
-    static double ByteSwapDouble(double value)
-    {
-        // Helper function to swap bytes in a double
-        uint64_t temp;
-        memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
-        temp = __builtin_bswap64(temp);        // Byte swap the 64-bit integer
-        memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
-        return value;
-    }
 
     static vector<uint8_t> ConvertPixelsToByteArray(const vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
     {
@@ -171,10 +163,10 @@ public:
         vector<uint8_t> combined;
 
         // Calculate the total size of the combined array using a fold expression
-        size_t totalSize = (arrays.size() + ... + 0);
+        size_t totalSize = (arrays.size() + ...);
         combined.reserve(totalSize);
 
-        // Append each array to the combined vector using a fold expression
+        // Append each array to the combined vector using a comma fold expression
         (combined.insert(
              combined.end(),
              make_move_iterator(arrays.begin()),
@@ -279,3 +271,4 @@ private:
         bytes.push_back(color.b);
     }
 };
+

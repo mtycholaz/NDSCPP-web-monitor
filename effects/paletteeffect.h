@@ -13,8 +13,6 @@ using namespace std::chrono;
 #include "../pixeltypes.h"
 #include "../palette.h"
 
-constexpr auto kPixelsPerMeter = 144;
-
 class PaletteEffect : public LEDEffectBase 
 {
 private:
@@ -71,7 +69,7 @@ public:
 
         // Calculate the number of colors to scroll based on the elapsed time
         double cColorsToScroll = secondsElapsed * _LEDColorPerSecond;
-        _iColor += cColorsToScroll / kPixelsPerMeter;
+        _iColor += cColorsToScroll * _Density;
         _iColor -= floor(_iColor);
 
         double iColor = _iColor;
@@ -96,7 +94,7 @@ public:
             // Avoid pixel 0 flicker as it scrolls by copying pixel 1 onto 0
             if (dotcount > 1) 
                 canvas.Graphics().SetPixel(0, 0, canvas.Graphics().GetPixel(1, 0));
-            iColor += count * (_Density / kPixelsPerMeter) * _EveryNthDot;
+            iColor +=  _Density / _Palette.originalSize();
         }
     }
 };
