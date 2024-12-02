@@ -95,7 +95,7 @@ public:
                 }
                 
                 // If we didn't find the socket, return a 404
-                return crow::response(404, "Socket not found"); 
+                return {crow::NOT_FOUND, R"({"error": "Socket not found"})"}; 
             });
 
         CROW_ROUTE(_crowApp, "/api/canvases")
