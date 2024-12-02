@@ -12,7 +12,6 @@
 
 using json = nlohmann::json;
 
-
 // Updated columns with new information
 extern const std::vector<std::pair<std::string, int>> COLUMNS;
 
@@ -27,10 +26,11 @@ class Monitor
     WINDOW *footerWin;
     int contentHeight;
     int scrollOffset = 0;
-    std::string baseUrl = "http://m2macpro:7777";
+    std::string baseUrl;
 
 public:
-    Monitor()
+    Monitor(const std::string& hostname = "localhost", int port = 7777)
+        : baseUrl(std::string("http://") + hostname + ":" + std::to_string(port))
     {
         initscr();
         start_color();
@@ -86,7 +86,6 @@ public:
     }
 
     void drawContent();
-    
 
     void drawFooter()
     {
