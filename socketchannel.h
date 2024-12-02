@@ -414,7 +414,7 @@ private:
 
         int flags = fcntl(socketFd, F_GETFL, 0);
         if (flags == -1) 
-        return false;
+            return false;
         
         if (!(fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) != -1))
             return false;
