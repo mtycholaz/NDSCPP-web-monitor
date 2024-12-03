@@ -13,6 +13,7 @@ using namespace std::chrono;
 #include "../pixeltypes.h"
 #include "../palette.h"
 
+template<size_t N>
 class PaletteEffect : public LEDEffectBase 
 {
 private:
@@ -20,7 +21,7 @@ private:
     double _iColor;
 
 public:
-    Palette  _Palette;
+    Palette<N>  _Palette;
     double   _LEDColorPerSecond = 3.0;
     double   _LEDScrollSpeed = 0.0;
     double   _Density = 1.0;
@@ -30,17 +31,19 @@ public:
     double   _Brightness = 1.0;
     bool     _Mirrored = false;
 
-    PaletteEffect(const string & name, 
-                  const Palette& palette,
-                  double         ledColorPerSecond = 3.0,
-                  double         ledScrollSpeed = 0.0,
-                  double         density = 1.0,
-                  double         everyNthDot = 1.0,
-                  uint32_t       dotSize = 1,
-                  bool           rampedColor = false,
-                  double         brightness = 1.0,
-                  bool           mirrored = false)
-        : _Palette(palette)
+    // New constructor taking std::array directly
+    PaletteEffect(const string& name, 
+                  const std::array<CRGB, N>& colors,
+                  double ledColorPerSecond = 3.0,
+                  double ledScrollSpeed = 0.0,
+                  double density = 1.0,
+                  double everyNthDot = 1.0,
+                  uint32_t dotSize = 1,
+                  bool rampedColor = false,
+                  double brightness = 1.0,
+                  bool mirrored = false) noexcept
+        : LEDEffectBase(name)
+        , _Palette(Palette<N>(colors))  // Construct Palette from array
         , _iColor(0)
         , _LEDColorPerSecond(ledColorPerSecond)
         , _LEDScrollSpeed(ledScrollSpeed)
@@ -50,10 +53,9 @@ public:
         , _RampedColor(rampedColor)
         , _Brightness(brightness)
         , _Mirrored(mirrored)
-        , LEDEffectBase(name)
     {
     }
-
+    
     void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
         auto dotcount = canvas.Graphics().Width() * canvas.Graphics().Height();

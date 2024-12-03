@@ -8,90 +8,174 @@
 #include "pixeltypes.h"
 #include "palette.h"
 
-class Palette
-{
+template<size_t N>
+class Palette {
 protected:
-    std::vector<CRGB> colorEntries;
+    std::array<CRGB, N> colorEntries;
+    static constexpr bool IsPowerOfTwo = (N & (N - 1)) == 0;
 
 public:
     bool blend = true;
 
-    static const std::vector<CRGB> Rainbow;
-    static const std::vector<CRGB> RainbowStripes;
-    static const std::vector<CRGB> ChristmasLights;
+    // Constructor taking std::array - existing constructor
+    explicit Palette(const std::array<CRGB, N>& colors) noexcept 
+        : colorEntries(colors)
+    {}
 
-    explicit Palette(const std::vector<CRGB> &colors) : colorEntries(colors) {}
-
-    size_t originalSize() const
+    // Constructor taking reference to static array (for CRGB::Rainbow etc)
+    template<typename T>
+    explicit Palette(const T& colors) noexcept 
+        : colorEntries(colors)
     {
-        return colorEntries.size();
+        static_assert(std::tuple_size<T>::value == N, 
+            "Color array size must match palette size N");
     }
 
-    virtual CRGB getColor(double d) const
-    {
-        while (d < 0)
-            d += 1.0;
+    // Fast compile-time size
+    static constexpr size_t originalSize() noexcept { return N; }
+
+    CRGB getColor(double d) const noexcept {
+        // Normalize d to [0, 1)
         d -= std::floor(d);
+        if (d < 0) d += 1.0;
 
-        double fracPerColor = 1.0 / colorEntries.size();
-        double indexD = d / fracPerColor;
-        int index = static_cast<int>(indexD) % colorEntries.size();
-        double fraction = indexD - index;
+        if (!blend) {
+            if constexpr (IsPowerOfTwo) {
+                // Use bitwise AND for power-of-two sizes
+                const size_t index = static_cast<size_t>(d * N) & (N - 1);
+                return colorEntries[index];
+            } else {
+                const size_t index = static_cast<size_t>(d * N) % N;
+                return colorEntries[index];
+            }
+        }
 
-        CRGB color1 = colorEntries[index];
-        if (!blend)
-            return color1;
+        // Calculate position in palette
+        const double indexD = d * N;
+        const size_t index = static_cast<size_t>(indexD);
+        const double fraction = indexD - index;
 
-        CRGB color2 = colorEntries[(index + 1) % colorEntries.size()];
-        return color1.blendWith(color2, fraction);  
+        // Get colors with wrapped index
+        const CRGB& color1 = colorEntries[index];
+        if constexpr (IsPowerOfTwo) {
+            const CRGB& color2 = colorEntries[(index + 1) & (N - 1)];
+            return color1.blendWith(color2, fraction);
+        } else {
+            const CRGB& color2 = colorEntries[(index + 1) % N];
+            return color1.blendWith(color2, fraction);
+        }
     }
+
+    // Fast path for single-precision float, pre-normalized [0,1) input
+    CRGB getColorFast(float d) const noexcept {
+        if (!blend) {
+            if constexpr (IsPowerOfTwo) {
+                return colorEntries[static_cast<size_t>(d * N) & (N - 1)];
+            } else {
+                return colorEntries[static_cast<size_t>(d * N) % N];
+            }
+        }
+
+        const float indexF = d * N;
+        const size_t index = static_cast<size_t>(indexF);
+        const float fraction = indexF - index;
+
+        if constexpr (IsPowerOfTwo) {
+            return colorEntries[index].blendWith(
+                colorEntries[(index + 1) & (N - 1)], 
+                fraction);
+        } else {
+            return colorEntries[index].blendWith(
+                colorEntries[(index + 1) % N], 
+                fraction);
+        }
+    }
+
+    // Define standard palettes as static members
+    static const Palette<N> Rainbow;
+    static const Palette<N> RainbowStripes;
+    static const Palette<N> ChristmasLights;
 };
+
 
 // GaussianPalette
 //
 // This palette uses a Gaussian distribution to blend colors smoothly.
 
-class GaussianPalette : public Palette
+template<size_t N>
+class GaussianPalette : public Palette<N>
 {
 protected:
     double smoothing = 0.0;
-    std::array<double, 5> factors = {0.06136, 0.24477, 0.38774, 0.24477, 0.06136};
+    static constexpr std::array<double, 5> factors = {0.06136, 0.24477, 0.38774, 0.24477, 0.06136};
 
 public:
-    explicit GaussianPalette(const std::vector<CRGB> &colors) : Palette(colors)
-    {
-        smoothing = 1.0 / colors.size();
-    }
+    // Constructor taking array
+    explicit GaussianPalette(const std::array<CRGB, N>& colors) noexcept
+        : Palette<N>(colors)
+        , smoothing(1.0 / N)
+    {}
 
-    CRGB getColor(double d) const override
-    {
-        double s = smoothing / originalSize();
+    // Constructor taking initializer list for convenience
+    explicit GaussianPalette(std::initializer_list<CRGB> colors) noexcept
+        : Palette<N>(colors)
+        , smoothing(1.0 / N)
+    {}
 
-        auto blendColor = [&](double offset) -> CRGB
-        {
-            return Palette::getColor(d + offset);
+    CRGB getColor(double d) const noexcept override
+    {
+        const double s = smoothing / N;
+
+        // Pre-calculate all color samples to avoid repeated calls
+        std::array<CRGB, 5> samples = {
+            Palette<N>::getColor(d - 2 * s),
+            Palette<N>::getColor(d - s),
+            Palette<N>::getColor(d),
+            Palette<N>::getColor(d + s),
+            Palette<N>::getColor(d + 2 * s)
         };
 
-        double red = blendColor(-2 * s).r   * factors[0] +
-                     blendColor(-s).r       * factors[1] +
-                     blendColor(0).r        * factors[2] +
-                     blendColor(s).r        * factors[3] +
-                     blendColor(2 * s).r    * factors[4];
+        // Calculate weighted sums for each channel
+        double red = 0, green = 0, blue = 0;
+        for (size_t i = 0; i < 5; ++i) {
+            red += samples[i].r * factors[i];
+            green += samples[i].g * factors[i];
+            blue += samples[i].b * factors[i];
+        }
 
-        double green = blendColor(-2 * s).g * factors[0] +
-                       blendColor(-s).g     * factors[1] +
-                       blendColor(0).g      * factors[2] +
-                       blendColor(s).g      * factors[3] +
-                       blendColor(2 * s).g  * factors[4];
+        // Clamp and convert to uint8_t
+        return CRGB(
+            static_cast<uint8_t>(std::clamp(red, 0.0, 255.0)),
+            static_cast<uint8_t>(std::clamp(green, 0.0, 255.0)),
+            static_cast<uint8_t>(std::clamp(blue, 0.0, 255.0))
+        );
+    }
 
-        double blue = blendColor(-2 * s).b  * factors[0] +
-                      blendColor(-s).b      * factors[1] +
-                      blendColor(0).b       * factors[2] +
-                      blendColor(s).b       * factors[3] +
-                      blendColor(2 * s).b   * factors[4];
+    // Add the fast path version as well
+    CRGB getColorFast(float d) const noexcept {
+        const float s = static_cast<float>(smoothing / N);
 
-        return CRGB(static_cast<uint8_t>(std::clamp(red, 0.0, 255.0)),
-                    static_cast<uint8_t>(std::clamp(green, 0.0, 255.0)),
-                    static_cast<uint8_t>(std::clamp(blue, 0.0, 255.0)));
+        // Pre-calculate all color samples
+        std::array<CRGB, 5> samples = {
+            Palette<N>::getColorFast(d - 2 * s),
+            Palette<N>::getColorFast(d - s),
+            Palette<N>::getColorFast(d),
+            Palette<N>::getColorFast(d + s),
+            Palette<N>::getColorFast(d + 2 * s)
+        };
+
+        // Calculate weighted sums for each channel
+        float red = 0, green = 0, blue = 0;
+        for (size_t i = 0; i < 5; ++i) {
+            red += samples[i].r * static_cast<float>(factors[i]);
+            green += samples[i].g * static_cast<float>(factors[i]);
+            blue += samples[i].b * static_cast<float>(factors[i]);
+        }
+
+        return CRGB(
+            static_cast<uint8_t>(std::clamp(red, 0.0f, 255.0f)),
+            static_cast<uint8_t>(std::clamp(green, 0.0f, 255.0f)),
+            static_cast<uint8_t>(std::clamp(blue, 0.0f, 255.0f))
+        );
     }
 };

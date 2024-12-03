@@ -146,53 +146,70 @@ public:
 
     void SetPixelsF(float fPos, float count, CRGB c, bool bMerge = false) override
     {
-        float frac1 = fPos - floor(fPos);                 // eg:   3.25 becomes 0.25
-        float frac2 = fPos + count - floor(fPos + count); // eg:   3.25 + 1.5 yields 4.75 which becomes 0.75
+        // Early exit for empty ranges or out-of-bounds start positions
+        if (count <= 0 || fPos >= _pixels.size() || fPos + count <= 0)
+            return;
 
-        /* Example:
+        // Pre-calculate common values
+        const size_t arraySize = _pixels.size();
+        const int startIdx = std::max(0, static_cast<int>(std::floor(fPos)));
+        const int endIdx = std::min(static_cast<int>(arraySize), static_cast<int>(std::ceil(fPos + count)));
+        const float frac1 = fPos - std::floor(fPos);
+        const uint8_t fade1 = static_cast<uint8_t>((std::max(frac1, 1.0f - count)) * 255);
+        float remainingCount = count - (1.0f - frac1);
+        const int fullPixels = static_cast<int>(remainingCount);
+        const float lastFrac = remainingCount - std::floor(remainingCount);
+        const uint8_t fade2 = static_cast<uint8_t>((1.0f - lastFrac) * 255);
 
-          Starting at 3.25, draw for 1.5:
-          We start at pixel 3.
-          We fill pixel with .75 worth of color
-          We advance to next pixel
-
-          We fill one pixel and advance to next pixel
-
-          We are now at pixel 5, frac2 = .75
-          We fill pixel with .75 worth of color
-        */
-
-        uint8_t fade1 = (uint8_t) ((std::max(frac1, 1.0f - count)) * 255); // Fraction is how far past pixel boundary we are (up to our total size) so larger fraction is more dimming
-        uint8_t fade2 = (uint8_t) ((1.0f - frac2) * 255);                   // Fraction is how far we are poking into this pixel, so larger fraction is less dimming
-        CRGB c1 = c;
-        CRGB c2 = c;
-        c1 = c1.fadeToBlackBy(fade1);
-        c2 = c2.fadeToBlackBy(fade2);
-
-        // These assignments use the + operator of CRGB to merge the colors when requested, and it's pretty
-        // naive, just saturating each color element at 255, so the operator could be improved or replaced
-        // if needed...
-
-        float p = fPos;
-        if (p >= 0 && p < _pixels.size())
-            _pixels[(int)p] = bMerge ? _pixels[(int)p] + c1 : c1;
-
-        p = fPos + (1.0f - frac1);
-        count -= (1.0f - frac1);
-
-        // Middle (body) pixels
-
-        while (count >= 1)
+        if (!bMerge)
         {
-            if (p >= 0 && p < _pixels.size())
-                _pixels[(int)p] = bMerge ? _pixels[(int)p] + c : c;
-            count--;
-            p++;
-        };
+            // Non-merging implementation
+            
+            if (startIdx >= 0 && startIdx < arraySize)
+            {
+                CRGB c1 = c;
+                c1.fadeToBlackBy(fade1);
+                _pixels[startIdx] = c1;
+            }
 
-        // Final pixel, if in bounds
-        if (count > 0)
-            if (p >= 0 && p < _pixels.size())
-                _pixels[(int)p] = bMerge ? _pixels[(int)p] + c2 : c2;
-    }    
+            // Middle pixels - use pointer arithmetic for speed
+            CRGB *pixel = &_pixels[startIdx + 1];
+            const CRGB *end = &_pixels[endIdx - 1];
+            while (pixel < end)
+                *pixel++ = c;
+
+            // Last pixel if needed
+            if (lastFrac > 0 && endIdx - 1 < arraySize)
+            {
+                CRGB c2 = c;
+                c2.fadeToBlackBy(fade2);
+                _pixels[endIdx - 1] = c2;
+            }
+        }
+        else
+        {
+            // Merging implementation
+            // First pixel
+            if (startIdx >= 0 && startIdx < arraySize)
+            {
+                CRGB c1 = c;
+                c1.fadeToBlackBy(fade1);
+                _pixels[startIdx] += c1;
+            }
+
+            // Middle pixels - use pointer arithmetic for speed
+            CRGB *pixel = &_pixels[startIdx + 1];
+            const CRGB *end = &_pixels[endIdx - 1];
+            while (pixel < end)
+                *pixel++ += c;
+
+            // Last pixel if needed
+            if (lastFrac > 0 && endIdx - 1 < arraySize)
+            {
+                CRGB c2 = c;
+                c2.fadeToBlackBy(fade2);
+                _pixels[endIdx - 1] += c2;
+            }
+        }
+    }
 };
