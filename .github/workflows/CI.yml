@@ -25,7 +25,7 @@ jobs:
     - name: Set up dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install asio ffmpeg curl
+        brew install asio ffmpeg
 
     - name: Create secrets.h
       run: cp secrets.example.h secrets.h
