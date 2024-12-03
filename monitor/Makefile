@@ -21,9 +21,6 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Darwin)
     INCLUDES += -I$(shell brew --prefix)/include/
     LDFLAGS += -L$(shell brew --prefix)/lib/
-else
-    INCLUDES += -I/usr/include/
-    LDFLAGS += -L/usr/lib/
 endif
 
 # Default target
