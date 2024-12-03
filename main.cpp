@@ -34,6 +34,7 @@
 #include "misceffects.h"
 #include "palette.h"
 #include "paletteeffect.h"
+#include "fireworkseffect.h"
 
 using namespace std;
 
@@ -272,7 +273,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
         canvasCabana->AddFeature(std::move(featureCabana2));
         canvasCabana->AddFeature(std::move(featureCabana3));
         canvasCabana->AddFeature(std::move(featureCabana4));
-        canvasCabana->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::ChristmasLights), 0.0, 0.0, 1.0, 30, 4));
+        canvasCabana->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::ChristmasLights), 0.0, 5.0, 1.0, 30, 4));
         canvasCabana->Effects().SetCurrentEffect(0, *canvasCabana);
         canvases.push_back(std::move(canvasCabana));
     }
@@ -291,7 +292,7 @@ vector<unique_ptr<ICanvas>> LoadCanvases()
             500                  // Client Buffer Count
         );
         canvasCeiling->AddFeature(std::move(featureCeiling));
-        canvasCeiling->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", Palette(Palette::ChristmasLights), 0.0, 0.0, 1.0, 30, 4));
+        canvasCeiling->Effects().AddEffect(make_unique<FireworksEffect>("Fireworks"));
         canvasCeiling->Effects().SetCurrentEffect(0, *canvasCeiling);
         canvases.push_back(std::move(canvasCeiling));
     }

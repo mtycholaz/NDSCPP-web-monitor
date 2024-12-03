@@ -80,16 +80,13 @@ public:
         {
             int count = 0;
             // Draw the dots
-            for (uint32_t j = 0; j < _DotSize && (i + j) < cLength; j++) 
-            {
-                double iPixel = fmod(i + j + _iPixel, cLength);
-                CRGB c = _Palette.getColor(iColor).fadeToBlackBy(1.0 - _Brightness);
-                double cCenter = dotcount / 2.0;
-                canvas.Graphics().SetPixel(iPixel + (_Mirrored ? cCenter : 0), 0, c);
-                if (_Mirrored) 
-                    canvas.Graphics().SetPixel(cCenter - iPixel, 1, c);
-                count++;
-            }
+            double iPixel = fmod(i + _iPixel, cLength);
+            CRGB c = _Palette.getColor(iColor).fadeToBlackBy(1.0 - _Brightness);
+            double cCenter = dotcount / 2.0;
+            canvas.Graphics().SetPixelsF(iPixel + (_Mirrored ? cCenter : 0), _DotSize, c);
+            if (_Mirrored) 
+                canvas.Graphics().SetPixelsF(cCenter - iPixel, _DotSize, c); 
+            count+= _DotSize;
 
             // Avoid pixel 0 flicker as it scrolls by copying pixel 1 onto 0
             if (dotcount > 1) 
