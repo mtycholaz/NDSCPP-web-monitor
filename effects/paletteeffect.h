@@ -58,42 +58,44 @@ public:
     
     void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
-        auto dotcount = canvas.Graphics().Width() * canvas.Graphics().Height();
-        canvas.Graphics().Clear(CRGB::Black);
+        auto& graphics = canvas.Graphics();
+        const auto width = graphics.Width();
+        const auto height = graphics.Height();
+        const auto dotcount = width * height;
+        
+        graphics.Clear(CRGB::Black);
 
-        // Convert milliseconds to seconds for our calculations
-        double secondsElapsed = deltaTime.count() / 1000.0;
-
-        // Calculate the number of pixels to scroll based on the elapsed time
-        double cPixelsToScroll = secondsElapsed * _LEDScrollSpeed;
-        _iPixel += cPixelsToScroll;
-        _iPixel = fmod(_iPixel, dotcount);
-
-        // Calculate the number of colors to scroll based on the elapsed time
-        double cColorsToScroll = secondsElapsed * _LEDColorPerSecond;
-        _iColor += cColorsToScroll * _Density;
-        _iColor -= floor(_iColor);
-
+        // Pre-calculate constants
+        const double secondsElapsed = deltaTime.count() / 1000.0;
+        const double cPixelsToScroll = secondsElapsed * _LEDScrollSpeed;
+        const double cColorsToScroll = secondsElapsed * _LEDColorPerSecond;
+        const uint32_t cLength = (_Mirrored ? dotcount / 2 : dotcount);
+        const double cCenter = dotcount / 2.0;
+        const double colorIncrement = _Density / _Palette.originalSize();
+        const double fadeFactor = 1.0 - _Brightness;
+        
+        // Update state variables
+        _iPixel = fmod(_iPixel + cPixelsToScroll, dotcount);
+        _iColor = fmod(_iColor + (cColorsToScroll * _Density), 1.0);
+        
+        // Draw the scrolling color "dots"
+        
         double iColor = _iColor;
-        uint32_t cLength = (_Mirrored ? dotcount / 2 : dotcount);
-
-        // Draw the scrolling colors
         for (double i = 0; i < cLength; i += _EveryNthDot) 
         {
-            int count = 0;
-            // Draw the dots
             double iPixel = fmod(i + _iPixel, cLength);
-            CRGB c = _Palette.getColor(iColor).fadeToBlackBy(1.0 - _Brightness);
-            double cCenter = dotcount / 2.0;
-            canvas.Graphics().SetPixelsF(iPixel + (_Mirrored ? cCenter : 0), _DotSize, c);
+            CRGB c = _Palette.getColor(iColor).fadeToBlackBy(fadeFactor);
+            
+            graphics.SetPixelsF(iPixel + (_Mirrored ? cCenter : 0), _DotSize, c);
             if (_Mirrored) 
-                canvas.Graphics().SetPixelsF(cCenter - iPixel, _DotSize, c); 
-            count+= _DotSize;
-
-            // Avoid pixel 0 flicker as it scrolls by copying pixel 1 onto 0
-            if (dotcount > 1) 
-                canvas.Graphics().SetPixel(0, 0, canvas.Graphics().GetPixel(1, 0));
-            iColor +=  _Density / _Palette.originalSize();
+                graphics.SetPixelsF(cCenter - iPixel, _DotSize, c);
+           
+            iColor = fmod(iColor + colorIncrement, 1.0);
+        }
+        
+        // Handle pixel 0 flicker prevention
+        if (dotcount > 1) {
+            graphics.SetPixel(0, 0, graphics.GetPixel(1, 0));
         }
     }
 };
