@@ -5,12 +5,8 @@
 //
 // Contains the implementation of the Palette class defined in palette.h.
 
-// Explicit instantiation definitions
-template class Palette<4>;
-template class Palette<8>;
-template class Palette<16>;
-
 // Rainbow - 8 colors for smoother transitions in a performant power of 2 size
+
 template<>
 const Palette<8> Palette<8>::Rainbow({
     CRGB(255, 0, 0),     // Pure Red       (~650nm)
@@ -24,6 +20,7 @@ const Palette<8> Palette<8>::Rainbow({
 });
 
 // Christmas Lights - 4 colors (power of 2 size!)
+
 template<>
 const Palette<4> Palette<4>::ChristmasLights({
     CRGB::Red,    // Red
@@ -33,6 +30,7 @@ const Palette<4> Palette<4>::ChristmasLights({
 });
 
 // Rainbow Stripes - 16 colors (power of 2 size!)
+
 template<>
 const Palette<16> Palette<16>::RainbowStripes({
     CRGB::Black, 

@@ -6,6 +6,7 @@ using namespace std::chrono;
 #include "../interfaces.h"
 #include "../ledeffectbase.h"
 #include "../pixeltypes.h"
+#include "../utilities.h"
 #include <vector>
 #include <random>
 #include <cmath>
@@ -25,7 +26,7 @@ private:
         Particle(const CRGB& starColor, double pos, double maxSpeed, std::mt19937& rng)
             : _starColor(starColor),
               _position(pos),
-              _velocity(RandomDouble(-maxSpeed, maxSpeed)),
+              _velocity(Utilities::RandomDouble(-maxSpeed, maxSpeed)),
               _birthTime(GetCurrentTime()),
               _lastUpdate(GetCurrentTime())
         {
@@ -41,7 +42,7 @@ private:
             _position += _velocity * deltaTime;
             _lastUpdate = GetCurrentTime();
             _velocity -= 2 * _velocity * deltaTime;
-            _starColor.fadeToBlackBy(RandomDouble(0.0, 0.1));
+            _starColor.fadeToBlackBy(Utilities::RandomDouble(0.0, 0.1));
         }
 
     private:
@@ -73,12 +74,12 @@ public:
 
         for (int i = 0; i < std::max(5, static_cast<int>(ledCount / 50)); ++i)
         {
-            if (RandomDouble(0.0, 1.0) < _newParticleProbability * 0.005)
+            if (Utilities::RandomDouble(0.0, 1.0) < _newParticleProbability * 0.005)
             {
-                double startPos = RandomDouble(0.0, static_cast<double>(canvas.Graphics().Width()));
-                CRGB color = CHSV(RandomInt(0, 255), 255, 255);
-                int particleCount = RandomInt(10, 50);
-                double multiplier = RandomDouble(1.0, 3.0);
+                double startPos = Utilities::RandomDouble(0.0, static_cast<double>(canvas.Graphics().Width()));
+                CRGB color = CHSV(Utilities::RandomInt(0, 255), 255, 255);
+                int particleCount = Utilities::RandomInt(10, 50);
+                double multiplier = Utilities::RandomDouble(1.0, 3.0);
 
                 for (int j = 0; j < particleCount; ++j)
                 {
@@ -132,21 +133,6 @@ public:
             newParticles.push(particle);
         }
         _particles.swap(newParticles);
-    }
-
-private:
-    static double RandomDouble(double min, double max)
-    {
-        static std::mt19937 rng(std::random_device{}());
-        std::uniform_real_distribution<double> dist(min, max);
-        return dist(rng);
-    }
-
-    static int RandomInt(int min, int max)
-    {
-        static std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<int> dist(min, max);
-        return dist(rng);
     }
 };
 

@@ -34,25 +34,26 @@ public:
     // New constructor taking std::array directly
     PaletteEffect(const string& name, 
                   const std::array<CRGB, N>& colors,
-                  double ledColorPerSecond = 3.0,
-                  double ledScrollSpeed = 0.0,
-                  double density = 1.0,
-                  double everyNthDot = 1.0,
+                  double   ledColorPerSecond = 3.0,
+                  double   ledScrollSpeed = 0.0,
+                  double   density = 1.0,
+                  double   everyNthDot = 1.0,
                   uint32_t dotSize = 1,
-                  bool rampedColor = false,
-                  double brightness = 1.0,
-                  bool mirrored = false) noexcept
-        : LEDEffectBase(name)
-        , _Palette(Palette<N>(colors))  // Construct Palette from array
-        , _iColor(0)
-        , _LEDColorPerSecond(ledColorPerSecond)
-        , _LEDScrollSpeed(ledScrollSpeed)
-        , _Density(density)
-        , _EveryNthDot(everyNthDot)
-        , _DotSize(dotSize)
-        , _RampedColor(rampedColor)
-        , _Brightness(brightness)
-        , _Mirrored(mirrored)
+                  bool     rampedColor = false,
+                  double   brightness = 1.0,
+                  bool     mirrored = false,
+                  bool     bBlend   = true) noexcept
+        : LEDEffectBase(name),
+          _Palette(Palette<N>(colors, bBlend)), 
+          _iColor(0),
+          _LEDColorPerSecond(ledColorPerSecond),
+          _LEDScrollSpeed(ledScrollSpeed),
+          _Density(density),
+          _EveryNthDot(everyNthDot),
+          _DotSize(dotSize),
+          _RampedColor(rampedColor),
+          _Brightness(brightness),
+          _Mirrored(mirrored)
     {
     }
     
@@ -79,7 +80,7 @@ public:
         _iColor = fmod(_iColor + (cColorsToScroll * _Density), 1.0);
         
         // Draw the scrolling color "dots"
-        
+
         double iColor = _iColor;
         for (double i = 0; i < cLength; i += _EveryNthDot) 
         {
