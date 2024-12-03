@@ -19,8 +19,8 @@ OBJECTS = $(SOURCES:.cpp=.o)
 # Detect platform
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Darwin)
-    INCLUDES += -I$(brew --prefix)/include/
-    LDFLAGS += -L$(brew --prefix)/lib/
+    INCLUDES += -I$(shell brew --prefix)/include/
+    LDFLAGS += -L$(shell brew --prefix)/lib/
 else
     INCLUDES += -I/usr/include/
     LDFLAGS += -L/usr/lib/
