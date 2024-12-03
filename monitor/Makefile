@@ -2,6 +2,7 @@
 CXX = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -O2
 INCLUDES = -I.
+LDFLAGS =
 
 # Libraries needed
 LIBS = -lncurses -lcurl
@@ -15,13 +16,20 @@ SOURCES = main.cpp content.cpp
 # Object files
 OBJECTS = $(SOURCES:.cpp=.o)
 
+# Detect platform
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S), Darwin)
+    INCLUDES += -I$(shell brew --prefix)/include/
+    LDFLAGS += -L$(shell brew --prefix)/lib/
+endif
+
 # Default target
 all: $(TARGET)
 
 # Link the target binary
 $(TARGET): $(OBJECTS)
 	@echo "Linking $@..."
-	@$(CXX) $(OBJECTS) -o $(TARGET) $(LIBS)
+	@$(CXX) $(LDFLAGS) $(OBJECTS) -o $(TARGET) $(LIBS)
 
 # Compile source files
 %.o: %.cpp

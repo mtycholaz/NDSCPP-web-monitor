@@ -102,7 +102,6 @@ public:
 // attempt to reconnect if the connection is lost.
 
 struct ClientResponse;
-
 class SocketChannel : public ISocketChannel
 {
 public:
@@ -414,7 +413,7 @@ private:
 
         int flags = fcntl(socketFd, F_GETFL, 0);
         if (flags == -1) 
-        return false;
+            return false;
         
         if (!(fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) != -1))
             return false;
@@ -426,29 +425,31 @@ private:
         int keepidle = 1;         // Time in seconds before sending keepalive probes
         int keepintvl = 1;        // Time in seconds between keepalive probes
 
+        // On macOS, TCP_KEEPIDLE is called TCP_KEEPALIVE
+        #ifdef __APPLE__
+            #define TCP_KEEPIDLE TCP_KEEPALIVE
+        #endif
+
         if (setsockopt(socketFd, SOL_SOCKET, SO_KEEPALIVE, &keepalive, sizeof(keepalive)) < 0 ||
             setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt)) < 0 ||
-            #ifdef __APPLE__
-                setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPALIVE, &keepidle, sizeof(keepidle)) < 0 ||
-            #else
-                setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle)) < 0 ||
-            #endif
+            setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPIDLE, &keepidle, sizeof(keepidle)) < 0 ||
             setsockopt(socketFd, IPPROTO_TCP, TCP_KEEPINTVL, &keepintvl, sizeof(keepintvl)) < 0)
         {
             cerr << "Could not set keepalive options for " << _friendlyName << endl;
             return false;
         }           
 
-        return true;
-    }
-
-    bool SetSocketSendTimeout(int socketFd, milliseconds timeout)
-    {
         struct timeval timeouttv;
-        timeouttv.tv_sec = timeout.count() / 1000;
-        timeouttv.tv_usec = (timeout.count() % 1000) * 1000;
+        timeouttv.tv_sec = kSendTimeout.count() / 1000;
+        timeouttv.tv_usec = (kSendTimeout.count() % 1000) * 1000;
 
-        return setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, &timeouttv, sizeof(timeouttv)) == 0;
+        if (setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, &timeouttv, sizeof(timeouttv)) < 0)
+        {
+            cerr << "Could not set TCP send timeout for " << _friendlyName << endl;
+            return false;
+        }
+
+        return true;
     }
 
     optional<ClientResponse> SendFrame(const vector<uint8_t>&& frame)
@@ -527,10 +528,10 @@ private:
             return false;
         }
 
-        // Set socket to non-blocking mode
+        // Set socket options (non-blocking, keepalive, send timeout)
         if (!SetSocketOptions(tempSocket))
         {
-            cerr << "Could not set socket to non-blocking mode for " << _friendlyName << endl;
+            cerr << "Could not set socket options for " << _friendlyName << endl;
             close(tempSocket);
             return false;
         }
@@ -568,12 +569,6 @@ private:
             }
         }
 
-        if (!SetSocketSendTimeout(tempSocket, kSendTimeout))
-        {
-            close(tempSocket);
-            return false;
-        }
-
         _reconnectCount++;
         cout << "Connection number " << _reconnectCount << " to " << _hostName << ":" << _port << " [" << _friendlyName << "] on thread " << this_thread::get_id() << endl; 
         _socketFd = tempSocket;
@@ -582,18 +577,15 @@ private:
 
     void EmptyQueue()
     {
-        lock_guard<mutex> lock(_mutex);  // Add lock
-        {
-            lock_guard queueLock(_queueMutex);
-            queue<vector<uint8_t>> empty;
-            _frameQueue.swap(empty);
-            _totalQueuedBytes = 0;
-        }        
+        scoped_lock lock(_mutex, _queueMutex);
+        queue<vector<uint8_t>> empty;
+        _frameQueue.swap(empty);
+        _totalQueuedBytes = 0;
     }
 
     void CloseSocket()
     {
-        lock_guard<mutex> lock(_mutex);  // Add lock    
+        lock_guard lock(_mutex);  // Add lock    
         if (_socketFd != -1)
         {
             close(_socketFd);
