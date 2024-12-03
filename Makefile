@@ -45,7 +45,8 @@ $(EXECUTABLE): $(OBJECTS)
 	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 %.o: %.cpp $(DEPDIR)/%.d | $(DEPDIR)
-	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+	@echo Compiling $<...
+	@$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
 
 $(DEPDIR): ; @mkdir -p $@
 
