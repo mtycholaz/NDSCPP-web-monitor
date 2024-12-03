@@ -50,8 +50,7 @@ This project uses clang++ and make, and is dependent on the libraries for asio (
 On the Mac, you'll have to install asio and ffmpeg using Homebrew; the other required libraries are usually already installed:
 
 ```shell
-brew install asio
-brew install ffmpeg
+brew install asio ffmpeg
 ```
 
 On Ubuntu, dev versions for all libraries except ncurses and pthreads have to be installed (ncurses already gets pulled in by llvm/clang):

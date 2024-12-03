@@ -4,16 +4,27 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up dependencies
+    - name: Set up dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update 
         sudo apt-get install -y libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev libcurl4-gnutls-dev
+
+    - name: Set up dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: brew install asio ffmpeg
 
     - name: Create secrets.h
       run: cp secrets.example.h secrets.h
