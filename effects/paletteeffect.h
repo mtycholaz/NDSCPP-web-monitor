@@ -33,7 +33,7 @@ public:
 
     // New constructor taking std::array directly
     PaletteEffect(const string& name, 
-                  const std::array<CRGB, N>& colors,
+                  const    array<CRGB, N>& colors,
                   double   ledColorPerSecond = 3.0,
                   double   ledScrollSpeed = 0.0,
                   double   density = 1.0,
