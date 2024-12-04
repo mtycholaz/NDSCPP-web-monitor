@@ -625,3 +625,18 @@ private:
     uint32_t _reconnectCount;
     int _socketFd;
 };
+
+
+inline void from_json(const nlohmann::json& j, unique_ptr<ISocketChannel>& socket) 
+{
+    socket = make_unique<SocketChannel>(
+        j.at("hostName").get<string>(),
+        j.at("friendlyName").get<string>(),
+        j.value("port", uint16_t(49152))
+    );
+
+    if (j.contains("stats")) {
+        ClientResponse response = j["stats"].get<ClientResponse>();
+        // Socket will automatically start tracking stats when connected
+    }
+}

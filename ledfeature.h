@@ -15,8 +15,8 @@ using namespace std::chrono;
 
 #include "interfaces.h"
 #include "utilities.h"
+#include "socketchannel.h"
 #include "canvas.h"
-#include <string>
 
 class LEDFeature : public ILEDFeature
 {
@@ -178,3 +178,27 @@ private:
     static atomic<uint32_t> _nextId;
     uint32_t _id;    
 };
+
+
+inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDFeature>& feature) 
+{
+    if (j.at("type").get<std::string>() != "LEDFeature") 
+    {
+        throw std::runtime_error("Invalid feature type in JSON");
+    }
+
+    feature = std::make_unique<LEDFeature>(
+        nullptr,  // Canvas pointer needs to be set after deserialization
+        j.at("hostName").get<std::string>(),
+        j.at("friendlyName").get<std::string>(),
+        j.at("port").get<uint16_t>(),
+        j.at("width").get<uint32_t>(),
+        j.value("height", 1u),
+        j.value("offsetX", 0u),
+        j.value("offsetY", 0u),
+        j.value("reversed", false),
+        j.value("channel", uint8_t(0)),
+        j.value("redGreenSwap", false),
+        j.value("clientBufferCount", 8u)
+    );
+}

@@ -151,7 +151,7 @@ inline void from_json(const nlohmann::json& j, CRGB& color)
 
 
 // In serialization.h
-inline void to_json(nlohmann::json& j, const Palette& palette) 
+inline void to_json(nlohmann::json& j, const Palette & palette) 
 {
     auto colorsJson = nlohmann::json::array();
     for (const auto& color : palette.getColors()) 
@@ -164,7 +164,7 @@ inline void to_json(nlohmann::json& j, const Palette& palette)
     };
 }
 
-inline void from_json(const nlohmann::json& j, Palette& palette) 
+inline void from_json(const nlohmann::json& j, Palette & palette) 
 {
     // Deserialize the "colors" array
     std::vector<CRGB> colors;
@@ -179,7 +179,7 @@ inline void from_json(const nlohmann::json& j, Palette& palette)
 }
 
 // Feature serialization
-inline void to_json(nlohmann::json& j, const ILEDFeature& feature) 
+inline void to_json(nlohmann::json& j, const ILEDFeature & feature) 
 {
     j = {
             {"type", "LEDFeature"},
@@ -227,7 +227,8 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
     j["features"] = featuresJson;
 }
 
-inline void to_json(nlohmann::json &j, const ISocketChannel &socket)
+
+inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
 {
     try
     {
