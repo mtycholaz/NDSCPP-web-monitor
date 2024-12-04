@@ -141,6 +141,10 @@ inline void from_json(const nlohmann::json& j, ClientResponse& response)
     response.watts = j.at("watts").get<float>();
 }
 
+//
+// CRGB serialization
+// 
+
 inline void to_json(nlohmann::json& j, const CRGB& color) 
 {
     j = {
@@ -159,8 +163,10 @@ inline void from_json(const nlohmann::json& j, CRGB& color)
     );
 }
 
+//
+// Palette serialization
+//
 
-// In serialization.h
 inline void to_json(nlohmann::json& j, const Palette & palette) 
 {
     auto colorsJson = nlohmann::json::array();
@@ -188,7 +194,10 @@ inline void from_json(const nlohmann::json& j, Palette & palette)
     palette = Palette(colors, blend);
 }
 
+//
 // Feature serialization
+//
+
 inline void to_json(nlohmann::json& j, const ILEDFeature & feature) 
 {
     j = {
@@ -217,7 +226,10 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
         j["lastClientResponse"] = response;
 }
 
+//
 // Canvas serialization
+//
+
 inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
 {
     j = {
@@ -237,6 +249,9 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
     j["features"] = featuresJson;
 }
 
+//
+// ISocketChannel serialization
+//
 
 inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
 {
