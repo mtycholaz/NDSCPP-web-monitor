@@ -30,7 +30,8 @@ const std::vector<std::pair<std::string, int>> COLUMNS =
         {"Data", 7},      // Bandwidth
         {"Delta", 12},    // Clock delta
         {"Flash", 5},     // Flash version
-        {"Status", 6}     // Connection status
+        {"Status", 7},    // Connection status
+        {"Effect", 16}    // Current effect name
 };
 
 void Monitor::drawContent()
@@ -48,6 +49,12 @@ void Monitor::drawContent()
         {
             std::string canvasName = canvasJson["name"].get<std::string>();
             int canvasFps = canvasJson["fps"].get<int>();
+            std::string currentEffect = canvasJson.contains("currentEffectName")
+                                          ? canvasJson.at("currentEffectName").get<std::string>()
+                                          : "---";
+
+            if (currentEffect.length() > (size_t)COLUMNS[13].second)
+                currentEffect = currentEffect.substr(0, COLUMNS[13].second);
 
             for (const auto &featureJson : canvasJson["features"])
             {
@@ -259,6 +266,10 @@ void Monitor::drawContent()
                         mvwprintw(contentWin, row - scrollOffset, x, "%-*s", COLUMNS[12].second, "OFFLINE");
                         wattroff(contentWin, COLOR_PAIR(2));
                     }
+                    // Current Effect
+                    x += COLUMNS[12].second + 1;
+                    mvwprintw(contentWin, row - scrollOffset, x, "%-*s", COLUMNS[13].second, currentEffect.c_str());
+
                 }
                 row++;
             }

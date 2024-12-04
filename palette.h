@@ -91,3 +91,4 @@ public:
         return _colorEntries[index].blendWith(_colorEntries[(index + 1) % N], fraction);
     }
 };
+

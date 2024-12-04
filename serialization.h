@@ -236,7 +236,8 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
         {"name", canvas.Name()},
         {"width", canvas.Graphics().Width()},
         {"height", canvas.Graphics().Height()},
-        {"fps", canvas.Effects().GetFPS()}
+        {"fps", canvas.Effects().GetFPS()},
+        {"currentEffectName", canvas.Effects().CurrentEffectName()}
     };
 
     // Add features array
