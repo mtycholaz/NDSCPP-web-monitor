@@ -13,7 +13,6 @@ using namespace std::chrono;
 #include "../pixeltypes.h"
 #include "../palette.h"
 
-template<size_t N>
 class PaletteEffect : public LEDEffectBase 
 {
 private:
@@ -21,7 +20,7 @@ private:
     double _iColor;
 
 public:
-    Palette<N>  _Palette;
+    Palette  _Palette;
     double   _LEDColorPerSecond = 3.0;
     double   _LEDScrollSpeed = 0.0;
     double   _Density = 1.0;
@@ -32,8 +31,8 @@ public:
     bool     _Mirrored = false;
 
     // New constructor taking std::array directly
-    PaletteEffect(const string& name, 
-                  const    array<CRGB, N>& colors,
+    PaletteEffect(const    string & name, 
+                  const    vector<CRGB> & colors,
                   double   ledColorPerSecond = 3.0,
                   double   ledScrollSpeed = 0.0,
                   double   density = 1.0,
@@ -42,9 +41,9 @@ public:
                   bool     rampedColor = false,
                   double   brightness = 1.0,
                   bool     mirrored = false,
-                  bool     bBlend   = true) noexcept
+                  bool     bBlend   = true) 
         : LEDEffectBase(name),
-          _Palette(Palette<N>(colors, bBlend)), 
+          _Palette(colors, bBlend), 
           _iColor(0),
           _LEDColorPerSecond(ledColorPerSecond),
           _LEDScrollSpeed(ledScrollSpeed),
