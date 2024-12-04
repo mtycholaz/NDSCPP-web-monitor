@@ -106,11 +106,10 @@ struct ClientResponse
     }
 } __attribute__((packed)); // Packed attribute required for network protocol compatibility
 
-// Helper function to serialize ClientResponse stats consistently
-inline void SerializeClientResponseStats(nlohmann::json &j, const ClientResponse &response)
+
+inline void to_json(nlohmann::json &j, const ClientResponse &response)
 {
-    j =
-        {
+    j ={
             {"responseSize", response.size},
             {"sequenceNumber", response.sequence},
             {"flashVersion", response.flashVersion},
@@ -123,12 +122,23 @@ inline void SerializeClientResponseStats(nlohmann::json &j, const ClientResponse
             {"bufferPos", response.bufferPos},
             {"fpsDrawing", response.fpsDrawing},
             {"watts", response.watts}
-        };
+    };
 }
 
-inline void to_json(nlohmann::json &j, const ClientResponse &response)
+inline void from_json(const nlohmann::json& j, ClientResponse& response) 
 {
-    SerializeClientResponseStats(j, response);
+    response.size = j.at("responseSize").get<uint8_t>();
+    response.sequence = j.at("sequenceNumber").get<uint32_t>();
+    response.flashVersion = j.at("flashVersion").get<uint32_t>();
+    response.currentClock = j.at("currentClock").get<uint64_t>();
+    response.oldestPacket = j.at("oldestPacket").get<uint64_t>();
+    response.newestPacket = j.at("newestPacket").get<uint64_t>();
+    response.brightness = j.at("brightness").get<uint8_t>();
+    response.wifiSignal = j.at("wifiSignal").get<int8_t>();
+    response.bufferSize = j.at("bufferSize").get<uint32_t>();
+    response.bufferPos = j.at("bufferPos").get<uint32_t>();
+    response.fpsDrawing = j.at("fpsDrawing").get<float>();
+    response.watts = j.at("watts").get<float>();
 }
 
 inline void to_json(nlohmann::json& j, const CRGB& color) 
