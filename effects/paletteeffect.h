@@ -8,7 +8,7 @@
 using namespace std;
 using namespace std::chrono;
 
-#include "../interfaces.h"
+#include "../serialization.h"
 #include "../ledeffectbase.h"
 #include "../pixeltypes.h"
 #include "../palette.h"
@@ -98,4 +98,45 @@ public:
             graphics.SetPixel(0, 0, graphics.GetPixel(1, 0));
         }
     }
+
+    void ToJson(nlohmann::json& j) const override
+    {
+        j = 
+        {
+            {"type", "PaletteEffect"},
+            {"name", Name()},
+            {"palette", _Palette}, // Assuming Palette has a ToJson method or serializer
+            {"ledColorPerSecond", _LEDColorPerSecond},
+            {"ledScrollSpeed", _LEDScrollSpeed},
+            {"density", _Density},
+            {"everyNthDot", _EveryNthDot},
+            {"dotSize", _DotSize},
+            {"rampedColor", _RampedColor},
+            {"brightness", _Brightness},
+            {"mirrored", _Mirrored}
+        };
+    }
+
+    static std::unique_ptr<PaletteEffect> FromJson(const nlohmann::json& j)
+    {
+        // Extract colors from the nested "palette" object
+        std::vector<CRGB> colors = j.at("palette").at("colors").get<std::vector<CRGB>>();
+        bool blend = j.at("palette").at("blend").get<bool>();
+
+        return std::make_unique<PaletteEffect>(
+            j.at("name").get<std::string>(),
+            colors,
+            j.at("ledColorPerSecond").get<double>(),
+            j.at("ledScrollSpeed").get<double>(),
+            j.at("density").get<double>(),
+            j.at("everyNthDot").get<double>(),
+            j.at("dotSize").get<uint32_t>(),
+            j.at("rampedColor").get<bool>(),
+            j.at("brightness").get<double>(),
+            j.at("mirrored").get<bool>(),
+            blend  // Pass the blend flag
+        );
+    }
+
+
 };

@@ -11,6 +11,7 @@ using namespace std::chrono;
 
 #include "json.hpp"
 #include "interfaces.h"
+#include "palette.h"
 
 inline static double ByteSwapDouble(double value)
 {
@@ -130,18 +131,60 @@ inline void to_json(nlohmann::json &j, const ClientResponse &response)
     SerializeClientResponseStats(j, response);
 }
 
-inline void to_json(nlohmann::json &j, const ILEDFeature &feature)
+inline void to_json(nlohmann::json& j, const CRGB& color) 
 {
-    try
-    {
-        // Safely access Socket() first
-        auto &socket = feature.Socket();
+    j = {
+        {"r", color.r},
+        {"g", color.g},
+        {"b", color.b}
+    };
+}
 
-        // Manually serialize fields from the ILEDFeature interface
-        j = nlohmann::json
-        {
-            {"hostName", socket.HostName()},
-            {"friendlyName", socket.FriendlyName()},
+inline void from_json(const nlohmann::json& j, CRGB& color) 
+{
+    color = CRGB(
+        j.at("r").get<uint8_t>(),
+        j.at("g").get<uint8_t>(),
+        j.at("b").get<uint8_t>()
+    );
+}
+
+
+// In serialization.h
+inline void to_json(nlohmann::json& j, const Palette& palette) 
+{
+    auto colorsJson = nlohmann::json::array();
+    for (const auto& color : palette.getColors()) 
+        colorsJson.push_back(color);  // Uses CRGB serializer
+        
+    j = 
+    {
+        {"colors", colorsJson},
+        {"blend", palette._bBlend}
+    };
+}
+
+inline void from_json(const nlohmann::json& j, Palette& palette) 
+{
+    // Deserialize the "colors" array
+    std::vector<CRGB> colors;
+    for (const auto& colorJson : j.at("colors")) 
+        colors.push_back(colorJson.get<CRGB>()); // Use CRGB's from_json function
+
+    // Deserialize the "blend" flag, defaulting to true if not present
+    bool blend = j.value("blend", true);
+
+    // Assign to palette (Palette must allow reassignment)
+    palette = Palette(colors, blend);
+}
+
+// Feature serialization
+inline void to_json(nlohmann::json& j, const ILEDFeature& feature) 
+{
+    j = {
+            {"type", "LEDFeature"},
+            {"hostName", feature.Socket().HostName()},
+            {"friendlyName", feature.Socket().FriendlyName()},
             {"port", feature.Socket().Port()},
             {"width", feature.Width()},
             {"height", feature.Height()},
@@ -159,43 +202,29 @@ inline void to_json(nlohmann::json &j, const ILEDFeature &feature)
             {"reconnectCount", feature.Socket().GetReconnectCount()}
         };
 
-        const auto &response = socket.LastClientResponse();
-        if (response.size == sizeof(ClientResponse))
-        {
-            j["lastClientResponse"] = response;
-        }
-    }
-    catch (const std::exception &e)
-    {
-        // Log error or handle gracefully
-        j = nullptr;
-    }
+    const auto &response = feature.Socket().LastClientResponse();
+    if (response.size == sizeof(ClientResponse))
+        j["lastClientResponse"] = response;
 }
 
-inline void to_json(nlohmann::json &j, const ICanvas &canvas)
+// Canvas serialization
+inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
 {
-    try
-    {
-        // Serialize the features vector as an array of JSON objects
-        vector<nlohmann::json> featuresJson;
-        for (const auto &feature : canvas.Features())
-        {
-            nlohmann::json featureJson;
-            to_json(featureJson, *feature);
-            featuresJson.push_back(std::move(featureJson));
-        }
+    j = {
+        {"name", canvas.Name()},
+        {"width", canvas.Graphics().Width()},
+        {"height", canvas.Graphics().Height()},
+        {"fps", canvas.Effects().GetFPS()}
+    };
 
-        j = nlohmann::json{
-            {"width", canvas.Graphics().Width()},
-            {"height", canvas.Graphics().Height()},
-            {"name", canvas.Name()},
-            {"fps", canvas.Effects().GetFPS()},
-            {"features", featuresJson}};
+    // Add features array
+    auto featuresJson = nlohmann::json::array();
+    for (const auto& feature : canvas.Features()) {
+        nlohmann::json featureJson;
+        to_json(featureJson, *feature);
+        featuresJson.push_back(featureJson);
     }
-    catch (const std::exception &e)
-    {
-        j = nullptr;
-    }
+    j["features"] = featuresJson;
 }
 
 inline void to_json(nlohmann::json &j, const ISocketChannel &socket)

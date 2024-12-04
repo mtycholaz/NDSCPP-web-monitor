@@ -52,6 +52,7 @@ class ICanvas;
 //
 // Defines lifecycle hooks (`Start` and `Update`) for applying visual effects on LED canvases.  
 
+
 class ILEDEffect
 {
 public:
@@ -65,6 +66,9 @@ public:
 
     // Called to update the effect, given a canvas and timestamp
     virtual void Update(ICanvas& canvas, milliseconds deltaTime) = 0;
+
+    // Physician, serialize thyself!
+    virtual void ToJson(nlohmann::json& j) const = 0;
 
 };
 

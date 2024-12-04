@@ -10,7 +10,7 @@
 class Palette
 {
 protected:
-    const std::vector<CRGB>& _colorEntries;
+    std::vector<CRGB> _colorEntries;
 
 public:
     bool _bBlend = true;
@@ -19,14 +19,36 @@ public:
     static const std::vector<CRGB> RainbowStripes;
     static const std::vector<CRGB> ChristmasLights;
 
-    explicit Palette(const std::vector<CRGB>& colors, bool bBlend = true) 
+    explicit Palette(const std::vector<CRGB> & colors, bool bBlend = true) 
         : _colorEntries(colors), _bBlend(bBlend)
     {
     }
 
+    // Add copy/move operations
+    Palette(const Palette& other) 
+        : _colorEntries(other._colorEntries)
+        , _bBlend(other._bBlend)
+    {}
+
+    Palette& operator=(const Palette& other) 
+    {
+        _colorEntries = other._colorEntries;
+        _bBlend = other._bBlend;
+        return *this;
+    }
+
+    // Optional but good to have
+    Palette(Palette&& other) noexcept = default;
+    Palette& operator=(Palette&& other) noexcept = default;
+
     size_t originalSize() const
     {
         return _colorEntries.size();
+    }
+
+    const std::vector<CRGB> & getColors() const
+    {
+        return _colorEntries;
     }
 
     virtual CRGB getColor(double d) const 
