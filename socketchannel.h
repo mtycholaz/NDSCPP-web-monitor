@@ -20,7 +20,6 @@ using namespace std;
 #include <fcntl.h>
 #include <cerrno>
 #include "interfaces.h"
-#include "clientresponse.h"
 #include "utilities.h"
 #include "pixeltypes.h"
 
