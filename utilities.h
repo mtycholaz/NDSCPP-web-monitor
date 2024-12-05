@@ -10,7 +10,6 @@ using namespace std;
 
 #include <vector>
 #include <array>
-#include <bit>
 #include <cmath>
 #include <cstdint>
 #include <cstring>

@@ -3,143 +3,15 @@
 using namespace std;
 using namespace std::chrono;
 
-// Serialization
-//
-// To be able to create a JSON representation of the LEDFeature object, we need to provide
-// a to_json function that converts the object into a JSON object.  This function is then
-// used by the nlohmann::json library to serialize the object.
-
-#include "json.hpp"
-#include "interfaces.h"
-#include "palette.h"
-
-inline static double ByteSwapDouble(double value)
-{
-    // Helper function to swap bytes in a double
-    uint64_t temp;
-    memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
-    temp = __builtin_bswap64(temp);        // Byte swap the 64-bit integer
-    memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
-    return value;
-}
-
 // Note that in theory, for proper separation of concerns, these functions should NOT need
 // access to headers that are not part of the interfaces - i.e., everything we need should
 // be on an interface
 
-// ClientResponse
-//
-// Response data sent back to server every time we receive a packet.
-// This struct is packed to match the exact network protocol format used by ESP32 clients.
-// The packed attribute is required to ensure correct network communication but may cause
-// alignment issues on some architectures.
-
-struct OldClientResponse
-{
-    uint32_t size;         // 4
-    uint32_t flashVersion; // 4
-    double currentClock;   // 8
-    double oldestPacket;   // 8
-    double newestPacket;   // 8
-    double brightness;     // 8
-    double wifiSignal;     // 8
-    uint32_t bufferSize;   // 4
-    uint32_t bufferPos;    // 4
-    uint32_t fpsDrawing;   // 4
-    uint32_t watts;        // 4
-} __attribute__((packed)); // Packed attribute required for network protocol compatibility
-
-struct ClientResponse
-{
-    uint32_t size = sizeof(ClientResponse);         // 4
-    uint64_t sequence = 0;                          // 8
-    uint32_t flashVersion = 0;                      // 4
-    double currentClock = 0;                        // 8
-    double oldestPacket = 0;                        // 8
-    double newestPacket = 0;                        // 8
-    double brightness = 0;                          // 8
-    double wifiSignal = 0;                          // 8
-    uint32_t bufferSize = 0;                        // 4
-    uint32_t bufferPos = 0;                         // 4
-    uint32_t fpsDrawing = 0;                        // 4
-    uint32_t watts = 0;                             // 4
-
-    ClientResponse& operator=(const OldClientResponse& old)
-    {
-        size = sizeof(ClientResponse);;
-        sequence = 0;  // New field, initialize to 0
-        flashVersion = old.flashVersion;
-        currentClock = old.currentClock;
-        oldestPacket = old.oldestPacket;
-        newestPacket = old.newestPacket;
-        brightness = old.brightness;
-        wifiSignal = old.wifiSignal;
-        bufferSize = old.bufferSize;
-        bufferPos = old.bufferPos;
-        fpsDrawing = old.fpsDrawing;
-        watts = old.watts;
-        return *this;
-    }
-
-    // Member function to translate the structure from the ESP32 little endian
-    // to whatever the current running system is
-
-    void TranslateClientResponse()
-    {
-        // Check the system's endianness
-        if constexpr (std::endian::native == std::endian::little)
-            return; // No-op for little-endian systems
-
-        // Perform byte swaps for big-endian systems
-        size = __builtin_bswap32(size);
-        sequence = __builtin_bswap64(sequence); // Added missing sequence swap
-        flashVersion = __builtin_bswap32(flashVersion);
-        currentClock = ByteSwapDouble(currentClock);
-        oldestPacket = ByteSwapDouble(oldestPacket);
-        newestPacket = ByteSwapDouble(newestPacket);
-        brightness = ByteSwapDouble(brightness);
-        wifiSignal = ByteSwapDouble(wifiSignal);
-        bufferSize = __builtin_bswap32(bufferSize);
-        bufferPos = __builtin_bswap32(bufferPos);
-        fpsDrawing = __builtin_bswap32(fpsDrawing);
-        watts = __builtin_bswap32(watts);
-    }
-} __attribute__((packed)); // Packed attribute required for network protocol compatibility
-
-
-inline void to_json(nlohmann::json &j, const ClientResponse &response)
-{
-    j ={
-            {"responseSize", response.size},
-            {"sequenceNumber", response.sequence},
-            {"flashVersion", response.flashVersion},
-            {"currentClock", response.currentClock},
-            {"oldestPacket", response.oldestPacket},
-            {"newestPacket", response.newestPacket},
-            {"brightness", response.brightness},
-            {"wifiSignal", response.wifiSignal},
-            {"bufferSize", response.bufferSize},
-            {"bufferPos", response.bufferPos},
-            {"fpsDrawing", response.fpsDrawing},
-            {"watts", response.watts}
-    };
-}
-
-inline void from_json(const nlohmann::json& j, ClientResponse& response) 
-{
-    response.size = j.at("responseSize").get<uint8_t>();
-    response.sequence = j.at("sequenceNumber").get<uint32_t>();
-    response.flashVersion = j.at("flashVersion").get<uint32_t>();
-    response.currentClock = j.at("currentClock").get<uint64_t>();
-    response.oldestPacket = j.at("oldestPacket").get<uint64_t>();
-    response.newestPacket = j.at("newestPacket").get<uint64_t>();
-    response.brightness = j.at("brightness").get<uint8_t>();
-    response.wifiSignal = j.at("wifiSignal").get<int8_t>();
-    response.bufferSize = j.at("bufferSize").get<uint32_t>();
-    response.bufferPos = j.at("bufferPos").get<uint32_t>();
-    response.fpsDrawing = j.at("fpsDrawing").get<float>();
-    response.watts = j.at("watts").get<float>();
-}
+#include "json.hpp"
+#include "interfaces.h"
+#include "ledfeature.h"
+#include "canvas.h"
+#include "palette.h"
 
 //
 // CRGB serialization
@@ -226,6 +98,30 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
         j["lastClientResponse"] = response;
 }
 
+inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDFeature>& feature) 
+{
+    if (j.at("type").get<std::string>() != "LEDFeature") 
+    {
+        throw std::runtime_error("Invalid feature type in JSON");
+    }
+
+    feature = std::make_unique<LEDFeature>(
+        nullptr,  // Canvas pointer needs to be set after deserialization
+        j.at("hostName").get<std::string>(),
+        j.at("friendlyName").get<std::string>(),
+        j.at("port").get<uint16_t>(),
+        j.at("width").get<uint32_t>(),
+        j.value("height", 1u),
+        j.value("offsetX", 0u),
+        j.value("offsetY", 0u),
+        j.value("reversed", false),
+        j.value("channel", uint8_t(0)),
+        j.value("redGreenSwap", false),
+        j.value("clientBufferCount", 8u)
+    );
+}
+
+
 //
 // Canvas serialization
 //
@@ -248,6 +144,23 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
         featuresJson.push_back(featureJson);
     }
     j["features"] = featuresJson;
+}
+
+inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas) 
+{
+    // Create canvas with required fields
+    canvas = std::make_unique<Canvas>(
+        j.at("name").get<std::string>(),
+        j.at("width").get<uint32_t>(),
+        j.at("height").get<uint32_t>(),
+        j.value("fps", 30u)
+    );
+
+    // Deserialize features if present
+    if (j.contains("features")) {
+        for (const auto& featureJson : j["features"])
+            canvas->AddFeature(std::move(featureJson.get<std::unique_ptr<ILEDFeature>>()));
+    }
 }
 
 //

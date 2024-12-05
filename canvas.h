@@ -93,26 +93,3 @@ private:
     uint32_t _height;
     vector<unique_ptr<ILEDFeature>> _features;
 };
-
-
-#include "ledfeature.h"
-
-inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas) 
-{
-    // Create canvas with required fields
-    canvas = std::make_unique<Canvas>(
-        j.at("name").get<std::string>(),
-        j.at("width").get<uint32_t>(),
-        j.at("height").get<uint32_t>(),
-        j.value("fps", 30u)
-    );
-
-    // Deserialize features if present
-    if (j.contains("features")) {
-        for (const auto& featureJson : j["features"]) {
-            std::unique_ptr<ILEDFeature> feature;
-            from_json(featureJson, feature);
-            canvas->AddFeature(std::move(feature));
-        }
-    }
-}

@@ -19,9 +19,9 @@ using namespace std;
 #include <fcntl.h>
 #include <cerrno>
 #include "interfaces.h"
+#include "clientresponse.h"
 #include "utilities.h"
 #include "pixeltypes.h"
-#include "serialization.h"
 
 // How long to wait for a connection to be established or data sent
 
