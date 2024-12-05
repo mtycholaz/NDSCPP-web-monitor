@@ -9,10 +9,10 @@
 // Main.cpp
 //
 // This file is the main entry point for the NDSCPP LED Matrix Server application.
-// It creates a Canvas, adds a green fill effect to it, and then enters a loop where it
-// renders the effect to the canvas, compresses the data, and sends it to the LED
-// matrix via a SocketChannel.  The program will continue to run until it receives
-// a SIGINT signal (Ctrl-C).
+// It creates a number of Canvases and adds an effect to each, after which they enter
+// a loop where it renders the effect to the canvas, compresses the data, and sends
+// it to the relevant LED controller via a SocketChannel.  The program will continue
+// to run until it receives a SIGINT signal (Ctrl-C).
 
 #include <csignal>
 #include <iostream>

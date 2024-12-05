@@ -30,7 +30,7 @@ public:
     double   _Brightness = 1.0;
     bool     _Mirrored = false;
 
-    // New constructor taking std::array directly
+    // New constructor taking std::vector directly
     PaletteEffect(const    string & name, 
                   const    vector<CRGB> & colors,
                   double   ledColorPerSecond = 3.0,
