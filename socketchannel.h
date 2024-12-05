@@ -13,6 +13,7 @@ using namespace std;
 #include <stdexcept>
 #include <cstring>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <poll.h>
@@ -21,7 +22,6 @@ using namespace std;
 #include "interfaces.h"
 #include "utilities.h"
 #include "pixeltypes.h"
-#include "serialization.h"
 
 // How long to wait for a connection to be established or data sent
 
@@ -53,7 +53,7 @@ public:
         // Check for overflow before adding.  No idea if overflow is a practical
         // concern, but I'd feel weird not checking.
 
-        if (_currentWindowBytes <= (std::numeric_limits<uint64_t>::max() - bytes))
+        if (_currentWindowBytes <= (numeric_limits<uint64_t>::max() - bytes))
             _currentWindowBytes += bytes;
     }
 
@@ -94,6 +94,100 @@ public:
     }
 };
 
+// ClientResponse
+//
+// Response data sent back to server every time we receive a packet.
+// This struct is packed to match the exact network protocol format used by ESP32 clients.
+// The packed attribute is required to ensure correct network communication but may cause
+// alignment issues on some architectures.
+
+#include "json.hpp"
+#include <cstdint>
+#include <cstring>
+#include <bit>
+
+inline static double ByteSwapDouble(double value)
+{
+    // Helper function to swap bytes in a double
+    uint64_t temp;
+    memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
+    temp = __builtin_bswap64(temp);        // Byte swap the 64-bit integer
+    memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
+    return value;
+}
+
+struct OldClientResponse
+{
+    uint32_t size;         // 4
+    uint32_t flashVersion; // 4
+    double currentClock;   // 8
+    double oldestPacket;   // 8
+    double newestPacket;   // 8
+    double brightness;     // 8
+    double wifiSignal;     // 8
+    uint32_t bufferSize;   // 4
+    uint32_t bufferPos;    // 4
+    uint32_t fpsDrawing;   // 4
+    uint32_t watts;        // 4
+} __attribute__((packed)); // Packed attribute required for network protocol compatibility
+
+struct ClientResponse
+{
+    uint32_t size = sizeof(ClientResponse);         // 4
+    uint64_t sequence = 0;                          // 8
+    uint32_t flashVersion = 0;                      // 4
+    double currentClock = 0;                        // 8
+    double oldestPacket = 0;                        // 8
+    double newestPacket = 0;                        // 8
+    double brightness = 0;                          // 8
+    double wifiSignal = 0;                          // 8
+    uint32_t bufferSize = 0;                        // 4
+    uint32_t bufferPos = 0;                         // 4
+    uint32_t fpsDrawing = 0;                        // 4
+    uint32_t watts = 0;                             // 4
+
+    ClientResponse& operator=(const OldClientResponse& old)
+    {
+        size = sizeof(ClientResponse);;
+        sequence = 0;  // New field, initialize to 0
+        flashVersion = old.flashVersion;
+        currentClock = old.currentClock;
+        oldestPacket = old.oldestPacket;
+        newestPacket = old.newestPacket;
+        brightness = old.brightness;
+        wifiSignal = old.wifiSignal;
+        bufferSize = old.bufferSize;
+        bufferPos = old.bufferPos;
+        fpsDrawing = old.fpsDrawing;
+        watts = old.watts;
+        return *this;
+    }
+
+    // Member function to translate the structure from the ESP32 little endian
+    // to whatever the current running system is
+
+    void TranslateClientResponse()
+    {
+        // Check the system's endianness
+        if constexpr (endian::native == endian::little)
+            return; // No-op for little-endian systems
+
+        // Perform byte swaps for big-endian systems
+        size = __builtin_bswap32(size);
+        sequence = __builtin_bswap64(sequence); // Added missing sequence swap
+        flashVersion = __builtin_bswap32(flashVersion);
+        currentClock = ByteSwapDouble(currentClock);
+        oldestPacket = ByteSwapDouble(oldestPacket);
+        newestPacket = ByteSwapDouble(newestPacket);
+        brightness = ByteSwapDouble(brightness);
+        wifiSignal = ByteSwapDouble(wifiSignal);
+        bufferSize = __builtin_bswap32(bufferSize);
+        bufferPos = __builtin_bswap32(bufferPos);
+        fpsDrawing = __builtin_bswap32(fpsDrawing);
+        watts = __builtin_bswap32(watts);
+    }
+} __attribute__((packed)); // Packed attribute required for network protocol compatibility
+
 // SocketChannel
 //
 // Represents a socket connection to a NightDriverStrip client. Keeps a queue of frames and 
@@ -101,9 +195,40 @@ public:
 // to connect to the client if it is not already connected. The worker thread will also
 // attempt to reconnect if the connection is lost.
 
-struct ClientResponse;
 class SocketChannel : public ISocketChannel
 {
+    static constexpr uint16_t CommandPixelData = 3;
+    static constexpr size_t MaxQueueDepth = 500;
+    static constexpr size_t MaxQueuedBytes = 1024 * 1024 * 10;  // 10MB memory limit
+
+    string _hostName;
+    string _friendlyName;
+    uint16_t _port;
+
+    static atomic<uint32_t> _nextId;
+    uint32_t _id;
+
+    mutable mutex _mutex;                       // 
+    mutable mutex _queueMutex;
+    mutable mutex _responseMutex;
+    
+    atomic<bool> _isConnected;
+    atomic<bool> _running;
+
+    int _socketFd;
+
+    ClientResponse _lastClientResponse;
+    system_clock::time_point _lastResponseTime;
+    system_clock::time_point _lastConnectionAttempt;
+    SpeedTracker _speedTracker;
+
+    uint32_t _reconnectCount;
+
+    queue<vector<uint8_t>> _frameQueue;
+    size_t _totalQueuedBytes;  // Track total memory usage
+    thread _workerThread;
+
+
 public:
     SocketChannel(const string& hostName, const string& friendlyName, uint16_t port = 49152)
         : _hostName(hostName),
@@ -275,7 +400,6 @@ private:
             try
             {
                 vector<uint8_t> combinedBuffer;
-                size_t totalBytes = 0;
                 size_t packetCount = 0;
 
                 auto now = steady_clock::now();
@@ -305,7 +429,6 @@ private:
                     while (!_frameQueue.empty() && packetCount < kMaxBatchSize)
                     {
                         vector<uint8_t>& frame = _frameQueue.front();
-                        totalBytes += frame.size();
                         packetCount++;
                         combinedBuffer.insert(combinedBuffer.end(), frame.begin(), frame.end());
                         _totalQueuedBytes -= frame.size();
@@ -593,50 +716,4 @@ private:
         }
         _isConnected = false;
     }
-    
-private:
-    static constexpr uint16_t CommandPixelData = 3;
-    static constexpr size_t MaxQueueDepth = 500;
-    static constexpr size_t MaxQueuedBytes = 1024 * 1024 * 10;  // 10MB memory limit
-
-    string _hostName;
-    string _friendlyName;
-    uint16_t _port;
-
-    static atomic<uint32_t> _nextId;
-    uint32_t _id;
-
-    mutable mutex _mutex;                       // 
-    mutable mutex _queueMutex;
-    mutable mutex _responseMutex;
-    
-    atomic<bool> _isConnected;
-    atomic<bool> _running;
-
-    queue<vector<uint8_t>> _frameQueue;
-    size_t _totalQueuedBytes;  // Track total memory usage
-    thread _workerThread;
-
-    ClientResponse _lastClientResponse;
-    system_clock::time_point _lastResponseTime;
-    system_clock::time_point _lastConnectionAttempt;
-    SpeedTracker _speedTracker;
-
-    uint32_t _reconnectCount;
-    int _socketFd;
 };
-
-
-inline void from_json(const nlohmann::json& j, unique_ptr<ISocketChannel>& socket) 
-{
-    socket = make_unique<SocketChannel>(
-        j.at("hostName").get<string>(),
-        j.at("friendlyName").get<string>(),
-        j.value("port", uint16_t(49152))
-    );
-
-    if (j.contains("stats")) {
-        ClientResponse response = j["stats"].get<ClientResponse>();
-        // Socket will automatically start tracking stats when connected
-    }
-}

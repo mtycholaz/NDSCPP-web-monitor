@@ -58,8 +58,8 @@ public:
 
     void FillRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) override
     {
-        for (int j = y; j < y + height; ++j)
-            for (int i = x; i < x + width; ++i)
+        for (uint32_t j = y; j < y + height; ++j)
+            for (uint32_t i = x; i < x + width; ++i)
                 SetPixel(i, j, color);
     }
 
@@ -120,8 +120,8 @@ public:
     {
         // Fill within the bounding box, but only those pixels within radius of the center
 
-        for (int32_t cy = -radius; cy <= radius; ++cy)
-            for (int32_t cx = -radius; cx <= radius; ++cx)
+        for (uint32_t cy = -radius; cy <= radius; ++cy)
+            for (uint32_t cx = -radius; cx <= radius; ++cx)
                 if (cx * cx + cy * cy <= radius * radius)
                     SetPixel(x + cx, y + cy, color);
     }
@@ -152,12 +152,11 @@ public:
 
         // Pre-calculate common values
         const size_t arraySize = _pixels.size();
-        const int startIdx = std::max(0, static_cast<int>(std::floor(fPos)));
-        const int endIdx = std::min(static_cast<int>(arraySize), static_cast<int>(std::ceil(fPos + count)));
+        const size_t startIdx = std::max(0UL, static_cast<size_t>(std::floor(fPos)));
+        const size_t endIdx = std::min(arraySize, static_cast<size_t>(std::ceil(fPos + count)));
         const float frac1 = fPos - std::floor(fPos);
         const uint8_t fade1 = static_cast<uint8_t>((std::max(frac1, 1.0f - count)) * 255);
         float remainingCount = count - (1.0f - frac1);
-        const int fullPixels = static_cast<int>(remainingCount);
         const float lastFrac = remainingCount - std::floor(remainingCount);
         const uint8_t fade2 = static_cast<uint8_t>((1.0f - lastFrac) * 255);
 
@@ -165,7 +164,7 @@ public:
         {
             // Non-merging implementation
             
-            if (startIdx >= 0 && startIdx < arraySize)
+            if (startIdx < arraySize)
             {
                 CRGB c1 = c;
                 c1.fadeToBlackBy(fade1);
@@ -190,7 +189,7 @@ public:
         {
             // Merging implementation
             // First pixel
-            if (startIdx >= 0 && startIdx < arraySize)
+            if (startIdx < arraySize)
             {
                 CRGB c1 = c;
                 c1.fadeToBlackBy(fade1);

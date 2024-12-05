@@ -10,7 +10,7 @@ using namespace std;
 
 #include <vector>
 #include <array>
-#include <bit>
+#include <random>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -24,15 +24,15 @@ public:
 
     static double RandomDouble(double min, double max)
     {
-        static std::mt19937 rng(std::random_device{}());
-        std::uniform_real_distribution<double> dist(min, max);
+        static mt19937 rng(random_device{}());
+        uniform_real_distribution<double> dist(min, max);
         return dist(rng);
     }
 
     static int RandomInt(int min, int max)
     {
-        static std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<int> dist(min, max);
+        static mt19937 rng(random_device{}());
+        uniform_int_distribution<int> dist(min, max);
         return dist(rng);
     }
 

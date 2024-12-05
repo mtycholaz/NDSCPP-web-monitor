@@ -16,12 +16,24 @@ using namespace std::chrono;
 #include "interfaces.h"
 #include "utilities.h"
 #include "socketchannel.h"
-#include "canvas.h"
 
 class LEDFeature : public ILEDFeature
 {
+    const ICanvas   * _canvas; // Associated canvas
+    uint32_t    _width;
+    uint32_t    _height;
+    uint32_t    _offsetX;
+    uint32_t    _offsetY;
+    bool        _reversed;
+    uint8_t     _channel;
+    bool        _redGreenSwap;
+    uint32_t    _clientBufferCount;
+    SocketChannel _socketChannel;
+    static atomic<uint32_t> _nextId;
+    uint32_t _id;    
+
 public:
-    LEDFeature(const Canvas * canvas,
+    LEDFeature(const ICanvas * canvas,
                const string & hostName,
                const string & friendlyName,
                uint16_t       port,
@@ -163,42 +175,4 @@ public:
                                             Utilities::ULONGToBytes(microseconds),
                                             std::move(pixelData));
     }
-
-private:
-    uint32_t    _width;
-    uint32_t    _height;
-    uint32_t    _offsetX;
-    uint32_t    _offsetY;
-    bool        _reversed;
-    uint8_t     _channel;
-    bool        _redGreenSwap;
-    uint32_t    _clientBufferCount;
-    const ICanvas   * _canvas; // Associated canvas
-    SocketChannel _socketChannel;
-    static atomic<uint32_t> _nextId;
-    uint32_t _id;    
 };
-
-
-inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDFeature>& feature) 
-{
-    if (j.at("type").get<std::string>() != "LEDFeature") 
-    {
-        throw std::runtime_error("Invalid feature type in JSON");
-    }
-
-    feature = std::make_unique<LEDFeature>(
-        nullptr,  // Canvas pointer needs to be set after deserialization
-        j.at("hostName").get<std::string>(),
-        j.at("friendlyName").get<std::string>(),
-        j.at("port").get<uint16_t>(),
-        j.at("width").get<uint32_t>(),
-        j.value("height", 1u),
-        j.value("offsetX", 0u),
-        j.value("offsetY", 0u),
-        j.value("reversed", false),
-        j.value("channel", uint8_t(0)),
-        j.value("redGreenSwap", false),
-        j.value("clientBufferCount", 8u)
-    );
-}
