@@ -95,6 +95,100 @@ public:
     }
 };
 
+// ClientResponse
+//
+// Response data sent back to server every time we receive a packet.
+// This struct is packed to match the exact network protocol format used by ESP32 clients.
+// The packed attribute is required to ensure correct network communication but may cause
+// alignment issues on some architectures.
+
+#include "json.hpp"
+#include <cstdint>
+#include <cstring>
+#include <bit>
+
+inline static double ByteSwapDouble(double value)
+{
+    // Helper function to swap bytes in a double
+    uint64_t temp;
+    memcpy(&temp, &value, sizeof(double)); // Copy bits of double to temp
+    temp = __builtin_bswap64(temp);        // Byte swap the 64-bit integer
+    memcpy(&value, &temp, sizeof(double)); // Copy bits back to double
+    return value;
+}
+
+struct OldClientResponse
+{
+    uint32_t size;         // 4
+    uint32_t flashVersion; // 4
+    double currentClock;   // 8
+    double oldestPacket;   // 8
+    double newestPacket;   // 8
+    double brightness;     // 8
+    double wifiSignal;     // 8
+    uint32_t bufferSize;   // 4
+    uint32_t bufferPos;    // 4
+    uint32_t fpsDrawing;   // 4
+    uint32_t watts;        // 4
+} __attribute__((packed)); // Packed attribute required for network protocol compatibility
+
+struct ClientResponse
+{
+    uint32_t size = sizeof(ClientResponse);         // 4
+    uint64_t sequence = 0;                          // 8
+    uint32_t flashVersion = 0;                      // 4
+    double currentClock = 0;                        // 8
+    double oldestPacket = 0;                        // 8
+    double newestPacket = 0;                        // 8
+    double brightness = 0;                          // 8
+    double wifiSignal = 0;                          // 8
+    uint32_t bufferSize = 0;                        // 4
+    uint32_t bufferPos = 0;                         // 4
+    uint32_t fpsDrawing = 0;                        // 4
+    uint32_t watts = 0;                             // 4
+
+    ClientResponse& operator=(const OldClientResponse& old)
+    {
+        size = sizeof(ClientResponse);;
+        sequence = 0;  // New field, initialize to 0
+        flashVersion = old.flashVersion;
+        currentClock = old.currentClock;
+        oldestPacket = old.oldestPacket;
+        newestPacket = old.newestPacket;
+        brightness = old.brightness;
+        wifiSignal = old.wifiSignal;
+        bufferSize = old.bufferSize;
+        bufferPos = old.bufferPos;
+        fpsDrawing = old.fpsDrawing;
+        watts = old.watts;
+        return *this;
+    }
+
+    // Member function to translate the structure from the ESP32 little endian
+    // to whatever the current running system is
+
+    void TranslateClientResponse()
+    {
+        // Check the system's endianness
+        if constexpr (endian::native == endian::little)
+            return; // No-op for little-endian systems
+
+        // Perform byte swaps for big-endian systems
+        size = __builtin_bswap32(size);
+        sequence = __builtin_bswap64(sequence); // Added missing sequence swap
+        flashVersion = __builtin_bswap32(flashVersion);
+        currentClock = ByteSwapDouble(currentClock);
+        oldestPacket = ByteSwapDouble(oldestPacket);
+        newestPacket = ByteSwapDouble(newestPacket);
+        brightness = ByteSwapDouble(brightness);
+        wifiSignal = ByteSwapDouble(wifiSignal);
+        bufferSize = __builtin_bswap32(bufferSize);
+        bufferPos = __builtin_bswap32(bufferPos);
+        fpsDrawing = __builtin_bswap32(fpsDrawing);
+        watts = __builtin_bswap32(watts);
+    }
+} __attribute__((packed)); // Packed attribute required for network protocol compatibility
+
 // SocketChannel
 //
 // Represents a socket connection to a NightDriverStrip client. Keeps a queue of frames and 
@@ -102,7 +196,6 @@ public:
 // to connect to the client if it is not already connected. The worker thread will also
 // attempt to reconnect if the connection is lost.
 
-struct ClientResponse;
 class SocketChannel : public ISocketChannel
 {
     static constexpr uint16_t CommandPixelData = 3;
