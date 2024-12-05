@@ -717,13 +717,3 @@ private:
         _isConnected = false;
     }
 };
-
-
-inline void from_json(const nlohmann::json& j, unique_ptr<ISocketChannel>& socket) 
-{
-    socket = make_unique<SocketChannel>(
-        j.at("hostName").get<string>(),
-        j.at("friendlyName").get<string>(),
-        j.value("port", uint16_t(49152))
-    );
-}
