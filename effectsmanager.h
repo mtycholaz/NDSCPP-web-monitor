@@ -14,6 +14,12 @@ using namespace std::chrono;
 class EffectsManager : public IEffectsManager
 {
 public:
+    uint16_t _fps;
+    int _currentEffectIndex; // Index of the current effect
+    atomic<bool> _running;
+    vector<unique_ptr<ILEDEffect>> _effects;
+    thread _workerThread;
+
     EffectsManager(uint16_t fps = 30) : _fps(fps), _currentEffectIndex(-1), _running(false) // No effect selected initially
     {
     }
@@ -175,12 +181,6 @@ public:
     }
 
 private:
-    vector<unique_ptr<ILEDEffect>> _effects;
-    int _currentEffectIndex; // Index of the current effect
-    thread _workerThread;
-    atomic<bool> _running;
-    uint16_t _fps;
-
     bool IsEffectSelected() const
     {
         return _currentEffectIndex >= 0 && _currentEffectIndex < static_cast<int>(_effects.size());

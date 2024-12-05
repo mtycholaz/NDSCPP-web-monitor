@@ -8,7 +8,7 @@
 using namespace std;
 using namespace std::chrono;
 
-#include "../interfaces.h"
+#include "../serialization.h"
 #include "../ledeffectbase.h"
 #include "../pixeltypes.h"
 #include "../palette.h"
@@ -30,71 +30,113 @@ public:
     double   _Brightness = 1.0;
     bool     _Mirrored = false;
 
-    PaletteEffect(const string & name, 
-                  const Palette& palette,
-                  double         ledColorPerSecond = 3.0,
-                  double         ledScrollSpeed = 0.0,
-                  double         density = 1.0,
-                  double         everyNthDot = 1.0,
-                  uint32_t       dotSize = 1,
-                  bool           rampedColor = false,
-                  double         brightness = 1.0,
-                  bool           mirrored = false)
-        : _Palette(palette)
-        , _iColor(0)
-        , _LEDColorPerSecond(ledColorPerSecond)
-        , _LEDScrollSpeed(ledScrollSpeed)
-        , _Density(density)
-        , _EveryNthDot(everyNthDot)
-        , _DotSize(dotSize)
-        , _RampedColor(rampedColor)
-        , _Brightness(brightness)
-        , _Mirrored(mirrored)
-        , LEDEffectBase(name)
+    // New constructor taking std::vector directly
+    PaletteEffect(const    string & name, 
+                  const    vector<CRGB> & colors,
+                  double   ledColorPerSecond = 3.0,
+                  double   ledScrollSpeed = 0.0,
+                  double   density = 1.0,
+                  double   everyNthDot = 1.0,
+                  uint32_t dotSize = 1,
+                  bool     rampedColor = false,
+                  double   brightness = 1.0,
+                  bool     mirrored = false,
+                  bool     bBlend   = true) 
+        : LEDEffectBase(name),
+          _Palette(colors, bBlend), 
+          _iColor(0),
+          _LEDColorPerSecond(ledColorPerSecond),
+          _LEDScrollSpeed(ledScrollSpeed),
+          _Density(density),
+          _EveryNthDot(everyNthDot),
+          _DotSize(dotSize),
+          _RampedColor(rampedColor),
+          _Brightness(brightness),
+          _Mirrored(mirrored)
     {
     }
-
+    
     void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
-        auto dotcount = canvas.Graphics().Width() * canvas.Graphics().Height();
-        canvas.Graphics().Clear(CRGB::Black);
+        auto& graphics = canvas.Graphics();
+        const auto width = graphics.Width();
+        const auto height = graphics.Height();
+        const auto dotcount = width * height;
+        
+        graphics.Clear(CRGB::Black);
 
-        // Convert milliseconds to seconds for our calculations
-        double secondsElapsed = deltaTime.count() / 1000.0;
-
-        // Calculate the number of pixels to scroll based on the elapsed time
-        double cPixelsToScroll = secondsElapsed * _LEDScrollSpeed;
-        _iPixel += cPixelsToScroll;
-        _iPixel = fmod(_iPixel, dotcount);
-
-        // Calculate the number of colors to scroll based on the elapsed time
-        double cColorsToScroll = secondsElapsed * _LEDColorPerSecond;
-        _iColor += cColorsToScroll * _Density;
-        _iColor -= floor(_iColor);
+        // Pre-calculate constants
+        const double secondsElapsed = deltaTime.count() / 1000.0;
+        const double cPixelsToScroll = secondsElapsed * _LEDScrollSpeed;
+        const double cColorsToScroll = secondsElapsed * _LEDColorPerSecond;
+        const uint32_t cLength = (_Mirrored ? dotcount / 2 : dotcount);
+        const double cCenter = dotcount / 2.0;
+        const double colorIncrement = _Density / _Palette.originalSize();
+        const double fadeFactor = 1.0 - _Brightness;
+        
+        // Update state variables
+        _iPixel = fmod(_iPixel + cPixelsToScroll, dotcount);
+        _iColor = fmod(_iColor + (cColorsToScroll * _Density), 1.0);
+        
+        // Draw the scrolling color "dots"
 
         double iColor = _iColor;
-        uint32_t cLength = (_Mirrored ? dotcount / 2 : dotcount);
-
-        // Draw the scrolling colors
         for (double i = 0; i < cLength; i += _EveryNthDot) 
         {
-            int count = 0;
-            // Draw the dots
-            for (uint32_t j = 0; j < _DotSize && (i + j) < cLength; j++) 
-            {
-                double iPixel = fmod(i + j + _iPixel, cLength);
-                CRGB c = _Palette.getColor(iColor).fadeToBlackBy(1.0 - _Brightness);
-                double cCenter = dotcount / 2.0;
-                canvas.Graphics().SetPixel(iPixel + (_Mirrored ? cCenter : 0), 0, c);
-                if (_Mirrored) 
-                    canvas.Graphics().SetPixel(cCenter - iPixel, 1, c);
-                count++;
-            }
-
-            // Avoid pixel 0 flicker as it scrolls by copying pixel 1 onto 0
-            if (dotcount > 1) 
-                canvas.Graphics().SetPixel(0, 0, canvas.Graphics().GetPixel(1, 0));
-            iColor +=  _Density / _Palette.originalSize();
+            double iPixel = fmod(i + _iPixel, cLength);
+            CRGB c = _Palette.getColor(iColor).fadeToBlackBy(fadeFactor);
+            
+            graphics.SetPixelsF(iPixel + (_Mirrored ? cCenter : 0), _DotSize, c);
+            if (_Mirrored) 
+                graphics.SetPixelsF(cCenter - iPixel, _DotSize, c);
+           
+            iColor = fmod(iColor + colorIncrement, 1.0);
+        }
+        
+        // Handle pixel 0 flicker prevention
+        if (dotcount > 1) {
+            graphics.SetPixel(0, 0, graphics.GetPixel(1, 0));
         }
     }
+
+    void ToJson(nlohmann::json& j) const override
+    {
+        j = 
+        {
+            {"type", "PaletteEffect"},
+            {"name", Name()},
+            {"palette", _Palette}, // Assuming Palette has a ToJson method or serializer
+            {"ledColorPerSecond", _LEDColorPerSecond},
+            {"ledScrollSpeed", _LEDScrollSpeed},
+            {"density", _Density},
+            {"everyNthDot", _EveryNthDot},
+            {"dotSize", _DotSize},
+            {"rampedColor", _RampedColor},
+            {"brightness", _Brightness},
+            {"mirrored", _Mirrored}
+        };
+    }
+
+    static std::unique_ptr<PaletteEffect> FromJson(const nlohmann::json& j)
+    {
+        // Extract colors from the nested "palette" object
+        std::vector<CRGB> colors = j.at("palette").at("colors").get<std::vector<CRGB>>();
+        bool blend = j.at("palette").at("blend").get<bool>();
+
+        return std::make_unique<PaletteEffect>(
+            j.at("name").get<std::string>(),
+            colors,
+            j.at("ledColorPerSecond").get<double>(),
+            j.at("ledScrollSpeed").get<double>(),
+            j.at("density").get<double>(),
+            j.at("everyNthDot").get<double>(),
+            j.at("dotSize").get<uint32_t>(),
+            j.at("rampedColor").get<bool>(),
+            j.at("brightness").get<double>(),
+            j.at("mirrored").get<bool>(),
+            blend  // Pass the blend flag
+        );
+    }
+
+
 };

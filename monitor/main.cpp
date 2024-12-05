@@ -11,11 +11,16 @@
 
 // Our only interface to NDSCPP comes through the REST api and this serialization helper code
 #include "../serialization.h"
-#include "../interfaces.h"
 
 #include "monitor.h"
 
 using json = nlohmann::json;
+
+size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    ((std::string *)userp)->append((char *)contents, size * nmemb);
+    return size * nmemb;
+}
 
 void print_usage(const char *program_name)
 {

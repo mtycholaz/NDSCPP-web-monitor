@@ -15,13 +15,25 @@ using namespace std::chrono;
 
 #include "interfaces.h"
 #include "utilities.h"
-#include "canvas.h"
-#include <string>
+#include "socketchannel.h"
 
 class LEDFeature : public ILEDFeature
 {
+    const ICanvas   * _canvas; // Associated canvas
+    uint32_t    _width;
+    uint32_t    _height;
+    uint32_t    _offsetX;
+    uint32_t    _offsetY;
+    bool        _reversed;
+    uint8_t     _channel;
+    bool        _redGreenSwap;
+    uint32_t    _clientBufferCount;
+    SocketChannel _socketChannel;
+    static atomic<uint32_t> _nextId;
+    uint32_t _id;    
+
 public:
-    LEDFeature(const Canvas * canvas,
+    LEDFeature(const ICanvas * canvas,
                const string & hostName,
                const string & friendlyName,
                uint16_t       port,
@@ -163,18 +175,4 @@ public:
                                             Utilities::ULONGToBytes(microseconds),
                                             std::move(pixelData));
     }
-
-private:
-    uint32_t    _width;
-    uint32_t    _height;
-    uint32_t    _offsetX;
-    uint32_t    _offsetY;
-    bool        _reversed;
-    uint8_t     _channel;
-    bool        _redGreenSwap;
-    uint32_t    _clientBufferCount;
-    const ICanvas   * _canvas; // Associated canvas
-    SocketChannel _socketChannel;
-    static atomic<uint32_t> _nextId;
-    uint32_t _id;    
 };

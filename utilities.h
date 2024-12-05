@@ -10,7 +10,7 @@ using namespace std;
 
 #include <vector>
 #include <array>
-#include <bit>
+#include <random>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -21,6 +21,20 @@ using namespace std;
 class Utilities
 {
 public:
+
+    static double RandomDouble(double min, double max)
+    {
+        static mt19937 rng(random_device{}());
+        uniform_real_distribution<double> dist(min, max);
+        return dist(rng);
+    }
+
+    static int RandomInt(int min, int max)
+    {
+        static mt19937 rng(random_device{}());
+        uniform_int_distribution<int> dist(min, max);
+        return dist(rng);
+    }
 
     static vector<uint8_t> ConvertPixelsToByteArray(const vector<CRGB> &pixels, bool reversed, bool redGreenSwap)
     {

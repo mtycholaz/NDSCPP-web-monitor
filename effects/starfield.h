@@ -82,6 +82,24 @@ public:
         }
     }
 
+    void ToJson(nlohmann::json& j) const override
+    {
+        j = 
+        {
+            {"type", "Starfield"},
+            {"name", Name()},
+            {"starCount", _starCount}
+        };
+    }
+
+    static std::unique_ptr<StarfieldEffect> FromJson(const nlohmann::json& j)
+    {
+        return std::make_unique<StarfieldEffect>(
+            j.at("name").get<string>(),
+            j.value("starCount", 100)
+        );
+    }
+
 private:
     Star CreateRandomStar()
     {

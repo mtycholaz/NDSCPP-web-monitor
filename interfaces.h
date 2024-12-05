@@ -28,6 +28,7 @@ public:
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
     virtual void SetPixel(uint32_t x, uint32_t y, const CRGB& color) = 0;
+    virtual void SetPixelsF(float fPos, float count, CRGB c, bool bMerge = false) = 0;
     virtual CRGB GetPixel(uint32_t x, uint32_t y) const = 0;
     virtual void Clear(const CRGB& color) = 0;
     virtual void FadeFrameBy(uint8_t dimAmount) = 0;
@@ -51,6 +52,7 @@ class ICanvas;
 //
 // Defines lifecycle hooks (`Start` and `Update`) for applying visual effects on LED canvases.  
 
+
 class ILEDEffect
 {
 public:
@@ -64,6 +66,9 @@ public:
 
     // Called to update the effect, given a canvas and timestamp
     virtual void Update(ICanvas& canvas, milliseconds deltaTime) = 0;
+
+    // Physician, serialize thyself!
+    virtual void ToJson(nlohmann::json& j) const = 0;
 
 };
 

@@ -11,8 +11,6 @@ using namespace std;
 #include "effectsmanager.h"
 #include <vector>
 
-
-
 class Canvas : public ICanvas
 {
     static atomic<uint32_t> _nextId;
@@ -20,12 +18,11 @@ class Canvas : public ICanvas
     BaseGraphics _graphics;
     EffectsManager _effects;
     string _name;
+    vector<unique_ptr<ILEDFeature>> _features;
 
 public:
     Canvas(string name, uint32_t width, uint32_t height, uint16_t fps = 30) : 
         _id(_nextId++),
-        _width(width), 
-        _height(height), 
         _graphics(width, height), 
         _effects(fps),
         _name(name)
@@ -89,9 +86,4 @@ public:
         if (it != _features.end())
             _features.erase(it);
     }
-
-private:
-    uint32_t _width;
-    uint32_t _height;
-    vector<unique_ptr<ILEDFeature>> _features;
 };
