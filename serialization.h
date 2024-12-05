@@ -159,7 +159,7 @@ inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas)
     // Deserialize features if present
     if (j.contains("features")) {
         for (const auto& featureJson : j["features"])
-            canvas->AddFeature(std::move(featureJson.get<std::unique_ptr<ILEDFeature>>()));
+            canvas->AddFeature(featureJson.get<std::unique_ptr<ILEDFeature>>());
     }
 }
 

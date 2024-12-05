@@ -132,7 +132,7 @@ public:
                     auto reqJson = nlohmann::json::parse(req.body);
                     
                     size_t canvasId = _allCanvases.size();
-                    _allCanvases.push_back(std::move(reqJson.get<unique_ptr<ICanvas>>()));
+                    _allCanvases.push_back(reqJson.get<unique_ptr<ICanvas>>());
                     
                     nlohmann::json response;
                     response["id"] = canvasId;
@@ -160,7 +160,7 @@ public:
                     auto reqJson = nlohmann::json::parse(req.body);
                     
                     size_t featureId = _allCanvases[canvasId]->Features().size();
-                    _allCanvases[canvasId]->AddFeature(std::move(reqJson.get<unique_ptr<ILEDFeature>>()));
+                    _allCanvases[canvasId]->AddFeature(reqJson.get<unique_ptr<ILEDFeature>>());
                     
                     nlohmann::json response;
                     response["id"] = featureId;

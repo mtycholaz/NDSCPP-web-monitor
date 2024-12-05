@@ -257,7 +257,7 @@ public:
             Utilities::DWORDToBytes(static_cast<uint32_t>(compressedData.size())),
             Utilities::DWORDToBytes(static_cast<uint32_t>(data.size())),
             Utilities::DWORDToBytes(CUSTOM_TAG),
-            move(compressedData)
+            std::move(compressedData)
         );
     }
 
@@ -271,7 +271,7 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
             isQueueFull = true;
         else {
             _totalQueuedBytes += frameData.size();
-            _frameQueue.push(move(frameData));
+            _frameQueue.push(std::move(frameData));
         }
     }
 
@@ -308,7 +308,6 @@ private:
             try
             {
                 vector<uint8_t> combinedBuffer;
-                size_t totalBytes = 0;
                 size_t packetCount = 0;
 
                 auto now = steady_clock::now();
@@ -338,7 +337,6 @@ private:
                     while (!_frameQueue.empty() && packetCount < kMaxBatchSize)
                     {
                         vector<uint8_t>& frame = _frameQueue.front();
-                        totalBytes += frame.size();
                         packetCount++;
                         combinedBuffer.insert(combinedBuffer.end(), frame.begin(), frame.end());
                         _totalQueuedBytes -= frame.size();
@@ -353,11 +351,11 @@ private:
                     if (!combinedBuffer.empty())
                     {
                         lastSendTime = steady_clock::now();
-                        optional<ClientResponse> response = SendFrame(move(combinedBuffer));
+                        optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
                         if (response)
                         {
                             lock_guard lock(_responseMutex);
-                            _lastClientResponse = move(*response);
+                            _lastClientResponse = std::move(*response);
                             _lastResponseTime = system_clock::now();
                         }
                         _speedTracker.UpdateBytesPerSecond();
