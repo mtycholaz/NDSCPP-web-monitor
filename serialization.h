@@ -219,15 +219,14 @@ inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
         j["queueMaxSize"] = socket.GetQueueMaxSize();
         j["bytesPerSecond"] = socket.GetLastBytesPerSecond();
         j["port"] = socket.Port();
+        j["id"] = socket.Id();
         
         // Note: featureId and canvasId can't be included here since they're not
         // properties of the socket itself but rather of its container objects
 
         const auto &lastResponse = socket.LastClientResponse();
         if (lastResponse.size == sizeof(ClientResponse))
-        {
             j["stats"] = lastResponse; // Uses the ClientResponse serializer
-        }
     }
     catch (const std::exception &e)
     {

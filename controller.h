@@ -27,12 +27,6 @@ class Controller : public IController
     vector<unique_ptr<ICanvas>> _canvases;
     uint16_t                    _port;
 
-    void UpdateAllIDs()
-    {
-        for (size_t i = 0; i < _canvases.size(); ++i)
-            _canvases[i]->SetId(i);
-    }
-
   public:
 
     Controller(uint16_t port = 7777) : _port(port)
@@ -55,18 +49,20 @@ class Controller : public IController
 
     bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) override
     {
-        if (canvasId >= _canvases.size())
+        auto canvas = GetCanvasById(canvasId);
+        if (canvas == nullptr)
             return false;
-        _canvases[canvasId]->AddFeature(std::move(feature));
-        return false;
+        canvas->AddFeature(std::move(feature));
+        return true;
     }
 
     bool RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) override
     {
-        if (canvasId >= _canvases.size())
+        // Find the matching canvas and remove the feature from it
+        auto canvas = GetCanvasById(canvasId);
+        if (canvas == nullptr)
             return false;
-
-        return _canvases[canvasId]->RemoveFeatureById(featureId);
+        return canvas->RemoveFeatureById(featureId);
     }
 
 
@@ -371,10 +367,13 @@ class Controller : public IController
             canvas->Effects().Stop();
     }
 
-    void AddCanvas(unique_ptr<ICanvas> ptrCanvas) override
+    bool AddCanvas(unique_ptr<ICanvas> ptrCanvas) override
     {
+        // Check to see if a canvas already uses the ptrCanvas's ID and fail if so
+        if (nullptr != GetCanvasById(ptrCanvas->Id()))
+            return false;
         _canvases.push_back(std::move(ptrCanvas));
-        UpdateAllIDs();
+        return true;
     }
 
     bool DeleteCanvasById(uint32_t id) override
@@ -384,7 +383,6 @@ class Controller : public IController
             if (_canvases[i]->Id() == id)
             {
                 _canvases.erase(_canvases.begin() + i);
-                UpdateAllIDs();
                 return true;
             }
         }
@@ -393,15 +391,34 @@ class Controller : public IController
 
     bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) override
     {
-        if (ptrCanvas->Id() >= _canvases.size())
-            return false;
-        _canvases[ptrCanvas->Id()] = std::move(ptrCanvas);
-        return true;
+        // Find the existing canvas with the matching Id and replace it
+        for (size_t i = 0; i < _canvases.size(); ++i)
+        {
+            if (_canvases[i]->Id() == ptrCanvas->Id())
+            {
+                _canvases[i] = std::move(ptrCanvas);
+                return true;
+            }
+        }
+        return false;
     }
 
-    const ICanvas * GetCanvasById(uint16_t id) const override
+    ICanvas * GetCanvasById(uint16_t id) const override
     {
-        return _canvases[id].get();
+        // Find and return the canvas with the matching ID
+        for (auto &canvas : _canvases)
+            if (canvas->Id() == id)
+                return canvas.get();
+        return nullptr;
+    }
+
+    vector<const ISocketChannel *> GetSockets() const override
+    {
+        vector<const ISocketChannel *> sockets;
+        for (const auto &canvas : _canvases)
+            for (const auto &feature : canvas->Features())
+                sockets.push_back(&feature->Socket());
+        return sockets;
     }
 
     const ISocketChannel * GetSocketById(uint16_t id) const override

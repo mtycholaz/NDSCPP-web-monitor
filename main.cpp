@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
     uint16_t port = 7777;
 
     // Parse command-line options
-
     int opt;
     while ((opt = getopt(argc, argv, "p:")) != -1) 
     {
@@ -69,14 +68,12 @@ int main(int argc, char *argv[])
     }
 
     // Load the canvases and start the controller
-
     Controller controller(port);
     controller.LoadSampleCanvases();
     controller.Connect();
     controller.Start();
 
     // Start the web server
-
     crow::logger::setLogLevel(crow::LogLevel::WARNING);
     WebServer webServer(controller);
     webServer.Start();
@@ -84,7 +81,7 @@ int main(int argc, char *argv[])
     cout << "Shutting down..." << endl;
 
     // Shut down rendering and communications
-    
+   
     controller.Stop();
     controller.Disconnect();
 

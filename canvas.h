@@ -65,14 +65,20 @@ public:
         return _effects;
     }
 
-    vector<unique_ptr<ILEDFeature>>& Features() override
+    vector<ILEDFeature *> Features() override
     {
-        return _features;
+        vector<ILEDFeature *> features;
+        for (auto &feature : _features)
+            features.push_back(feature.get());
+        return features;
     }
 
-    const vector<unique_ptr<ILEDFeature>>& Features() const override
+    const vector<ILEDFeature *> Features() const override
     {
-        return _features;
+        vector<ILEDFeature *> features;
+        for (const auto &feature : _features)
+            features.push_back(feature.get());
+        return features;
     }
 
     uint32_t AddFeature(unique_ptr<ILEDFeature> feature) override

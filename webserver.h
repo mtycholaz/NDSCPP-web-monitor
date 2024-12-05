@@ -61,9 +61,15 @@ public:
         CROW_ROUTE(_crowApp, "/api/sockets")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
             {
+                auto sockets = _controller.GetSockets();
                 auto socketsJson = nlohmann::json::array();
-                to_json(socketsJson, _controller);
-                return socketsJson.dump(); 
+                for (const auto &socket : sockets)
+                {
+                    nlohmann::json socketJson;
+                    to_json(socketJson, *socket);
+                    socketsJson.push_back(socketJson);
+                }
+                return socketsJson.dump();
             });
 
         // Detail a single socket
@@ -125,10 +131,10 @@ public:
                         from_json(jsonPayload, newCanvas);
 
                         // Add the canvas to the controller
-                        _controller.AddCanvas(std::move(newCanvas));
-
-                        // Respond with success
-                        return crow::response(201, "Canvas added successfully.");
+                        if (false == _controller.AddCanvas(std::move(newCanvas)))
+                            return crow::response(400, "Canvas with that ID already exists.");
+                        else
+                            return crow::response(201, "Canvas added successfully.");
                     } 
                     catch (const std::exception& e) 
                     {
@@ -164,6 +170,7 @@ public:
             CROW_ROUTE(_crowApp, "/api/canvases/<int>/features/<int>")
                 .methods(crow::HTTPMethod::DELETE)([&](int canvasId, int featureId) -> crow::response 
                 {
+                    _controller.GetCanvasById(canvasId)->RemoveFeatureById(featureId);
                     auto canvas = _controller.Canvases()[canvasId];
                     canvas->RemoveFeatureById(featureId);
                     return crow::response(crow::OK);
