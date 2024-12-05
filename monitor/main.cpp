@@ -11,7 +11,6 @@
 
 // Our only interface to NDSCPP comes through the REST api and this serialization helper code
 #include "../serialization.h"
-#include "../interfaces.h"
 
 #include "monitor.h"
 

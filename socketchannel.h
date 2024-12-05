@@ -13,6 +13,7 @@ using namespace std;
 #include <stdexcept>
 #include <cstring>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <poll.h>
@@ -53,7 +54,7 @@ public:
         // Check for overflow before adding.  No idea if overflow is a practical
         // concern, but I'd feel weird not checking.
 
-        if (_currentWindowBytes <= (std::numeric_limits<uint64_t>::max() - bytes))
+        if (_currentWindowBytes <= (numeric_limits<uint64_t>::max() - bytes))
             _currentWindowBytes += bytes;
     }
 
@@ -104,6 +105,38 @@ public:
 struct ClientResponse;
 class SocketChannel : public ISocketChannel
 {
+    static constexpr uint16_t CommandPixelData = 3;
+    static constexpr size_t MaxQueueDepth = 500;
+    static constexpr size_t MaxQueuedBytes = 1024 * 1024 * 10;  // 10MB memory limit
+
+    string _hostName;
+    string _friendlyName;
+    uint16_t _port;
+
+    static atomic<uint32_t> _nextId;
+    uint32_t _id;
+
+    mutable mutex _mutex;                       // 
+    mutable mutex _queueMutex;
+    mutable mutex _responseMutex;
+    
+    atomic<bool> _isConnected;
+    atomic<bool> _running;
+
+    int _socketFd;
+
+    ClientResponse _lastClientResponse;
+    system_clock::time_point _lastResponseTime;
+    system_clock::time_point _lastConnectionAttempt;
+    SpeedTracker _speedTracker;
+
+    uint32_t _reconnectCount;
+
+    queue<vector<uint8_t>> _frameQueue;
+    size_t _totalQueuedBytes;  // Track total memory usage
+    thread _workerThread;
+
+
 public:
     SocketChannel(const string& hostName, const string& friendlyName, uint16_t port = 49152)
         : _hostName(hostName),
@@ -224,7 +257,7 @@ public:
             Utilities::DWORDToBytes(static_cast<uint32_t>(compressedData.size())),
             Utilities::DWORDToBytes(static_cast<uint32_t>(data.size())),
             Utilities::DWORDToBytes(CUSTOM_TAG),
-            std::move(compressedData)
+            move(compressedData)
         );
     }
 
@@ -238,7 +271,7 @@ bool EnqueueFrame(vector<uint8_t>&& frameData) override
             isQueueFull = true;
         else {
             _totalQueuedBytes += frameData.size();
-            _frameQueue.push(std::move(frameData));
+            _frameQueue.push(move(frameData));
         }
     }
 
@@ -320,11 +353,11 @@ private:
                     if (!combinedBuffer.empty())
                     {
                         lastSendTime = steady_clock::now();
-                        optional<ClientResponse> response = SendFrame(std::move(combinedBuffer));
+                        optional<ClientResponse> response = SendFrame(move(combinedBuffer));
                         if (response)
                         {
                             lock_guard lock(_responseMutex);
-                            _lastClientResponse = std::move(*response);
+                            _lastClientResponse = move(*response);
                             _lastResponseTime = system_clock::now();
                         }
                         _speedTracker.UpdateBytesPerSecond();
@@ -593,37 +626,6 @@ private:
         }
         _isConnected = false;
     }
-    
-private:
-    static constexpr uint16_t CommandPixelData = 3;
-    static constexpr size_t MaxQueueDepth = 500;
-    static constexpr size_t MaxQueuedBytes = 1024 * 1024 * 10;  // 10MB memory limit
-
-    string _hostName;
-    string _friendlyName;
-    uint16_t _port;
-
-    static atomic<uint32_t> _nextId;
-    uint32_t _id;
-
-    mutable mutex _mutex;                       // 
-    mutable mutex _queueMutex;
-    mutable mutex _responseMutex;
-    
-    atomic<bool> _isConnected;
-    atomic<bool> _running;
-
-    queue<vector<uint8_t>> _frameQueue;
-    size_t _totalQueuedBytes;  // Track total memory usage
-    thread _workerThread;
-
-    ClientResponse _lastClientResponse;
-    system_clock::time_point _lastResponseTime;
-    system_clock::time_point _lastConnectionAttempt;
-    SpeedTracker _speedTracker;
-
-    uint32_t _reconnectCount;
-    int _socketFd;
 };
 
 
@@ -634,9 +636,4 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ISocketChannel>& socke
         j.at("friendlyName").get<string>(),
         j.value("port", uint16_t(49152))
     );
-
-    if (j.contains("stats")) {
-        ClientResponse response = j["stats"].get<ClientResponse>();
-        // Socket will automatically start tracking stats when connected
-    }
 }
