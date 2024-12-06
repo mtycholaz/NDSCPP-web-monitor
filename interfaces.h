@@ -207,5 +207,4 @@ public:
     virtual ICanvas * GetCanvasById(uint16_t id) const = 0;
     virtual const ISocketChannel * GetSocketById(uint16_t id) const = 0;
     virtual vector<const ISocketChannel *> GetSockets() const = 0;
-
 };

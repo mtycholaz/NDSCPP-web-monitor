@@ -131,6 +131,8 @@ public:
     
     void Start(ICanvas& canvas) override
     {
+        logger->debug("Starting effects manager with {} effects at {} FPS", _effects.size(), _fps);
+
         if (_running.exchange(true))
             return; // Already running
 
@@ -175,6 +177,7 @@ public:
     // Stop the worker thread
     void Stop() override
     {
+        logger->debug("Stopping effects manager");
         if (!_running.exchange(false))
             return; // Not running
 

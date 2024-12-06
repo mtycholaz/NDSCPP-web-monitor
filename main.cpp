@@ -84,7 +84,6 @@ int main(int argc, char *argv[])
     cout << "Shutting down..." << endl;
 
     // Shut down rendering and communications
-   
     controller.Stop();
     controller.Disconnect();
 
