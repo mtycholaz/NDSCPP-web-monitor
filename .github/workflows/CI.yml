@@ -20,7 +20,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update 
-        sudo apt-get install -y libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev libcurl4-gnutls-dev libspdlog-dev libfmt-dev
+        sudo apt-get install -y libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev libcurl4-gnutls-dev libspdlog-dev
 
     - name: Set up dependencies (macOS)
       if: matrix.os == 'macos-latest'
