@@ -42,10 +42,6 @@ class Controller : public IController
     {
     }
 
-    Controller() : _port(7777) 
-    {
-    }
-
     vector<reference_wrapper<ICanvas>> Canvases() const override
     {
         vector<std::reference_wrapper<ICanvas>> canvases;
