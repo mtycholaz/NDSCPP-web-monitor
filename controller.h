@@ -76,7 +76,6 @@ class Controller : public IController
         return canvas->RemoveFeatureById(featureId);
     }
 
-
     // LoadSampleCanvases
     //
     // Until we have full load and save ability, this function will be used to load sample canvases.
