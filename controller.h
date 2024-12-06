@@ -36,8 +36,9 @@ class Controller : public IController
 
     vector<ICanvas*> Canvases() const override
     {
-        std::vector<ICanvas*> canvases(_canvases.size());
-        for (const auto & canvas : _canvases)
+        vector<ICanvas*> canvases;
+        canvases.reserve(_canvases.size());
+        for (const auto& canvas : _canvases)
             canvases.push_back(canvas.get());
         return canvases;
     }
