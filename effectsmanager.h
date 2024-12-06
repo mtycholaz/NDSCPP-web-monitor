@@ -148,15 +148,15 @@ public:
                 UpdateCurrentEffect(canvas, frameDuration);
                 for (const auto &feature : canvas.Features())
                 {
-                    auto frame = feature->GetDataFrame();
+                    auto frame = feature.get().GetDataFrame();
                     if (bUseCompression)
                     {
-                        auto compressedFrame = feature->Socket().CompressFrame(frame);
-                        feature->Socket().EnqueueFrame(std::move(compressedFrame));
+                        auto compressedFrame = feature.get().Socket().CompressFrame(frame);
+                        feature.get().Socket().EnqueueFrame(std::move(compressedFrame));
                     }
                     else
                     {
-                        feature->Socket().EnqueueFrame(std::move(frame));
+                        feature.get().Socket().EnqueueFrame(std::move(frame));
                     }
                 }
 

@@ -65,19 +65,19 @@ public:
         return _effects;
     }
 
-    vector<ILEDFeature *> Features() override
+    vector<reference_wrapper<ILEDFeature>> Features() override
     {
-        vector<ILEDFeature *> features;
+        vector<reference_wrapper<ILEDFeature>> features;
         for (auto &feature : _features)
-            features.push_back(feature.get());
+            features.push_back(*feature);
         return features;
     }
 
-    const vector<ILEDFeature *> Features() const override
+    const vector<reference_wrapper<ILEDFeature>> Features() const override
     {
-        vector<ILEDFeature *> features;
-        for (const auto &feature : _features)
-            features.push_back(feature.get());
+        vector<reference_wrapper<ILEDFeature>> features;
+        for (auto &feature : _features)
+            features.push_back(*feature);
         return features;
     }
 

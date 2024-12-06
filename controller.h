@@ -51,30 +51,14 @@ class Controller : public IController
     bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) override
     {
         logger->debug("Adding feature to canvas {}...", canvasId);
-
-        auto canvas = GetCanvasById(canvasId);
-        if (canvas == nullptr)
-        {
-            logger->error("Canvas {} not found in AddFeatureToCanvas.", canvasId);
-            return false;
-        }
-
-        canvas->AddFeature(std::move(feature));
+        GetCanvasById(canvasId).AddFeature(std::move(feature));
         return true;
     }
 
-    bool RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) override
+    void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) override
     {
         logger->debug("Removing feature {} from canvas {}...", featureId, canvasId);
-        
-        // Find the matching canvas and remove the feature from it
-        auto canvas = GetCanvasById(canvasId);
-        if (canvas == nullptr)
-        {
-            logger->error("Canvas {} not found in RemoveFeatureFromCanvas.", canvasId);
-            return false;
-        }
-        return canvas->RemoveFeatureById(featureId);
+        GetCanvasById(canvasId).RemoveFeatureById(featureId);
     }
 
     // LoadSampleCanvases
@@ -360,7 +344,7 @@ class Controller : public IController
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature->Socket().Start();
+                feature.get().Socket().Start();
     }
 
     void Disconnect() override
@@ -369,7 +353,7 @@ class Controller : public IController
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature->Socket().Stop();
+                feature.get().Socket().Stop();
     }
 
     void Start() override
@@ -392,15 +376,20 @@ class Controller : public IController
     {
         logger->debug("Adding canvas {}...", ptrCanvas->Name());
 
-        // Check to see if a canvas already uses the ptrCanvas's ID and fail if so
-        if (nullptr != GetCanvasById(ptrCanvas->Id()))
+        // This is a bit odd; we try get the current canvas with the ID specified by the new one,
+        // and we only proceed in the exception case if the canvas doesn't exist, where we add it
+
+        try
         {
+            GetCanvasById(ptrCanvas->Id());
             logger->error("Canvas with ID {} already exists.", ptrCanvas->Id());
             return false;
         }
-
-        _canvases.push_back(std::move(ptrCanvas));
-        return true;
+        catch(const out_of_range &)               
+        {
+            _canvases.push_back(std::move(ptrCanvas));    
+            return true;
+        }
     }
 
     bool DeleteCanvasById(uint32_t id) override
@@ -438,35 +427,35 @@ class Controller : public IController
         return false;
     }
 
-    ICanvas * GetCanvasById(uint16_t id) const override
+    ICanvas & GetCanvasById(uint16_t id) const override
     {
         // Find and return the canvas with the matching ID
         for (auto &canvas : _canvases)
             if (canvas->Id() == id)
-                return canvas.get();
+                return *canvas.get();
 
         logger->error("Canvas with ID {} not found in GetCanvasById.", id);
-        return nullptr;
+        throw out_of_range("Canvas not found");
     }
 
-    vector<const ISocketChannel *> GetSockets() const override
+    vector<reference_wrapper<ISocketChannel>> GetSockets() const override
     {
-        vector<const ISocketChannel *> sockets;
+        vector<reference_wrapper<ISocketChannel>> sockets;
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                sockets.push_back(&feature->Socket());
+                sockets.push_back(feature.get().Socket());
         return sockets;
     }
 
-    const ISocketChannel * GetSocketById(uint16_t id) const override
+    const ISocketChannel & GetSocketById(uint16_t id) const override
     {
         for (auto &canvas : _canvases)
             for (auto &feature : canvas->Features())
-                if (feature->Socket().Id() == id)
-                    return &feature->Socket();
+                if (feature.get().Socket().Id() == id)
+                    return feature.get().Socket();
 
         logger->error("Socket with ID {} not found in GetSocketById.", id);                     
-        return nullptr;
+        throw out_of_range("Socket not found by id");
     }
 };
 

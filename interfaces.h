@@ -172,11 +172,12 @@ public:
     virtual uint32_t Id() const = 0;
     virtual uint32_t SetId(uint32_t id) = 0;
     virtual string Name() const = 0;
-    virtual vector<ILEDFeature *> Features() = 0;
-    virtual const vector<ILEDFeature *> Features() const = 0;
-
     virtual uint32_t AddFeature(unique_ptr<ILEDFeature> feature) = 0;
     virtual bool RemoveFeatureById(uint16_t featureId) = 0;
+
+    virtual vector<reference_wrapper<ILEDFeature>> Features() = 0;
+    virtual const vector<reference_wrapper<ILEDFeature>> Features() const = 0;
+
 
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;
@@ -203,8 +204,8 @@ public:
     virtual bool DeleteCanvasById(uint32_t id) = 0;
     virtual bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) = 0;
     virtual bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) = 0;
-    virtual bool RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) = 0;
-    virtual ICanvas * GetCanvasById(uint16_t id) const = 0;
-    virtual const ISocketChannel * GetSocketById(uint16_t id) const = 0;
-    virtual vector<const ISocketChannel *> GetSockets() const = 0;
+    virtual void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) = 0;
+    virtual ICanvas & GetCanvasById(uint16_t id) const = 0;
+    virtual const ISocketChannel & GetSocketById(uint16_t id) const = 0;
+    virtual vector<reference_wrapper<ISocketChannel>> GetSockets() const = 0;
 };

@@ -178,9 +178,10 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
 
     // Add features array
     auto featuresJson = nlohmann::json::array();
-    for (const auto& feature : canvas.Features()) {
+    for (const auto& feature : canvas.Features()) 
+    {
         nlohmann::json featureJson;
-        to_json(featureJson, *feature);
+        to_json(featureJson, feature);
         featuresJson.push_back(featureJson);
     }
     j["features"] = featuresJson;
