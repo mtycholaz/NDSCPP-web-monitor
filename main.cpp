@@ -29,19 +29,22 @@
 #include "webserver.h"
 #include "controller.h"
 
+
 using namespace std;
 
 atomic<uint32_t> Canvas::_nextId{0};        // Initialize the static member variable for canvas.h
 atomic<uint32_t> LEDFeature::_nextId{0};    // Initialize the static member variable for ledfeature.h
 atomic<uint32_t> SocketChannel::_nextId{0}; // Initialize the static member variable for socketchannel.h
 
-
+shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("console");
 
 // Main program entry point. Runs the webServer and starts up the LED processing.
 // When SIGINT is received, exits gracefully.
 
 int main(int argc, char *argv[])
 {
+    logger->set_level(spdlog::level::info);
+
     uint16_t port = 7777;
 
     // Parse command-line options
@@ -55,7 +58,7 @@ int main(int argc, char *argv[])
                 int parsedPort = atoi(optarg);
                 if (parsedPort < 1 || parsedPort > 65535) 
                 {
-                    cerr << "Error: Port number must be between 1 and 65535." << endl;
+                    logger->error("Error: Port number must be between 1 and 65535, but was {}", parsedPort);
                     return EXIT_FAILURE;
                 }
                 port = static_cast<uint16_t>(parsedPort);

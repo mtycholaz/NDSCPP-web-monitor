@@ -10,6 +10,7 @@ using namespace std;
 #include "basegraphics.h"
 #include "effectsmanager.h"
 #include <vector>
+#include "global.h"
 #include "canvas.h"
 #include "ledfeature.h"
 #include "effects/colorwaveeffect.h"
@@ -49,19 +50,30 @@ class Controller : public IController
 
     bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) override
     {
+        logger->debug("Adding feature to canvas {}...", canvasId);
+
         auto canvas = GetCanvasById(canvasId);
         if (canvas == nullptr)
+        {
+            logger->error("Canvas {} not found in AddFeatureToCanvas.", canvasId);
             return false;
+        }
+
         canvas->AddFeature(std::move(feature));
         return true;
     }
 
     bool RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) override
     {
+        logger->debug("Removing feature {} from canvas {}...", featureId, canvasId);
+        
         // Find the matching canvas and remove the feature from it
         auto canvas = GetCanvasById(canvasId);
         if (canvas == nullptr)
+        {
+            logger->error("Canvas {} not found in RemoveFeatureFromCanvas.", canvasId);
             return false;
+        }
         return canvas->RemoveFeatureById(featureId);
     }
 
@@ -72,6 +84,8 @@ class Controller : public IController
 
     void LoadSampleCanvases() override
     {
+        logger->debug("Loading sample canvases...");
+
         vector<unique_ptr<ICanvas>> canvases;
 
         // Define a Canvas for the Mesmerizer
@@ -343,6 +357,8 @@ class Controller : public IController
 
     void Connect() override
     {
+        logger->debug("Connecting canvases...");
+
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
                 feature->Socket().Start();
@@ -350,6 +366,8 @@ class Controller : public IController
 
     void Disconnect() override
     {
+        logger->debug("Disconnecting canvases...");
+
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
                 feature->Socket().Stop();
@@ -357,27 +375,39 @@ class Controller : public IController
 
     void Start() override
     {
+        logger->debug("Starting canvases...");
+
         for (auto &canvas : _canvases)
             canvas->Effects().Start(*canvas);
     }
 
     void Stop() override
     {
+        logger->debug("Stopping canvases...");
+
         for (auto &canvas : _canvases)
             canvas->Effects().Stop();
     }
 
     bool AddCanvas(unique_ptr<ICanvas> ptrCanvas) override
     {
+        logger->debug("Adding canvas {}...", ptrCanvas->Name());
+
         // Check to see if a canvas already uses the ptrCanvas's ID and fail if so
         if (nullptr != GetCanvasById(ptrCanvas->Id()))
+        {
+            logger->error("Canvas with ID {} already exists.", ptrCanvas->Id());
             return false;
+        }
+
         _canvases.push_back(std::move(ptrCanvas));
         return true;
     }
 
     bool DeleteCanvasById(uint32_t id) override
     {
+        logger->debug("Deleting canvas {}...", id);
+
         for (size_t i = 0; i < _canvases.size(); ++i)
         {
             if (_canvases[i]->Id() == id)
@@ -386,11 +416,15 @@ class Controller : public IController
                 return true;
             }
         }
+
+        logger->error("Canvas with ID {} not found in DeleteCanvasById.", id);
         return false;
     }
 
     bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) override
     {
+        logger->debug("Updating canvas {}...", ptrCanvas->Name());
+
         // Find the existing canvas with the matching Id and replace it
         for (size_t i = 0; i < _canvases.size(); ++i)
         {
@@ -400,6 +434,8 @@ class Controller : public IController
                 return true;
             }
         }
+
+        logger->error("Canvas with ID {} not found in UpdateCanvas.", ptrCanvas->Id());
         return false;
     }
 
@@ -409,6 +445,8 @@ class Controller : public IController
         for (auto &canvas : _canvases)
             if (canvas->Id() == id)
                 return canvas.get();
+
+        logger->error("Canvas with ID {} not found in GetCanvasById.", id);
         return nullptr;
     }
 
@@ -427,6 +465,8 @@ class Controller : public IController
             for (auto &feature : canvas->Features())
                 if (feature->Socket().Id() == id)
                     return &feature->Socket();
+
+        logger->error("Socket with ID {} not found in GetSocketById.", id);                     
         return nullptr;
     }
 };
