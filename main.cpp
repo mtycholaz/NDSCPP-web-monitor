@@ -46,10 +46,11 @@ int main(int argc, char *argv[])
     logger->set_level(spdlog::level::info);
 
     uint16_t port = 7777;
+    string   filename = "config.led";
 
     // Parse command-line options
     int opt;
-    while ((opt = getopt(argc, argv, "p:")) != -1) 
+    while ((opt = getopt(argc, argv, "p:c:")) != -1) 
     {
         switch (opt) 
         {
@@ -64,28 +65,37 @@ int main(int argc, char *argv[])
                 port = static_cast<uint16_t>(parsedPort);
                 break;
             }
+            case 'c':
+                filename = optarg;
+                break;
             default:
-                cerr << "Usage: " << argv[0] << " [-p <portid>]" << endl;
+                std::cerr << "Usage: " << argv[0] << " [-p <portid>] [-c <configfile>]" << std::endl;
                 return EXIT_FAILURE;
         }
     }
 
-    // Load the canvases and start the controller
-    Controller controller(port);
-    controller.LoadSampleCanvases();
-    controller.Connect();
-    controller.Start();
+    // Load the canvases from the configuration file
+
+    unique_ptr<Controller> ptrController = Controller::CreateFromFile(filename);
+    
+    // Until the controller can serialize effects, we still need to manually load things.
+    ptrController->LoadSampleCanvases();
+        
+    ptrController->Connect();
+    ptrController->Start();
 
     // Start the web server
     crow::logger::setLogLevel(crow::LogLevel::WARNING);
-    WebServer webServer(controller);
+    WebServer webServer(*ptrController.get());
     webServer.Start();
 
     cout << "Shutting down..." << endl;
 
     // Shut down rendering and communications
-    controller.Stop();
-    controller.Disconnect();
+    ptrController->Stop();
+    ptrController->Disconnect();
+
+    ptrController = nullptr;
 
     cout << "Shut down complete." << endl;
 

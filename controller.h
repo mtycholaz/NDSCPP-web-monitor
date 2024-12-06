@@ -13,6 +13,7 @@ using namespace std;
 #include "global.h"
 #include "canvas.h"
 #include "ledfeature.h"
+#include "serialization.h"
 #include "effects/colorwaveeffect.h"
 #include "effects/starfield.h"
 #include "effects/videoeffect.h"
@@ -20,6 +21,9 @@ using namespace std;
 #include "palette.h"
 #include "effects/paletteeffect.h"
 #include "effects/fireworkseffect.h"
+
+class Controller;
+inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrController);
 
 class Controller : public IController
 {
@@ -34,6 +38,10 @@ class Controller : public IController
     {
     }
 
+    Controller() : _port(7777) 
+    {
+    }
+
     vector<reference_wrapper<ICanvas>> Canvases() const override
     {
         vector<std::reference_wrapper<ICanvas>> canvases;
@@ -43,9 +51,35 @@ class Controller : public IController
         return canvases;
     }
 
+    static std::unique_ptr<Controller> CreateFromFile(const std::string& filePath) 
+    {
+        // Open the file and parse the JSON
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            throw std::runtime_error("Unable to open file: " + filePath);
+        }
+
+        nlohmann::json jsonData;
+        file >> jsonData;
+
+        // Deserialize the JSON into a unique_ptr<Controller>
+        std::unique_ptr<Controller> ptrController;
+        from_json(jsonData, ptrController);  // Explicitly use your from_json function
+
+        return ptrController;
+    }
+
+
+
+
     uint16_t GetPort() const override
     {
         return _port;
+    }
+
+    void SetPort(uint16_t port) override
+    {
+        _port = port;
     }
 
     bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) override
@@ -61,15 +95,16 @@ class Controller : public IController
         GetCanvasById(canvasId).RemoveFeatureById(featureId);
     }
 
+
     // LoadSampleCanvases
     //
     // Until we have full load and save ability, this function will be used to load sample canvases.
 
-    void LoadSampleCanvases() override
+    void LoadSampleCanvases()
     {
         logger->debug("Loading sample canvases...");
 
-        vector<unique_ptr<ICanvas>> canvases;
+        _canvases.clear();
 
         // Define a Canvas for the Mesmerizer
 
@@ -89,7 +124,7 @@ class Controller : public IController
         canvasMesmerizer->AddFeature(std::move(feature1));
         canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("Starfield", "./media/mp4/rickroll.mp4"));
         canvasMesmerizer->Effects().SetCurrentEffect(0, *canvasMesmerizer);
-        canvases.push_back(std::move(canvasMesmerizer));
+        _canvases.push_back(std::move(canvasMesmerizer));
 
         //---------------------------------------------------------------------
 
@@ -110,7 +145,7 @@ class Controller : public IController
         canvasBanner->AddFeature(std::move(featureBanner));
         canvasBanner->Effects().AddEffect(make_unique<StarfieldEffect>("Starfield", 100));
         canvasBanner->Effects().SetCurrentEffect(0, *canvasBanner);
-        canvases.push_back(std::move(canvasBanner));
+        _canvases.push_back(std::move(canvasBanner));
 
         //---------------------------------------------------------------------
 
@@ -129,7 +164,7 @@ class Controller : public IController
         canvasWindow1->AddFeature(std::move(featureWindow1));
         canvasWindow1->Effects().AddEffect(make_unique<SolidColorFill>("Yellow Window", CRGB(255, 112, 0)));
         canvasWindow1->Effects().SetCurrentEffect(0, *canvasWindow1);
-        canvases.push_back(std::move(canvasWindow1));
+        _canvases.push_back(std::move(canvasWindow1));
 
         //---------------------------------------------------------------------
 
@@ -148,7 +183,7 @@ class Controller : public IController
         canvasWindow2->AddFeature(std::move(featureWindow2));
         canvasWindow2->Effects().AddEffect(make_unique<SolidColorFill>("Blue Window", CRGB::Blue));
         canvasWindow2->Effects().SetCurrentEffect(0, *canvasWindow2);
-        canvases.push_back(std::move(canvasWindow2));
+        _canvases.push_back(std::move(canvasWindow2));
 
         //---------------------------------------------------------------------
 
@@ -167,7 +202,7 @@ class Controller : public IController
         canvasWindow3->AddFeature(std::move(featureWindow3));
         canvasWindow3->Effects().AddEffect(make_unique<SolidColorFill>("Green Window", CRGB::Green));
         canvasWindow3->Effects().SetCurrentEffect(0, *canvasWindow3);
-        canvases.push_back(std::move(canvasWindow3));
+        _canvases.push_back(std::move(canvasWindow3));
 
         //---------------------------------------------------------------------
 
@@ -231,7 +266,7 @@ class Controller : public IController
             canvasCabinets->AddFeature(std::move(featureCabinets4));
             canvasCabinets->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", StandardPalettes::Rainbow, 2.0, 0.0, 0.01));
             canvasCabinets->Effects().SetCurrentEffect(0, *canvasCabinets);
-            canvases.push_back(std::move(canvasCabinets));
+            _canvases.push_back(std::move(canvasCabinets));
         }
 
         // Cabana - Christmas lights that wrap around my guest house
@@ -294,7 +329,7 @@ class Controller : public IController
             canvasCabana->AddFeature(std::move(featureCabana4));
             canvasCabana->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", StandardPalettes::ChristmasLights, 0.0, 5.0, 1.0, 30, 4));
             canvasCabana->Effects().SetCurrentEffect(0, *canvasCabana);
-            canvases.push_back(std::move(canvasCabana));
+            _canvases.push_back(std::move(canvasCabana));
         }
         {
             auto canvasCeiling = make_unique<Canvas>("Ceiling", 144 * 5 + 38, 1, 30);
@@ -313,7 +348,7 @@ class Controller : public IController
             canvasCeiling->AddFeature(std::move(featureCeiling));
             canvasCeiling->Effects().AddEffect(make_unique<FireworksEffect>("Fireworks"));
             canvasCeiling->Effects().SetCurrentEffect(0, *canvasCeiling);
-            canvases.push_back(std::move(canvasCeiling));
+            _canvases.push_back(std::move(canvasCeiling));
         }
         {
             auto canvasTree = make_unique<Canvas>("Tree", 32, 1, 30);
@@ -332,10 +367,8 @@ class Controller : public IController
             canvasTree->AddFeature(std::move(featureTree));
             canvasTree->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", StandardPalettes::Rainbow, 0.25, 0.0, 1, 1));
             canvasTree->Effects().SetCurrentEffect(0, *canvasTree);
-            canvases.push_back(std::move(canvasTree));
+            _canvases.push_back(std::move(canvasTree));
         }
-
-        _canvases = std::move(canvases);
     }
 
     void Connect() override
@@ -434,7 +467,7 @@ class Controller : public IController
             if (canvas->Id() == id)
                 return *canvas.get();
 
-        logger->error("Canvas with ID {} not found in GetCanvasById.", id);
+        logger->debug("Canvas with ID {} not found in GetCanvasById.", id);
         throw out_of_range("Canvas not found");
     }
 
