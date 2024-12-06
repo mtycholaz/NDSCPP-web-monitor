@@ -428,36 +428,40 @@ class Controller : public IController
     bool DeleteCanvasById(uint32_t id) override
     {
         logger->debug("Deleting canvas {}...", id);
-
-        for (size_t i = 0; i < _canvases.size(); ++i)
-        {
-            if (_canvases[i]->Id() == id)
-            {
-                _canvases.erase(_canvases.begin() + i);
-                return true;
-            }
+        
+        try {
+            GetCanvasById(id); // Verify canvas exists
+            _canvases.erase(
+                std::remove_if(_canvases.begin(), _canvases.end(),
+                    [id](const auto& canvas) { return canvas->Id() == id; }),
+                _canvases.end());
+            return true;
         }
-
-        logger->error("Canvas with ID {} not found in DeleteCanvasById.", id);
-        return false;
+        catch(const out_of_range&) {
+            logger->error("Canvas with ID {} not found in DeleteCanvasById.", id);
+            return false;
+        }
     }
 
     bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) override
     {
         logger->debug("Updating canvas {}...", ptrCanvas->Name());
 
-        // Find the existing canvas with the matching Id and replace it
-        for (size_t i = 0; i < _canvases.size(); ++i)
-        {
-            if (_canvases[i]->Id() == ptrCanvas->Id())
-            {
-                _canvases[i] = std::move(ptrCanvas);
-                return true;
+        try {
+            // Find index of canvas we want to update
+            auto canvasId = ptrCanvas->Id();
+            for (size_t i = 0; i < _canvases.size(); ++i) {
+                if (_canvases[i]->Id() == canvasId) {
+                    _canvases[i] = std::move(ptrCanvas);
+                    return true;
+                }
             }
+            throw out_of_range("Canvas not found");
         }
-
-        logger->error("Canvas with ID {} not found in UpdateCanvas.", ptrCanvas->Id());
-        return false;
+        catch(const out_of_range&) {
+            logger->error("Canvas with ID {} not found in UpdateCanvas.", ptrCanvas->Id());
+            return false;
+        }
     }
 
     ICanvas & GetCanvasById(uint16_t id) const override

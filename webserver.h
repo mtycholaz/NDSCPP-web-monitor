@@ -126,8 +126,6 @@ public:
             CROW_ROUTE(_crowApp, "/api/canvases/<int>")
                 .methods(crow::HTTPMethod::DELETE)([&](int id) -> crow::response 
                 {
-                    if (id < 0 || id >= _controller.Canvases().size())
-                        return {crow::NOT_FOUND, R"({"error": "Canvas not found"})"};
                     _controller.DeleteCanvasById(id);
                     return crow::response(crow::OK);
                 });
