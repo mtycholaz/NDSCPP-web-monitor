@@ -98,7 +98,7 @@ public:
                 
                 for (size_t i = 0; i < allCanvases.size(); ++i)
                 {
-                    nlohmann::json canvasJson = *_controller.Canvases()[i]; // Use the utility function
+                    nlohmann::json canvasJson = _controller.Canvases()[i]; // Use the utility function
                     canvasesJson.push_back(canvasJson);
                 }
                 return canvasesJson.dump(); 
@@ -113,7 +113,7 @@ public:
                 if (id < 0 || id >= allCanvases.size())
                     return {crow::NOT_FOUND, R"({"error": "Canvas not found"})"};
 
-                nlohmann::json canvasJson = *allCanvases[id]; // Use the utility function
+                nlohmann::json canvasJson = allCanvases[id]; // Use the utility function
                 return canvasJson.dump(); 
             });
             
@@ -161,7 +161,8 @@ public:
                     nlohmann::json response;
                     auto reqJson = nlohmann::json::parse(req.body);
                     auto canvas = _controller.Canvases()[canvasId];
-                    auto newId  = canvas->AddFeature(reqJson.get<unique_ptr<ILEDFeature>>());
+                    auto feature = reqJson.get<std::unique_ptr<ILEDFeature>>();
+                    auto newId  = canvas.get().AddFeature(std::move(feature));
                     response["id"] = newId;
                     return response.dump();
                 });
@@ -172,7 +173,7 @@ public:
                 {
                     _controller.GetCanvasById(canvasId)->RemoveFeatureById(featureId);
                     auto canvas = _controller.Canvases()[canvasId];
-                    canvas->RemoveFeatureById(featureId);
+                    canvas.get().RemoveFeatureById(featureId);
                     return crow::response(crow::OK);
                 });
                 

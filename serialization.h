@@ -250,10 +250,10 @@ inline void to_json(nlohmann::json &j, const IController &controller)
         j["port"] = controller.GetPort();
         j["canvases"] = nlohmann::json::array();
         
-        for (const auto * ptrCanvas : controller.Canvases())
+        for (const auto ptrCanvas : controller.Canvases())
         {
             nlohmann::json canvasJson;
-            to_json(canvasJson, *ptrCanvas);           // Uses the Canvas serializer
+            to_json(canvasJson, ptrCanvas);           // Uses the Canvas serializer
             j["canvases"].push_back(canvasJson);
         }
     }

@@ -198,7 +198,7 @@ public:
 
     virtual uint16_t GetPort() const = 0;
 
-    virtual vector<ICanvas*> Canvases() const = 0;
+    virtual vector<reference_wrapper<ICanvas>> Canvases() const = 0;
     virtual bool AddCanvas(unique_ptr<ICanvas> ptrCanvas) = 0;
     virtual bool DeleteCanvasById(uint32_t id) = 0;
     virtual bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) = 0;

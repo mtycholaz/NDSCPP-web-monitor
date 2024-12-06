@@ -34,12 +34,12 @@ class Controller : public IController
     {
     }
 
-    vector<ICanvas*> Canvases() const override
+    vector<reference_wrapper<ICanvas>> Canvases() const override
     {
-        vector<ICanvas*> canvases;
+        vector<std::reference_wrapper<ICanvas>> canvases;
         canvases.reserve(_canvases.size());
         for (const auto& canvas : _canvases)
-            canvases.push_back(canvas.get());
+            canvases.push_back(*canvas);
         return canvases;
     }
 
