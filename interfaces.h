@@ -191,13 +191,13 @@ class IController
 public:
     virtual ~IController() = default;
 
-    virtual void LoadSampleCanvases() = 0;              // Will become LoadCanvasesFromJson later
     virtual void Connect() = 0;
     virtual void Disconnect() = 0;
     virtual void Start() = 0;
     virtual void Stop() = 0;
 
     virtual uint16_t GetPort() const = 0;
+    virtual void     SetPort(uint16_t port) = 0;
 
     virtual vector<reference_wrapper<ICanvas>> Canvases() const = 0;
     virtual bool AddCanvas(unique_ptr<ICanvas> ptrCanvas) = 0;

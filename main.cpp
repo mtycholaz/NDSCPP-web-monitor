@@ -71,21 +71,22 @@ int main(int argc, char *argv[])
     }
 
     // Load the canvases and start the controller
-    Controller controller(port);
-    controller.LoadSampleCanvases();
-    controller.Connect();
-    controller.Start();
+    unique_ptr<Controller> ptrController = Controller::CreateFromFile("config.led");
+    ptrController->Connect();
+    ptrController->Start();
 
     // Start the web server
     crow::logger::setLogLevel(crow::LogLevel::WARNING);
-    WebServer webServer(controller);
+    WebServer webServer(*ptrController.get());
     webServer.Start();
 
     cout << "Shutting down..." << endl;
 
     // Shut down rendering and communications
-    controller.Stop();
-    controller.Disconnect();
+    ptrController->Stop();
+    ptrController->Disconnect();
+
+    ptrController = nullptr;
 
     cout << "Shut down complete." << endl;
 

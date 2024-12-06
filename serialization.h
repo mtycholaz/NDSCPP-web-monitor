@@ -187,10 +187,10 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
     j["features"] = featuresJson;
 }
 
-inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas) 
+inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas) 
 {
     // Create canvas with required fields
-    canvas = std::make_unique<Canvas>(
+    canvas = make_unique<Canvas>(
         j.at("name").get<std::string>(),
         j.at("width").get<uint32_t>(),
         j.at("height").get<uint32_t>(),
@@ -200,7 +200,7 @@ inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas)
     // Deserialize features if present
     if (j.contains("features")) {
         for (const auto& featureJson : j["features"])
-            canvas->AddFeature(featureJson.get<std::unique_ptr<ILEDFeature>>());
+            canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
     }
 }
 
@@ -264,3 +264,56 @@ inline void to_json(nlohmann::json &j, const IController &controller)
     }
 }
 
+// I've run into the same dependency loop issue again here... I'm not sure how to resolve it!
+// I think I need to move the from_json function to a separate file, but I know you want to keep
+// it here likely.  It can go right into Controller.h nicely though....
+
+#include "controller.h"
+
+inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrController) 
+{
+    try 
+    {
+        // Extract port
+        uint16_t port = j.at("port").get<uint16_t>();
+
+        // Create controller
+        ptrController = std::make_unique<Controller>(port);
+
+        // Extract canvases
+        for (const auto &canvasJson : j.at("canvases")) {
+            auto canvas = std::make_unique<Canvas>(
+                canvasJson.at("name").get<std::string>(),
+                canvasJson.at("width").get<uint16_t>(),
+                canvasJson.at("height").get<uint16_t>(),
+                canvasJson.at("fps").get<uint16_t>()
+            );
+
+            // Extract features for each canvas
+            for (const auto &featureJson : canvasJson.at("features")) {
+                auto feature = std::make_unique<LEDFeature>(
+                    canvas.get(),
+                    featureJson.at("hostName").get<std::string>(),
+                    featureJson.at("friendlyName").get<std::string>(),
+                    featureJson.at("port").get<uint16_t>(),
+                    featureJson.at("width").get<uint16_t>(),
+                    featureJson.at("height").get<uint16_t>(),
+                    featureJson.at("offsetX").get<uint16_t>(),
+                    featureJson.at("offsetY").get<uint16_t>(),
+                    featureJson.at("reversed").get<bool>(),
+                    featureJson.at("channel").get<uint8_t>(),
+                    featureJson.at("redGreenSwap").get<bool>(),
+                    featureJson.at("clientBufferCount").get<uint16_t>()
+                );
+
+                canvas->AddFeature(std::move(feature));
+            }
+
+            ptrController->AddCanvas(std::move(canvas));
+        }
+    } 
+    catch (const std::exception &e) 
+    {
+        throw std::runtime_error("Error parsing JSON for Controller: " + std::string(e.what()));
+    }
+}
