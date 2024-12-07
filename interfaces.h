@@ -1,6 +1,4 @@
 #pragma once
-using namespace std;
-using namespace std::chrono;
 
 // Interfaces
 // 
@@ -13,6 +11,12 @@ using namespace std::chrono;
 #include "pixeltypes.h"
 #include <vector>
 #include <map>
+#include <chrono>
+#include <string>
+#include "json.hpp"
+
+using namespace std;
+using namespace std::chrono;
 
 // ILEDGraphics 
 //

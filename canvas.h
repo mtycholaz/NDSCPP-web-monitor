@@ -68,8 +68,11 @@ public:
     vector<reference_wrapper<ILEDFeature>> Features() override
     {
         vector<reference_wrapper<ILEDFeature>> features;
-        for (auto &feature : _features)
-            features.push_back(*feature);
+        features.reserve(_features.size());
+        std::for_each(_features.begin(), _features.end(),
+            [&features](const auto& feature) {
+                features.push_back(*feature);
+            });
         return features;
     }
 

@@ -712,9 +712,11 @@ private:
     {
         logger->debug("Emptying queue for {} [{}]", _hostName, _friendlyName);
         scoped_lock lock(_mutex, _queueMutex);
-        queue<vector<uint8_t>> empty;
-        _frameQueue.swap(empty);
-        _totalQueuedBytes = 0;
+        while (!_frameQueue.empty()) {
+            _totalQueuedBytes -= _frameQueue.front().size();
+            _frameQueue.pop();
+        }
+        assert(_totalQueuedBytes == 0);
     }
 
     void CloseSocket()

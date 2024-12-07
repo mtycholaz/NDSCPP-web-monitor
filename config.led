@@ -54,7 +54,7 @@
             "clientBufferCount": 500,
             "friendlyName": "Banner",
             "height": 32,
-            "hostName": "192.168.1.98",
+            "hostName": "192.168.8.76",
             "id": 1,
             "isConnected": true,
             "lastClientResponse": {

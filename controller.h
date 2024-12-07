@@ -133,7 +133,7 @@ class Controller : public IController
         auto canvasBanner = make_unique<Canvas>("Banner", 512, 32, 24);
         auto featureBanner = make_unique<LEDFeature>(
             canvasBanner.get(), // Canvas pointer
-            "192.168.1.98",     // Hostname
+            "192.168.8.76",     // Hostname
             "Banner",           // Friendly Name
             49152,              // Port∏
             512, 32,            // Width, Height
