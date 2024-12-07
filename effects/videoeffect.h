@@ -187,4 +187,21 @@ public:
         // Loop the video by restarting
         av_seek_frame(_formatCtx, _videoStreamIndex, 0, AVSEEK_FLAG_BACKWARD);
     }
+
+    void ToJson(nlohmann::json& j) const override
+    {
+        j = {
+            {"type", "MP4PlaybackEffect"},
+            {"name", Name()},
+            {"filePath", _filePath}
+        };
+    }
+
+    static std::unique_ptr<MP4PlaybackEffect> FromJson(const nlohmann::json& j)
+    {
+        return std::make_unique<MP4PlaybackEffect>(
+            j.at("name").get<std::string>(),
+            j.at("filePath").get<std::string>()
+        );
+    }
 };
