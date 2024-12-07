@@ -52,7 +52,7 @@ inline void to_json(nlohmann::json& j, const Palette & palette)
     };
 }
 
-inline void from_json(const nlohmann::json& j, Palette & palette) 
+inline void from_json(const nlohmann::json& j, std::unique_ptr<Palette>& palette) 
 {
     // Deserialize the "colors" array
     std::vector<CRGB> colors;
@@ -62,8 +62,8 @@ inline void from_json(const nlohmann::json& j, Palette & palette)
     // Deserialize the "blend" flag, defaulting to true if not present
     bool blend = j.value("blend", true);
 
-    // Assign to palette (Palette must allow reassignment)
-    palette = Palette(colors, blend);
+    // Create new Palette
+    palette = std::make_unique<Palette>(colors, blend);
 }
 
 //
