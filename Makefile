@@ -3,7 +3,7 @@ SHELL:=/bin/bash
 CC=clang++
 CFLAGS=-std=c++20 -g3 -O3 -Ieffects
 LDFLAGS=
-LIBS=-lpthread -lz -lavformat -lavcodec -lavutil -lswscale -lswresample
+LIBS=-lpthread -lz -lavformat -lavcodec -lavutil -lswscale -lswresample -lfmt
 
 DEPFLAGS=-MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 

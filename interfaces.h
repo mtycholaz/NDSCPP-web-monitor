@@ -1,6 +1,4 @@
 #pragma once
-using namespace std;
-using namespace std::chrono;
 
 // Interfaces
 // 
@@ -13,6 +11,12 @@ using namespace std::chrono;
 #include "pixeltypes.h"
 #include <vector>
 #include <map>
+#include <chrono>
+#include <string>
+#include "json.hpp"
+
+using namespace std;
+using namespace std::chrono;
 
 // ILEDGraphics 
 //
@@ -150,6 +154,9 @@ public:
     virtual uint32_t ClientBufferCount() const = 0;
     virtual double   TimeOffset () const = 0;
 
+    // Canvas association
+    virtual void SetCanvas(const ICanvas * canvas) = 0;
+
     // Data retrieval
     virtual vector<uint8_t> GetPixelData() const = 0;
     virtual vector<uint8_t> GetDataFrame() const = 0;    
@@ -170,16 +177,42 @@ public:
     virtual ~ICanvas() = default;
     
     virtual uint32_t Id() const = 0;
+    virtual uint32_t SetId(uint32_t id) = 0;
     virtual string Name() const = 0;
-    virtual vector<unique_ptr<ILEDFeature>>& Features() = 0;
-    virtual const vector<unique_ptr<ILEDFeature>>& Features() const = 0;
+    virtual uint32_t AddFeature(unique_ptr<ILEDFeature> feature) = 0;
+    virtual bool RemoveFeatureById(uint16_t featureId) = 0;
 
-    virtual void AddFeature(unique_ptr<ILEDFeature> feature) = 0;
-    virtual void RemoveFeature(unique_ptr<ILEDFeature> & feature) = 0;
+    virtual vector<reference_wrapper<ILEDFeature>> Features() = 0;
+    virtual const vector<reference_wrapper<ILEDFeature>> Features() const = 0;
+
 
     virtual ILEDGraphics & Graphics() = 0;
     virtual const ILEDGraphics& Graphics() const = 0;
 
     virtual IEffectsManager & Effects() = 0;
     virtual const IEffectsManager & Effects() const = 0;
+};
+
+class IController
+{
+public:
+    virtual ~IController() = default;
+
+    virtual void Connect() = 0;
+    virtual void Disconnect() = 0;
+    virtual void Start() = 0;
+    virtual void Stop() = 0;
+
+    virtual uint16_t GetPort() const = 0;
+    virtual void     SetPort(uint16_t port) = 0;
+
+    virtual vector<reference_wrapper<ICanvas>> Canvases() const = 0;
+    virtual bool AddCanvas(unique_ptr<ICanvas> ptrCanvas) = 0;
+    virtual bool DeleteCanvasById(uint32_t id) = 0;
+    virtual bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) = 0;
+    virtual bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) = 0;
+    virtual void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) = 0;
+    virtual ICanvas & GetCanvasById(uint16_t id) const = 0;
+    virtual const ISocketChannel & GetSocketById(uint16_t id) const = 0;
+    virtual vector<reference_wrapper<ISocketChannel>> GetSockets() const = 0;
 };

@@ -8,16 +8,17 @@ using namespace std;
 #include "json.hpp"
 #include "interfaces.h"
 #include "basegraphics.h"
+#include "ledfeature.h"
 #include "effectsmanager.h"
 #include <vector>
 
 class Canvas : public ICanvas
 {
     static atomic<uint32_t> _nextId;
-    uint32_t _id;
-    BaseGraphics _graphics;
-    EffectsManager _effects;
-    string _name;
+    uint32_t                _id;
+    BaseGraphics            _graphics;
+    EffectsManager          _effects;
+    string                  _name;
     vector<unique_ptr<ILEDFeature>> _features;
 
 public:
@@ -37,6 +38,12 @@ public:
     uint32_t Id() const override 
     { 
         return _id; 
+    }
+
+    uint32_t SetId(uint32_t id) override 
+    { 
+        _id = id;
+        return _id;
     }
 
     ILEDGraphics & Graphics() override
@@ -59,31 +66,83 @@ public:
         return _effects;
     }
 
-    vector<unique_ptr<ILEDFeature>>& Features() override
+    vector<reference_wrapper<ILEDFeature>> Features() override
     {
-        return _features;
+        vector<reference_wrapper<ILEDFeature>> features;
+        features.reserve(_features.size());
+        for_each(_features.begin(), _features.end(),
+            [&features](const auto& feature) {
+                features.push_back(*feature);
+            });
+        return features;
     }
 
-    const vector<unique_ptr<ILEDFeature>>& Features() const override
+    const vector<reference_wrapper<ILEDFeature>> Features() const override
     {
-        return _features;
+        vector<reference_wrapper<ILEDFeature>> features;
+        for (auto &feature : _features)
+            features.push_back(*feature);
+        return features;
     }
 
-    void AddFeature(unique_ptr<ILEDFeature> feature) override
+    uint32_t AddFeature(unique_ptr<ILEDFeature> feature) override
     {
         if (!feature)
             throw invalid_argument("Cannot add a null feature.");
 
+        feature->SetCanvas(this);
+
+        uint32_t id = feature->Id();
         _features.push_back(std::move(feature));
+        return id;    
     }
 
-    void RemoveFeature(unique_ptr<ILEDFeature> & feature) override
+    bool RemoveFeatureById(uint16_t featureId) override
     {
-        if (!feature)
-            throw invalid_argument("Cannot remove a null feature.");
-
-        auto it = find(_features.begin(), _features.end(), feature);
-        if (it != _features.end())
-            _features.erase(it);
+        for (size_t i = 0; i < _features.size(); ++i)
+        {
+            if (_features[i]->Id() == featureId)
+            {
+                _features.erase(_features.begin() + i);
+                return true;
+            }
+        }
+        return false;
     }
 };
+
+inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
+{
+    j = {
+        {"name", canvas.Name()},
+        {"id", canvas.Id()},
+        {"width", canvas.Graphics().Width()},
+        {"height", canvas.Graphics().Height()},
+        {"fps", canvas.Effects().GetFPS()},
+        {"currentEffectName", canvas.Effects().CurrentEffectName()}
+    };
+
+    // Add features array
+    auto featuresJson = nlohmann::json::array();
+    for (const auto& feature : canvas.Features()) 
+        featuresJson.push_back(feature);
+
+    j["features"] = featuresJson;
+}
+
+inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas) 
+{
+    // Create canvas with required fields
+    canvas = make_unique<Canvas>(
+        j.at("name").get<string>(),
+        j.at("width").get<uint32_t>(),
+        j.at("height").get<uint32_t>(),
+        j.value("fps", 30u)
+    );
+
+    // Deserialize features if present
+    if (j.contains("features")) {
+        for (const auto& featureJson : j["features"])
+            canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
+    }
+}

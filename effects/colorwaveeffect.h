@@ -59,9 +59,9 @@ public:
         };
     }
 
-    static std::unique_ptr<ColorWaveEffect> FromJson(const nlohmann::json& j) 
+    static unique_ptr<ColorWaveEffect> FromJson(const nlohmann::json& j) 
     {
-        return std::make_unique<ColorWaveEffect>(
+        return make_unique<ColorWaveEffect>(
             j.at("name").get<string>(),
             j.value("speed", 0.5),
             j.value("waveFrequency", 10.0)

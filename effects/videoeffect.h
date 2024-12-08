@@ -19,7 +19,7 @@ extern "C"
 class MP4PlaybackEffect : public LEDEffectBase
 {
 private:
-    std::string _filePath;
+    string _filePath;
     AVFormatContext* _formatCtx = nullptr;
     AVCodecContext* _codecCtx = nullptr;
     AVFrame* _frame = nullptr;
@@ -32,14 +32,14 @@ private:
         // Open the input file
         if (avformat_open_input(&_formatCtx, _filePath.c_str(), nullptr, nullptr) != 0)
         {
-            std::cerr << "Failed to open video file: " << _filePath << std::endl;
+            logger->error("Failed to open video file: {}", _filePath);
             return false;
         }
 
         // Retrieve stream information
         if (avformat_find_stream_info(_formatCtx, nullptr) < 0)
         {
-            std::cerr << "Failed to retrieve stream info." << std::endl;
+            logger->error("Failed to retrieve stream info.");
             return false;
         }
 
@@ -55,7 +55,7 @@ private:
 
         if (_videoStreamIndex == -1)
         {
-            std::cerr << "No video stream found." << std::endl;
+            logger->error("No video stream found.");
             return false;
         }
 
@@ -63,7 +63,7 @@ private:
         const AVCodec* codec = avcodec_find_decoder(_formatCtx->streams[_videoStreamIndex]->codecpar->codec_id);
         if (!codec)
         {
-            std::cerr << "Codec not found." << std::endl;
+            logger->error("Codec not found.");
             return false;
         }
 
@@ -71,20 +71,20 @@ private:
         _codecCtx = avcodec_alloc_context3(codec);
         if (!_codecCtx)
         {
-            std::cerr << "Failed to allocate codec context." << std::endl;
+            logger->error("Failed to allocate codec context.");
             return false;
         }
 
         if (avcodec_parameters_to_context(_codecCtx, _formatCtx->streams[_videoStreamIndex]->codecpar) < 0)
         {
-            std::cerr << "Failed to copy codec parameters to context." << std::endl;
+            logger->error("Failed to copy codec parameters to context.");
             return false;
         }
 
         // Open the codec
         if (avcodec_open2(_codecCtx, codec, nullptr) < 0)
         {
-            std::cerr << "Failed to open codec." << std::endl;
+            logger->error("Failed to open codec.");
             return false;
         }
 
@@ -98,15 +98,24 @@ private:
 
     void CleanupFFmpeg()
     {
-        if (_swsCtx) sws_freeContext(_swsCtx);
-        if (_frame) av_frame_free(&_frame);
-        if (_packet) av_packet_free(&_packet);
-        if (_codecCtx) avcodec_free_context(&_codecCtx);
-        if (_formatCtx) avformat_close_input(&_formatCtx);
+        if (_swsCtx) 
+            sws_freeContext(_swsCtx);
+
+        if (_frame) 
+            av_frame_free(&_frame);
+
+        if (_packet) 
+            av_packet_free(&_packet);
+
+        if (_codecCtx) 
+            avcodec_free_context(&_codecCtx);
+
+        if (_formatCtx) 
+            avformat_close_input(&_formatCtx);
     }
 
 public:
-    MP4PlaybackEffect(const std::string& name, const std::string& filePath)
+    MP4PlaybackEffect(const string& name, const string& filePath)
         : LEDEffectBase(name), _filePath(filePath) {}
 
     ~MP4PlaybackEffect()
@@ -118,7 +127,7 @@ public:
     {
         if (!InitializeFFmpeg())
         {
-            std::cerr << "Failed to initialize FFmpeg for MP4 playback." << std::endl;
+            logger->error("Failed to initialize FFmpeg for MP4 playback.");
             return;
         }
 
@@ -150,7 +159,7 @@ public:
                         int canvasHeight = graphics.Height();
 
                         // Buffer for RGB24 pixels
-                        std::vector<uint8_t> rgbBuffer(canvasWidth * canvasHeight * 3);
+                        vector<uint8_t> rgbBuffer(canvasWidth * canvasHeight * 3);
 
                         uint8_t* dstData[1] = { rgbBuffer.data() };
                         int dstLinesize[1] = { 3 * canvasWidth };
@@ -177,5 +186,22 @@ public:
 
         // Loop the video by restarting
         av_seek_frame(_formatCtx, _videoStreamIndex, 0, AVSEEK_FLAG_BACKWARD);
+    }
+
+    void ToJson(nlohmann::json& j) const override
+    {
+        j = {
+            {"type", "MP4PlaybackEffect"},
+            {"name", Name()},
+            {"filePath", _filePath}
+        };
+    }
+
+    static unique_ptr<MP4PlaybackEffect> FromJson(const nlohmann::json& j)
+    {
+        return make_unique<MP4PlaybackEffect>(
+            j.at("name").get<string>(),
+            j.at("filePath").get<string>()
+        );
     }
 };

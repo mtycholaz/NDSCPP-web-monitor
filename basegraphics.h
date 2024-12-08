@@ -7,6 +7,8 @@ using namespace std;
 // interface to its own internal buffer of pixels.  It manipulates the buffer only through SetPixel
 
 #include <vector>
+#include <execution>
+
 #include "pixeltypes.h" // Assuming this defines the CRGB structure
 #include "interfaces.h"
 
@@ -22,11 +24,22 @@ protected:
         return y * _width + x;
     }
 
+    constexpr inline bool _isInBounds(uint32_t x, uint32_t y) const 
+    {
+        return (x < _width && y < _height);
+    }
+
 public:
     explicit BaseGraphics(uint32_t width, uint32_t height) 
-        : _width(width), _height(height), _pixels(width * height) 
     {
-
+        if (width == 0 || height == 0)
+            throw invalid_argument("Width and height must be greater than 0");
+        if (static_cast<uint64_t>(width) * height > numeric_limits<size_t>::max() / sizeof(CRGB))
+            throw overflow_error("Requested dimensions too large");
+            
+        _width = width;
+        _height = height;
+        _pixels.resize(width * height);
     }
 
     // ICanvas methods
@@ -40,13 +53,13 @@ public:
 
     void SetPixel(uint32_t x, uint32_t y, const CRGB& color) override
     {
-        if (x < _width && y < _height)
+        if (_isInBounds(x, y))
             _pixels[_index(x, y)] = color;
     }
 
     CRGB GetPixel(uint32_t x, uint32_t y) const override 
     {
-        if (x < _width && y < _height)
+        if (_isInBounds(x, y))
             return _pixels[_index(x, y)];
         return CRGB(0, 0, 0); // Default to black for out-of-bounds
     }
@@ -58,9 +71,17 @@ public:
 
     void FillRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) override
     {
-        for (uint32_t j = y; j < y + height; ++j)
-            for (uint32_t i = x; i < x + width; ++i)
-                SetPixel(i, j, color);
+        if (x >= _width || y >= _height) return;
+        width = min(width, _width - x);
+        height = min(height, _height - y);
+        
+        if (color == CRGB::Black) {
+            for (uint32_t j = y; j < y + height; ++j)
+                memset(&_pixels[_index(x, j)], 0, width * sizeof(CRGB));
+        } else {
+            for (uint32_t j = y; j < y + height; ++j)
+                fill(&_pixels[_index(x, j)], &_pixels[_index(x + width, j)], color);
+        }
     }
 
     void DrawLine(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, const CRGB& color) override
@@ -136,12 +157,13 @@ public:
 
     void FadeFrameBy(uint8_t dimAmount) override
     {
-        for (auto& pixel : _pixels)
-        {
-            pixel.r = scale8(pixel.r, 255-dimAmount);
-            pixel.g = scale8(pixel.g, 255-dimAmount);
-            pixel.b = scale8(pixel.b, 255-dimAmount);
-        }
+        const uint8_t scale = 255 - dimAmount;
+        for_each(_pixels.begin(), _pixels.end(),
+            [scale](CRGB& p) {
+                p.r = (p.r * scale) >> 8;
+                p.g = (p.g * scale) >> 8;
+                p.b = (p.b * scale) >> 8;
+            });
     }
 
     void SetPixelsF(float fPos, float count, CRGB c, bool bMerge = false) override
@@ -152,12 +174,12 @@ public:
 
         // Pre-calculate common values
         const size_t arraySize = _pixels.size();
-        const size_t startIdx = std::max(0UL, static_cast<size_t>(std::floor(fPos)));
-        const size_t endIdx = std::min(arraySize, static_cast<size_t>(std::ceil(fPos + count)));
-        const float frac1 = fPos - std::floor(fPos);
-        const uint8_t fade1 = static_cast<uint8_t>((std::max(frac1, 1.0f - count)) * 255);
+        const size_t startIdx = max(0UL, static_cast<size_t>(floor(fPos)));
+        const size_t endIdx = min(arraySize, static_cast<size_t>(ceil(fPos + count)));
+        const float frac1 = fPos - floor(fPos);
+        const uint8_t fade1 = static_cast<uint8_t>((max(frac1, 1.0f - count)) * 255);
         float remainingCount = count - (1.0f - frac1);
-        const float lastFrac = remainingCount - std::floor(remainingCount);
+        const float lastFrac = remainingCount - floor(remainingCount);
         const uint8_t fade2 = static_cast<uint8_t>((1.0f - lastFrac) * 255);
 
         if (!bMerge)

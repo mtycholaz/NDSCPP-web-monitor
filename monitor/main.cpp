@@ -9,9 +9,6 @@
 #include <unistd.h> // for getopt
 #include <cstdlib>  // for exit
 
-// Our only interface to NDSCPP comes through the REST api and this serialization helper code
-#include "../serialization.h"
-
 #include "monitor.h"
 
 using json = nlohmann::json;
