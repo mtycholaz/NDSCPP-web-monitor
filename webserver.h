@@ -26,7 +26,7 @@ private:
         {
             res.set_header("Content-Type", "application/json");
             res.add_header("Access-Control-Allow-Origin", "*");
-            res.add_header("Access-Control-Allow-Methods", "GET, OPTIONS");
+            res.add_header("Access-Control-Allow-Methods", "GET, OPTIONS, POST, DELETE");
         }
     };
 
