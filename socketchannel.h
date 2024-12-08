@@ -785,7 +785,7 @@ inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
         if (lastResponse.size == sizeof(ClientResponse))
             j["stats"] = lastResponse; // Uses the ClientResponse serializer
     }
-    catch (const std::exception &e)
+    catch (const exception &e)
     {
         j = nullptr;
     }

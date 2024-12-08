@@ -156,9 +156,9 @@ public:
             for (size_t i = 0; i < numPixels / 2; ++i) {
                 size_t front = i * 3;
                 size_t back = (numPixels - 1 - i) * 3;
-                std::swap(result[front], result[back]);
-                std::swap(result[front + 1], result[back + 1]);
-                std::swap(result[front + 2], result[back + 2]);
+                swap(result[front], result[back]);
+                swap(result[front + 1], result[back + 1]);
+                swap(result[front + 2], result[back + 2]);
             }
         }
 
@@ -213,16 +213,16 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
         j["lastClientResponse"] = response;
 }
 
-inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDFeature>& feature) 
+inline void from_json(const nlohmann::json& j, unique_ptr<ILEDFeature>& feature) 
 {
-    if (j.at("type").get<std::string>() != "LEDFeature") 
+    if (j.at("type").get<string>() != "LEDFeature") 
     {
-        throw std::runtime_error("Invalid feature type in JSON");
+        throw runtime_error("Invalid feature type in JSON");
     }
 
-    feature = std::make_unique<LEDFeature>(
-        j.at("hostName").get<std::string>(),
-        j.at("friendlyName").get<std::string>(),
+    feature = make_unique<LEDFeature>(
+        j.at("hostName").get<string>(),
+        j.at("friendlyName").get<string>(),
         j.at("port").get<uint16_t>(),
         j.at("width").get<uint32_t>(),
         j.value("height", 1u),

@@ -43,26 +43,26 @@ class Controller : public IController
 
     vector<reference_wrapper<ICanvas>> Canvases() const override
     {
-        vector<std::reference_wrapper<ICanvas>> canvases;
+        vector<reference_wrapper<ICanvas>> canvases;
         canvases.reserve(_canvases.size());
         for (const auto& canvas : _canvases)
             canvases.push_back(*canvas);
         return canvases;
     }
 
-    static std::unique_ptr<Controller> CreateFromFile(const std::string& filePath) 
+    static unique_ptr<Controller> CreateFromFile(const string& filePath) 
     {
         // Open the file and parse the JSON
-        std::ifstream file(filePath);
+        ifstream file(filePath);
         if (!file.is_open()) {
-            throw std::runtime_error("Unable to open file: " + filePath);
+            throw runtime_error("Unable to open file: " + filePath);
         }
 
         nlohmann::json jsonData;
         file >> jsonData;
 
         // Deserialize the JSON into a unique_ptr<Controller>
-        std::unique_ptr<Controller> ptrController;
+        unique_ptr<Controller> ptrController;
         from_json(jsonData, ptrController);  // Explicitly use your from_json function
 
         return ptrController;
@@ -416,7 +416,7 @@ class Controller : public IController
         try {
             GetCanvasById(id); // Verify canvas exists
             _canvases.erase(
-                std::remove_if(_canvases.begin(), _canvases.end(),
+                remove_if(_canvases.begin(), _canvases.end(),
                     [id](const auto& canvas) { return canvas->Id() == id; }),
                 _canvases.end());
             return true;
@@ -490,7 +490,7 @@ inline void to_json(nlohmann::json &j, const IController &controller)
         for (const auto ptrCanvas : controller.Canvases())
             j["canvases"].push_back(ptrCanvas);
     }
-    catch (const std::exception &e)
+    catch (const exception &e)
     {
         j = nullptr;
     }
@@ -504,14 +504,14 @@ inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrContr
         uint16_t port = j.at("port").get<uint16_t>();
 
         // Create controller
-        ptrController = std::make_unique<Controller>(port);
+        ptrController = make_unique<Controller>(port);
 
         // Extract canvases
         for (const auto &canvasJson : j.at("canvases"))
-            ptrController->AddCanvas(canvasJson.get<std::unique_ptr<ICanvas>>());
+            ptrController->AddCanvas(canvasJson.get<unique_ptr<ICanvas>>());
     } 
-    catch (const std::exception &e) 
+    catch (const exception &e) 
     {
-        throw std::runtime_error("Error parsing JSON for Controller: " + std::string(e.what()));
+        throw runtime_error("Error parsing JSON for Controller: " + string(e.what()));
     }
 }

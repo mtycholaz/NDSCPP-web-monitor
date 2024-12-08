@@ -70,7 +70,7 @@ public:
     {
         vector<reference_wrapper<ILEDFeature>> features;
         features.reserve(_features.size());
-        std::for_each(_features.begin(), _features.end(),
+        for_each(_features.begin(), _features.end(),
             [&features](const auto& feature) {
                 features.push_back(*feature);
             });
@@ -134,7 +134,7 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas)
 {
     // Create canvas with required fields
     canvas = make_unique<Canvas>(
-        j.at("name").get<std::string>(),
+        j.at("name").get<string>(),
         j.at("width").get<uint32_t>(),
         j.at("height").get<uint32_t>(),
         j.value("fps", 30u)

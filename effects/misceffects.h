@@ -39,10 +39,10 @@ public:
         };
     }
 
-    static std::unique_ptr<SolidColorFill> FromJson(const nlohmann::json& j)
+    static unique_ptr<SolidColorFill> FromJson(const nlohmann::json& j)
     {
-        return std::make_unique<SolidColorFill>(
-            j.at("name").get<std::string>(),
+        return make_unique<SolidColorFill>(
+            j.at("name").get<string>(),
             j.at("color").get<CRGB>() // Assumes `from_json` for CRGB is already defined
         );
     }

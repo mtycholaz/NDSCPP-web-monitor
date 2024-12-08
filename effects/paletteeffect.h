@@ -117,14 +117,14 @@ public:
         };
     }
 
-    static std::unique_ptr<PaletteEffect> FromJson(const nlohmann::json& j)
+    static unique_ptr<PaletteEffect> FromJson(const nlohmann::json& j)
     {
         // Extract colors from the nested "palette" object
-        std::vector<CRGB> colors = j.at("palette").at("colors").get<std::vector<CRGB>>();
+        vector<CRGB> colors = j.at("palette").at("colors").get<vector<CRGB>>();
         bool blend = j.at("palette").at("blend").get<bool>();
 
-        return std::make_unique<PaletteEffect>(
-            j.at("name").get<std::string>(),
+        return make_unique<PaletteEffect>(
+            j.at("name").get<string>(),
             colors,
             j.at("ledColorPerSecond").get<double>(),
             j.at("ledScrollSpeed").get<double>(),
