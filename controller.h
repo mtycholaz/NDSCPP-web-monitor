@@ -13,7 +13,6 @@ using namespace std;
 #include "global.h"
 #include "canvas.h"
 #include "ledfeature.h"
-#include "serialization.h"
 #include "effects/colorwaveeffect.h"
 #include "effects/starfield.h"
 #include "effects/videoeffect.h"
@@ -110,7 +109,6 @@ class Controller : public IController
 
         auto canvasMesmerizer = make_unique<Canvas>("Mesmerizer", 64, 32, 20);
         auto feature1 = make_unique<LEDFeature>(
-            canvasMesmerizer.get(), // Canvas pointer
             "192.168.8.161",        // Hostname
             "Mesmerizer",           // Friendly Name
             49152,                  // Port
@@ -132,7 +130,6 @@ class Controller : public IController
 
         auto canvasBanner = make_unique<Canvas>("Banner", 512, 32, 24);
         auto featureBanner = make_unique<LEDFeature>(
-            canvasBanner.get(), // Canvas pointer
             "192.168.1.98",     // Hostname
             "Banner",           // Friendly Name
             49152,              // Port∏
@@ -151,7 +148,6 @@ class Controller : public IController
 
         auto canvasWindow1 = make_unique<Canvas>("Window1", 100, 1, 3);
         auto featureWindow1 = make_unique<LEDFeature>(
-            canvasWindow1.get(), // Canvas pointer
             "192.168.8.8",       // Hostname
             "Window1",           // Friendly Name
             49152,               // Port∏
@@ -170,7 +166,6 @@ class Controller : public IController
 
         auto canvasWindow2 = make_unique<Canvas>("Window2", 100, 1, 3);
         auto featureWindow2 = make_unique<LEDFeature>(
-            canvasWindow2.get(), // Canvas pointer
             "192.168.8.9",       // Hostname
             "Window2",           // Friendly Name
             49152,               // Port∏
@@ -189,7 +184,6 @@ class Controller : public IController
 
         auto canvasWindow3 = make_unique<Canvas>("Window3", 100, 1, 3);
         auto featureWindow3 = make_unique<LEDFeature>(
-            canvasWindow3.get(), // Canvas pointer
             "192.168.8.10",      // Hostname
             "Window3",           // Friendly Name
             49152,               // Port∏
@@ -216,7 +210,6 @@ class Controller : public IController
 
             auto canvasCabinets = make_unique<Canvas>("Cabinets", totalLength, 1, 20);
             auto featureCabinets1 = make_unique<LEDFeature>(
-                canvasCabinets.get(), // Canvas pointer
                 "192.168.8.12",       // Hostname
                 "Cupboard1",          // Friendly Name
                 49152,                // Port∏
@@ -227,7 +220,6 @@ class Controller : public IController
                 false,                // Red-Green Swap
                 180);
             auto featureCabinets2 = make_unique<LEDFeature>(
-                canvasCabinets.get(), // Canvas pointer
                 "192.168.8.29",       // Hostname
                 "Cupboard2",          // Friendly Name
                 49152,                // Port∏
@@ -238,7 +230,6 @@ class Controller : public IController
                 false,                // Red-Green Swap
                 180);
             auto featureCabinets3 = make_unique<LEDFeature>(
-                canvasCabinets.get(), // Canvas pointer
                 "192.168.8.30",       // Hostname
                 "Cupboard3",          // Friendly Name
                 49152,                // Port∏
@@ -249,7 +240,6 @@ class Controller : public IController
                 false,                // Red-Green Swap
                 180);
             auto featureCabinets4 = make_unique<LEDFeature>(
-                canvasCabinets.get(), // Canvas pointer
                 "192.168.8.15",       // Hostname
                 "Cupboard4",          // Friendly Name
                 49152,                // Port∏
@@ -279,7 +269,6 @@ class Controller : public IController
 
             auto canvasCabana = make_unique<Canvas>("Cabana", totalLength, 1, 24);
             auto featureCabana1 = make_unique<LEDFeature>(
-                canvasCabana.get(), // Canvas pointer
                 "192.168.8.33",     // Hostname
                 "CBWEST",           // Friendly Name
                 49152,              // Port∏
@@ -290,7 +279,6 @@ class Controller : public IController
                 false,              // Red-Green Swap
                 180);
             auto featureCabana2 = make_unique<LEDFeature>(
-                canvasCabana.get(), // Canvas pointer
                 "192.168.8.5",      // Hostname
                 "CBEAST1",          // Friendly Name
                 49152,              // Port∏
@@ -301,7 +289,6 @@ class Controller : public IController
                 false,              // Red-Green Swap
                 180);
             auto featureCabana3 = make_unique<LEDFeature>(
-                canvasCabana.get(), // Canvas pointer
                 "192.168.8.37",     // Hostname
                 "CBEAST2",          // Friendly Name
                 49152,              // Port∏
@@ -312,7 +299,6 @@ class Controller : public IController
                 false,              // Red-Green Swap
                 180);
             auto featureCabana4 = make_unique<LEDFeature>(
-                canvasCabana.get(), // Canvas pointer
                 "192.168.8.31",     // Hostname
                 "CBEAST3",          // Friendly Name
                 49152,              // Port∏
@@ -334,7 +320,6 @@ class Controller : public IController
         {
             auto canvasCeiling = make_unique<Canvas>("Ceiling", 144 * 5 + 38, 1, 30);
             auto featureCeiling = make_unique<LEDFeature>(
-                canvasCeiling.get(), // Canvas pointer
                 "192.168.8.60",      // Hostname
                 "Ceiling",           // Friendly Name
                 49152,               // Port
@@ -353,7 +338,6 @@ class Controller : public IController
         {
             auto canvasTree = make_unique<Canvas>("Tree", 32, 1, 30);
             auto featureTree = make_unique<LEDFeature>(
-                canvasTree.get(), // Canvas pointer
                 "192.168.8.167",  // Hostname
                 "Tree",           // Friendly Name
                 49152,            // Port
@@ -496,3 +480,38 @@ class Controller : public IController
     }
 };
 
+inline void to_json(nlohmann::json &j, const IController &controller)
+{
+    try
+    {
+        j["port"] = controller.GetPort();
+        j["canvases"] = nlohmann::json::array();
+        
+        for (const auto ptrCanvas : controller.Canvases())
+            j["canvases"].push_back(ptrCanvas);
+    }
+    catch (const std::exception &e)
+    {
+        j = nullptr;
+    }
+}
+
+inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrController) 
+{
+    try 
+    {
+        // Extract port
+        uint16_t port = j.at("port").get<uint16_t>();
+
+        // Create controller
+        ptrController = std::make_unique<Controller>(port);
+
+        // Extract canvases
+        for (const auto &canvasJson : j.at("canvases"))
+            ptrController->AddCanvas(canvasJson.get<std::unique_ptr<ICanvas>>());
+    } 
+    catch (const std::exception &e) 
+    {
+        throw std::runtime_error("Error parsing JSON for Controller: " + std::string(e.what()));
+    }
+}

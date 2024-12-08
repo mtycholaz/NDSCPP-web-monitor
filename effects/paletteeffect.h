@@ -8,7 +8,6 @@
 using namespace std;
 using namespace std::chrono;
 
-#include "../serialization.h"
 #include "../ledeffectbase.h"
 #include "../pixeltypes.h"
 #include "../palette.h"

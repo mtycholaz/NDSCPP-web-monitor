@@ -154,6 +154,9 @@ public:
     virtual uint32_t ClientBufferCount() const = 0;
     virtual double   TimeOffset () const = 0;
 
+    // Canvas association
+    virtual void SetCanvas(const ICanvas * canvas) = 0;
+
     // Data retrieval
     virtual vector<uint8_t> GetPixelData() const = 0;
     virtual vector<uint8_t> GetDataFrame() const = 0;    

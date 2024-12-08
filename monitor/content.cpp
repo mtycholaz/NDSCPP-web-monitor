@@ -8,10 +8,6 @@
 #include <string>
 #include <wchar.h>
 
-// Our only interface to NDSCPP comes through the REST api and this serialization helper code
-#include "../serialization.h"
-#include "../interfaces.h"
-
 #include "monitor.h"
 
 using json = nlohmann::json;
@@ -138,7 +134,7 @@ void Monitor::drawContent()
                             int queueColor = queueDepth < 100 ? 1 : 
                                            queueDepth < 250 ? 6 : 2;
 
-                            string bar = buildProgressBar(queueDepth, kFatQueue, 6);
+                            std::string bar = buildProgressBar(queueDepth, kFatQueue, 6);
                             wattron(contentWin, COLOR_PAIR(queueColor));
                             mvwprintw(contentWin, row - scrollOffset, x, bar.c_str(), COLUMNS[6].second, queueDepth);
                             // If the queue is too big to show by bar alone, add a numeric indicator atop it

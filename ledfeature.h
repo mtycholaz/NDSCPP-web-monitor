@@ -19,7 +19,7 @@ using namespace std::chrono;
 
 class LEDFeature : public ILEDFeature
 {
-    const ICanvas   * _canvas; // Associated canvas
+    const ICanvas   * _canvas = nullptr; // Associated canvas
     uint32_t    _width;
     uint32_t    _height;
     uint32_t    _offsetX;
@@ -33,8 +33,7 @@ class LEDFeature : public ILEDFeature
     uint32_t _id;    
 
 public:
-    LEDFeature(const ICanvas * canvas,
-               const string & hostName,
+    LEDFeature(const string & hostName,
                const string & friendlyName,
                uint16_t       port,
                uint32_t       width,
@@ -45,8 +44,7 @@ public:
                uint8_t        channel = 0,
                bool           redGreenSwap = false,
                uint32_t       clientBufferCount = 8)
-        : _canvas(canvas),
-          _width(width),
+        : _width(width),
           _height(height),
           _offsetX(offsetX),
           _offsetY(offsetY),
@@ -73,6 +71,14 @@ public:
     uint8_t         Channel()           const override { return _channel; }
     bool            RedGreenSwap()      const override { return _redGreenSwap; }
     uint32_t        ClientBufferCount() const override { return _clientBufferCount; }
+
+    void SetCanvas(const ICanvas * canvas) override
+    {
+        if (_canvas)
+            throw runtime_error("Canvas is already set for this LEDFeature.");
+
+        _canvas = canvas;
+    }
 
     double TimeOffset () const override
     {
@@ -177,3 +183,54 @@ public:
                                             std::move(pixelData));
     }
 };
+
+inline void to_json(nlohmann::json& j, const ILEDFeature & feature) 
+{
+    j = {
+            {"type", "LEDFeature"},
+            {"id", feature.Id()},
+            {"hostName", feature.Socket().HostName()},
+            {"friendlyName", feature.Socket().FriendlyName()},
+            {"port", feature.Socket().Port()},
+            {"width", feature.Width()},
+            {"height", feature.Height()},
+            {"offsetX", feature.OffsetX()},
+            {"offsetY", feature.OffsetY()},
+            {"reversed", feature.Reversed()},
+            {"channel", feature.Channel()},
+            {"redGreenSwap", feature.RedGreenSwap()},
+            {"clientBufferCount", feature.ClientBufferCount()},
+            {"timeOffset", feature.TimeOffset()},
+            {"bytesPerSecond", feature.Socket().GetLastBytesPerSecond()},
+            {"isConnected", feature.Socket().IsConnected()},
+            {"queueDepth", feature.Socket().GetCurrentQueueDepth()},
+            {"queueMaxSize", feature.Socket().GetQueueMaxSize()},
+            {"reconnectCount", feature.Socket().GetReconnectCount()}
+        };
+
+    const auto &response = feature.Socket().LastClientResponse();
+    if (response.size == sizeof(ClientResponse))
+        j["lastClientResponse"] = response;
+}
+
+inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDFeature>& feature) 
+{
+    if (j.at("type").get<std::string>() != "LEDFeature") 
+    {
+        throw std::runtime_error("Invalid feature type in JSON");
+    }
+
+    feature = std::make_unique<LEDFeature>(
+        j.at("hostName").get<std::string>(),
+        j.at("friendlyName").get<std::string>(),
+        j.at("port").get<uint16_t>(),
+        j.at("width").get<uint32_t>(),
+        j.value("height", 1u),
+        j.value("offsetX", 0u),
+        j.value("offsetY", 0u),
+        j.value("reversed", false),
+        j.value("channel", uint8_t(0)),
+        j.value("redGreenSwap", false),
+        j.value("clientBufferCount", 8u)
+    );
+}
