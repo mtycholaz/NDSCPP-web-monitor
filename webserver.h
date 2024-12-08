@@ -106,13 +106,13 @@ public:
                         auto jsonPayload = nlohmann::json::parse(req.body);
 
                         // Add the canvas to the controller
-                        if (!_controller.AddCanvas(jsonPayload.get<std::unique_ptr<ICanvas>>()))
+                        if (!_controller.AddCanvas(jsonPayload.get<unique_ptr<ICanvas>>()))
                             return {400, "Error, likely canvas with that ID already exists."};
                         return {201, "Canvas added successfully."};
                     } 
-                    catch (const std::exception& e) 
+                    catch (const exception& e) 
                     {
-                        return {400, std::string("Error: ") + e.what()};
+                        return {400, string("Error: ") + e.what()};
                     }
                 });
 
@@ -133,13 +133,13 @@ public:
                     try 
                     {
                         auto reqJson = nlohmann::json::parse(req.body);
-                        auto feature = reqJson.get<std::unique_ptr<ILEDFeature>>();
+                        auto feature = reqJson.get<unique_ptr<ILEDFeature>>();
                         auto newId = _controller.Canvases()[canvasId].get().AddFeature(std::move(feature));
                         return nlohmann::json{{"id", newId}}.dump();
                     } 
-                    catch (const std::exception& e) 
+                    catch (const exception& e) 
                     {
-                        return {400, std::string("Error: ") + e.what()};
+                        return {400, string("Error: ") + e.what()};
                     }
                 });
 
