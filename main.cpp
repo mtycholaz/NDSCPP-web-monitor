@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
                 filename = optarg;
                 break;
             default:
-                std::cerr << "Usage: " << argv[0] << " [-p <portid>] [-c <configfile>]" << std::endl;
+                cerr << "Usage: " << argv[0] << " [-p <portid>] [-c <configfile>]" << endl;
                 return EXIT_FAILURE;
         }
     }

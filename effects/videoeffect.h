@@ -19,7 +19,7 @@ extern "C"
 class MP4PlaybackEffect : public LEDEffectBase
 {
 private:
-    std::string _filePath;
+    string _filePath;
     AVFormatContext* _formatCtx = nullptr;
     AVCodecContext* _codecCtx = nullptr;
     AVFrame* _frame = nullptr;
@@ -115,7 +115,7 @@ private:
     }
 
 public:
-    MP4PlaybackEffect(const std::string& name, const std::string& filePath)
+    MP4PlaybackEffect(const string& name, const string& filePath)
         : LEDEffectBase(name), _filePath(filePath) {}
 
     ~MP4PlaybackEffect()
@@ -159,7 +159,7 @@ public:
                         int canvasHeight = graphics.Height();
 
                         // Buffer for RGB24 pixels
-                        std::vector<uint8_t> rgbBuffer(canvasWidth * canvasHeight * 3);
+                        vector<uint8_t> rgbBuffer(canvasWidth * canvasHeight * 3);
 
                         uint8_t* dstData[1] = { rgbBuffer.data() };
                         int dstLinesize[1] = { 3 * canvasWidth };
@@ -197,11 +197,11 @@ public:
         };
     }
 
-    static std::unique_ptr<MP4PlaybackEffect> FromJson(const nlohmann::json& j)
+    static unique_ptr<MP4PlaybackEffect> FromJson(const nlohmann::json& j)
     {
-        return std::make_unique<MP4PlaybackEffect>(
-            j.at("name").get<std::string>(),
-            j.at("filePath").get<std::string>()
+        return make_unique<MP4PlaybackEffect>(
+            j.at("name").get<string>(),
+            j.at("filePath").get<string>()
         );
     }
 };

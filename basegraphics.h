@@ -33,9 +33,9 @@ public:
     explicit BaseGraphics(uint32_t width, uint32_t height) 
     {
         if (width == 0 || height == 0)
-            throw std::invalid_argument("Width and height must be greater than 0");
-        if (static_cast<uint64_t>(width) * height > std::numeric_limits<size_t>::max() / sizeof(CRGB))
-            throw std::overflow_error("Requested dimensions too large");
+            throw invalid_argument("Width and height must be greater than 0");
+        if (static_cast<uint64_t>(width) * height > numeric_limits<size_t>::max() / sizeof(CRGB))
+            throw overflow_error("Requested dimensions too large");
             
         _width = width;
         _height = height;
@@ -72,15 +72,15 @@ public:
     void FillRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, const CRGB& color) override
     {
         if (x >= _width || y >= _height) return;
-        width = std::min(width, _width - x);
-        height = std::min(height, _height - y);
+        width = min(width, _width - x);
+        height = min(height, _height - y);
         
         if (color == CRGB::Black) {
             for (uint32_t j = y; j < y + height; ++j)
                 memset(&_pixels[_index(x, j)], 0, width * sizeof(CRGB));
         } else {
             for (uint32_t j = y; j < y + height; ++j)
-                std::fill(&_pixels[_index(x, j)], &_pixels[_index(x + width, j)], color);
+                fill(&_pixels[_index(x, j)], &_pixels[_index(x + width, j)], color);
         }
     }
 
@@ -158,7 +158,7 @@ public:
     void FadeFrameBy(uint8_t dimAmount) override
     {
         const uint8_t scale = 255 - dimAmount;
-        std::for_each(_pixels.begin(), _pixels.end(),
+        for_each(_pixels.begin(), _pixels.end(),
             [scale](CRGB& p) {
                 p.r = (p.r * scale) >> 8;
                 p.g = (p.g * scale) >> 8;
@@ -174,12 +174,12 @@ public:
 
         // Pre-calculate common values
         const size_t arraySize = _pixels.size();
-        const size_t startIdx = std::max(0UL, static_cast<size_t>(std::floor(fPos)));
-        const size_t endIdx = std::min(arraySize, static_cast<size_t>(std::ceil(fPos + count)));
-        const float frac1 = fPos - std::floor(fPos);
-        const uint8_t fade1 = static_cast<uint8_t>((std::max(frac1, 1.0f - count)) * 255);
+        const size_t startIdx = max(0UL, static_cast<size_t>(floor(fPos)));
+        const size_t endIdx = min(arraySize, static_cast<size_t>(ceil(fPos + count)));
+        const float frac1 = fPos - floor(fPos);
+        const uint8_t fade1 = static_cast<uint8_t>((max(frac1, 1.0f - count)) * 255);
         float remainingCount = count - (1.0f - frac1);
-        const float lastFrac = remainingCount - std::floor(remainingCount);
+        const float lastFrac = remainingCount - floor(remainingCount);
         const uint8_t fade2 = static_cast<uint8_t>((1.0f - lastFrac) * 255);
 
         if (!bMerge)

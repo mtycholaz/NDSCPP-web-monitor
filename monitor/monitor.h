@@ -1,4 +1,4 @@
- #define _XOPEN_SOURCE_EXTENDED 1
+#define _XOPEN_SOURCE_EXTENDED 1
 #include <locale.h>
 #include <ncurses.h>
 #include <curl/curl.h>
@@ -8,9 +8,7 @@
 #include <iomanip>
 #include <vector>
 #include <string>
-
-#include "../serialization.h"
-#include "../interfaces.h"
+#include <../json.hpp>
 
 using json = nlohmann::json;
 
@@ -122,7 +120,7 @@ inline std::string formatWifiSignal(double signal)
 
 inline std::string formatTimeDelta(double delta)
 {
-    string meter = buildMeter(delta, 3.0, 5);
+    std::string meter = buildMeter(delta, 3.0, 5);
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(1) << delta << "s " << meter;
     return oss.str();

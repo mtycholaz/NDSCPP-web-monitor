@@ -8,6 +8,7 @@ using namespace std;
 #include "json.hpp"
 #include "interfaces.h"
 #include "basegraphics.h"
+#include "ledfeature.h"
 #include "effectsmanager.h"
 #include <vector>
 
@@ -69,7 +70,7 @@ public:
     {
         vector<reference_wrapper<ILEDFeature>> features;
         features.reserve(_features.size());
-        std::for_each(_features.begin(), _features.end(),
+        for_each(_features.begin(), _features.end(),
             [&features](const auto& feature) {
                 features.push_back(*feature);
             });
@@ -89,6 +90,8 @@ public:
         if (!feature)
             throw invalid_argument("Cannot add a null feature.");
 
+        feature->SetCanvas(this);
+
         uint32_t id = feature->Id();
         _features.push_back(std::move(feature));
         return id;    
@@ -105,5 +108,41 @@ public:
             }
         }
         return false;
-    }    
+    }
 };
+
+inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
+{
+    j = {
+        {"name", canvas.Name()},
+        {"id", canvas.Id()},
+        {"width", canvas.Graphics().Width()},
+        {"height", canvas.Graphics().Height()},
+        {"fps", canvas.Effects().GetFPS()},
+        {"currentEffectName", canvas.Effects().CurrentEffectName()}
+    };
+
+    // Add features array
+    auto featuresJson = nlohmann::json::array();
+    for (const auto& feature : canvas.Features()) 
+        featuresJson.push_back(feature);
+
+    j["features"] = featuresJson;
+}
+
+inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas) 
+{
+    // Create canvas with required fields
+    canvas = make_unique<Canvas>(
+        j.at("name").get<string>(),
+        j.at("width").get<uint32_t>(),
+        j.at("height").get<uint32_t>(),
+        j.value("fps", 30u)
+    );
+
+    // Deserialize features if present
+    if (j.contains("features")) {
+        for (const auto& featureJson : j["features"])
+            canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
+    }
+}

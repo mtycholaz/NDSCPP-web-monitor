@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 #include <cstdint>
+#include "json.hpp"
 
 struct CRGB;
 struct CHSV;
@@ -1353,4 +1354,22 @@ namespace StandardPalettes
         CRGB::Black,   CRGB::Purple,   
         CRGB::Black,   CRGB::Green
     };
+}
+
+inline void to_json(nlohmann::json& j, const CRGB& color) 
+{
+    j = {
+        {"r", color.r},
+        {"g", color.g},
+        {"b", color.b}
+    };
+}
+
+inline void from_json(const nlohmann::json& j, CRGB& color) 
+{
+    color = CRGB(
+        j.at("r").get<uint8_t>(),
+        j.at("g").get<uint8_t>(),
+        j.at("b").get<uint8_t>()
+    );
 }

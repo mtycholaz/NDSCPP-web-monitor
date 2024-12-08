@@ -29,8 +29,8 @@ endef
 # Detect platform
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Darwin)
-    CFLAGS += -I$(shell brew --prefix)/include/ -I$(shell brew --prefix spdlog)/include
-    LDFLAGS += -L$(shell brew --prefix)/lib/ -L$(shell brew --prefix fmt)/lib
+    CFLAGS += -I$(shell brew --prefix)/include/
+    LDFLAGS += -L$(shell brew --prefix)/lib/
 endif
 
 all: $(EXECUTABLE)

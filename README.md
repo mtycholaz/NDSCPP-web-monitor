@@ -45,18 +45,18 @@ The project includes a REST API via the `WebServer` class to control and configu
 
 This repository is designed for programmers familiar with modern C++ (C++20 and later) and concepts like interfaces, threading, and network communication. Jump into the code, and start by exploring the interfaces and their implementing classes to understand the system's structure.
 
-This project uses clang++ and make, and is dependent on the libraries for asio (because Crow uses it), pthreads, z, avformat, avcodec, avutil, swscale and swresample. For the "ledmon" monitor application in the monitor directory, the ncurses and curl libraries are required.
+This project uses clang++ and make, and is dependent on the libraries for asio (because Crow uses it), pthreads, z, avformat, avcodec, avutil, swscale, swresample and spdlog. For the "ledmon" monitor application in the monitor directory, the ncurses and curl libraries are required.
 
-On the Mac, you'll have to install asio and ffmpeg using Homebrew; the other required libraries are usually already installed:
+On the Mac, you'll have to install asio, ffmpeg and spdlog using Homebrew; the other required libraries are usually already installed:
 
 ```shell
-brew install asio ffmpeg
+brew install asio ffmpeg spdlog
 ```
 
 On Ubuntu, dev versions for all libraries except ncurses and pthreads have to be installed (ncurses already gets pulled in by llvm/clang):
 
 ```shell
-sudo apt install libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev libcurl4-gnutls-dev
+sudo apt install libasio-dev zlib1g-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev libcurl4-gnutls-dev libspdlog-dev
 ```
 
 ## Interfaces Overview

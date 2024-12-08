@@ -23,7 +23,7 @@ private:
         double _velocity;
         double _position;
 
-        Particle(const CRGB &starColor, double pos, double maxSpeed, std::mt19937 &rng)
+        Particle(const CRGB &starColor, double pos, double maxSpeed, mt19937 &rng)
             : _starColor(starColor),
               _position(pos),
               _velocity(Utilities::RandomDouble(-maxSpeed, maxSpeed)),
@@ -48,16 +48,16 @@ private:
     private:
         static double GetCurrentTime()
         {
-            return static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                                           std::chrono::steady_clock::now().time_since_epoch())
+            return static_cast<double>(chrono::duration_cast<chrono::milliseconds>(
+                                           chrono::steady_clock::now().time_since_epoch())
                                            .count()) /
                    1000.0;
         }
     };
 
-    std::vector<CRGB> _palette;
-    std::queue<Particle> _particles;
-    std::mt19937 _rng;
+    vector<CRGB> _palette;
+    queue<Particle> _particles;
+    mt19937 _rng;
 
     double _maxSpeed = 175.0;
     double _newParticleProbability = 1.0;
@@ -68,11 +68,11 @@ private:
     double _particleSize = 1.0;
 
 public:
-    FireworksEffect(const std::string &name) : LEDEffectBase(name), _rng(std::random_device{}())
+    FireworksEffect(const string &name) : LEDEffectBase(name), _rng(random_device{}())
     {
     }
 
-    FireworksEffect(const std::string &name, 
+    FireworksEffect(const string &name, 
                     double maxSpeed, 
                     double newParticleProbability, 
                     double particlePreignitionTime, 
@@ -88,7 +88,7 @@ public:
           _particleHoldTime(particleHoldTime), 
           _particleFadeTime(particleFadeTime), 
           _particleSize(particleSize), 
-          _rng(std::random_device{}())
+          _rng(random_device{}())
     {
     }
 
@@ -96,7 +96,7 @@ public:
     {
         const auto ledCount = canvas.Graphics().Width() * canvas.Graphics().Height();
 
-        for (int i = 0; i < std::max(5, static_cast<int>(ledCount / 50)); ++i)
+        for (int i = 0; i < max(5, static_cast<int>(ledCount / 50)); ++i)
         {
             if (Utilities::RandomDouble(0.0, 1.0) < _newParticleProbability * 0.005)
             {
@@ -127,7 +127,7 @@ public:
             particleIter = _particles.front();
         }
 
-        std::queue<Particle> newParticles;
+        queue<Particle> newParticles;
         while (!_particles.empty())
         {
             Particle particle = _particles.front();
@@ -174,9 +174,9 @@ public:
             };
     }
 
-    static std::unique_ptr<FireworksEffect> FromJson(const nlohmann::json &j)
+    static unique_ptr<FireworksEffect> FromJson(const nlohmann::json &j)
     {
-        auto effect = std::make_unique<FireworksEffect>(
+        auto effect = make_unique<FireworksEffect>(
             j.at("name").get<string>(),
             j.value("maxSpeed", 175.0),
             j.value("newParticleProbability", 1.0),

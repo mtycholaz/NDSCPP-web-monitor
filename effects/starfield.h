@@ -92,9 +92,9 @@ public:
         };
     }
 
-    static std::unique_ptr<StarfieldEffect> FromJson(const nlohmann::json& j)
+    static unique_ptr<StarfieldEffect> FromJson(const nlohmann::json& j)
     {
-        return std::make_unique<StarfieldEffect>(
+        return make_unique<StarfieldEffect>(
             j.at("name").get<string>(),
             j.value("starCount", 100)
         );

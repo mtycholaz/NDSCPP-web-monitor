@@ -2,7 +2,7 @@
 using namespace std;
 
 #include <iostream>
-#include <iostream>
+#include <bit>
 #include <string>
 #include <vector>
 #include <atomic>
@@ -11,6 +11,7 @@ using namespace std;
 #include <queue>
 #include <thread>
 #include <stdexcept>
+#include <cstdint>
 #include <cstring>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -19,6 +20,7 @@ using namespace std;
 #include <poll.h>
 #include <fcntl.h>
 #include <cerrno>
+#include "json.hpp"
 #include "global.h"
 #include "interfaces.h"
 #include "utilities.h"
@@ -102,11 +104,6 @@ public:
 // The packed attribute is required to ensure correct network communication but may cause
 // alignment issues on some architectures.
 
-#include "json.hpp"
-#include <cstdint>
-#include <cstring>
-#include <bit>
-
 inline static double ByteSwapDouble(double value)
 {
     // Helper function to swap bytes in a double
@@ -187,6 +184,41 @@ struct ClientResponse
         fpsDrawing = __builtin_bswap32(fpsDrawing);
         watts = __builtin_bswap32(watts);
     }
+
+    friend void to_json(nlohmann::json &j, const ClientResponse &response)
+    {
+        j ={
+                {"responseSize", response.size},
+                {"sequenceNumber", response.sequence},
+                {"flashVersion", response.flashVersion},
+                {"currentClock", response.currentClock},
+                {"oldestPacket", response.oldestPacket},
+                {"newestPacket", response.newestPacket},
+                {"brightness", response.brightness},
+                {"wifiSignal", response.wifiSignal},
+                {"bufferSize", response.bufferSize},
+                {"bufferPos", response.bufferPos},
+                {"fpsDrawing", response.fpsDrawing},
+                {"watts", response.watts}
+        };
+    }
+
+    friend void from_json(const nlohmann::json& j, ClientResponse& response) 
+    {
+        response.size = j.at("responseSize").get<uint8_t>();
+        response.sequence = j.at("sequenceNumber").get<uint32_t>();
+        response.flashVersion = j.at("flashVersion").get<uint32_t>();
+        response.currentClock = j.at("currentClock").get<uint64_t>();
+        response.oldestPacket = j.at("oldestPacket").get<uint64_t>();
+        response.newestPacket = j.at("newestPacket").get<uint64_t>();
+        response.brightness = j.at("brightness").get<uint8_t>();
+        response.wifiSignal = j.at("wifiSignal").get<int8_t>();
+        response.bufferSize = j.at("bufferSize").get<uint32_t>();
+        response.bufferPos = j.at("bufferPos").get<uint32_t>();
+        response.fpsDrawing = j.at("fpsDrawing").get<float>();
+        response.watts = j.at("watts").get<float>();
+    }
+
 } __attribute__((packed)); // Packed attribute required for network protocol compatibility
 
 // SocketChannel
@@ -731,3 +763,39 @@ private:
         _isConnected = false;
     }
 };
+
+inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
+{
+    try
+    {
+        j["hostName"] = socket.HostName();
+        j["friendlyName"] = socket.FriendlyName();
+        j["isConnected"] = socket.IsConnected();
+        j["reconnectCount"] = socket.GetReconnectCount();
+        j["queueDepth"] = socket.GetCurrentQueueDepth();
+        j["queueMaxSize"] = socket.GetQueueMaxSize();
+        j["bytesPerSecond"] = socket.GetLastBytesPerSecond();
+        j["port"] = socket.Port();
+        j["id"] = socket.Id();
+        
+        // Note: featureId and canvasId can't be included here since they're not
+        // properties of the socket itself but rather of its container objects
+
+        const auto &lastResponse = socket.LastClientResponse();
+        if (lastResponse.size == sizeof(ClientResponse))
+            j["stats"] = lastResponse; // Uses the ClientResponse serializer
+    }
+    catch (const exception &e)
+    {
+        j = nullptr;
+    }
+}
+
+inline void from_json(const nlohmann::json& j, unique_ptr<ISocketChannel>& socket) 
+{
+    socket = make_unique<SocketChannel>(
+        j.at("hostName").get<string>(),
+        j.at("friendlyName").get<string>(),
+        j.value("port", uint16_t(49152))
+    );
+}
