@@ -540,8 +540,11 @@ private:
                         continue;  // Check for more data
                     }
                 }
-
-                logger->warn("Invalid byte count reading response from {} [{}]", _hostName, _friendlyName);
+                else if (byteCount > 0)
+                {
+                    logger->warn("Invalid byte count reading response from {} [{}]", _hostName, _friendlyName);
+                }
+                
                 // Invalid byte count; eat the contents
                 vector<uint8_t> tempBuffer(byteCount);
                 recv(_socketFd, tempBuffer.data(), byteCount, 0);

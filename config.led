@@ -2,34 +2,46 @@
     "canvases": [
       {
         "currentEffectName": "Starfield",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "filePath": "./media/mp4/rickroll.mp4",
+              "name": "Starfield",
+              "type": "MP4Playback"
+            }
+          ],
+          "fps": 20,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 138023,
+            "bytesPerSecond": 33489,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "Mesmerizer",
             "height": 32,
             "hostName": "192.168.8.161",
-            "id": 0,
+            "id": 15,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 0,
-              "bufferPos": 65,
+              "bufferPos": 39,
               "bufferSize": 180,
-              "currentClock": 1733517231.62897,
+              "currentClock": 1733706007.93592,
               "flashVersion": 41,
               "fpsDrawing": 20,
-              "newestPacket": 2.37097096443176,
-              "oldestPacket": -0.629004955291748,
+              "newestPacket": 1.06400203704834,
+              "oldestPacket": -0.935966014862061,
               "responseSize": 72,
-              "sequenceNumber": 406290,
+              "sequenceNumber": 3992717,
               "watts": 0,
-              "wifiSignal": -49
+              "wifiSignal": -53
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 38,
+            "queueDepth": 43,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -41,42 +53,54 @@
         ],
         "fps": 20,
         "height": 32,
-        "id": 0,
+        "id": 9,
         "name": "Mesmerizer",
         "width": 64
       },
       {
         "currentEffectName": "Starfield",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "name": "Starfield",
+              "starCount": 100,
+              "type": "Starfield"
+            }
+          ],
+          "fps": 24,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 211608,
+            "bytesPerSecond": 0,
             "channel": 0,
             "clientBufferCount": 500,
             "friendlyName": "Banner",
             "height": 32,
-            "hostName": "192.168.8.76",
-            "id": 1,
-            "isConnected": true,
+            "hostName": "192.168.1.98",
+            "id": 16,
+            "isConnected": false,
             "lastClientResponse": {
-              "brightness": 100,
-              "bufferPos": 295,
-              "bufferSize": 500,
-              "currentClock": 1733517231.48497,
-              "flashVersion": 41,
-              "fpsDrawing": 24,
-              "newestPacket": 15.7632550925293,
-              "oldestPacket": 3.7491830925293,
+              "brightness": 0,
+              "bufferPos": 0,
+              "bufferSize": 0,
+              "currentClock": 0,
+              "flashVersion": 0,
+              "fpsDrawing": 0,
+              "newestPacket": 0,
+              "oldestPacket": 0,
               "responseSize": 72,
               "sequenceNumber": 0,
               "watts": 0,
-              "wifiSignal": 1000
+              "wifiSignal": 0
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 15,
+            "queueDepth": 3,
             "queueMaxSize": 500,
-            "reconnectCount": 1,
+            "reconnectCount": 0,
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 16.6666666666667,
@@ -86,40 +110,56 @@
         ],
         "fps": 24,
         "height": 32,
-        "id": 1,
+        "id": 10,
         "name": "Banner",
         "width": 512
       },
       {
         "currentEffectName": "Yellow Window",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "color": {
+                "b": 0,
+                "g": 112,
+                "r": 255
+              },
+              "name": "Yellow Window",
+              "type": "SolidColorFill"
+            }
+          ],
+          "fps": 3,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 147,
+            "bytesPerSecond": 130,
             "channel": 0,
             "clientBufferCount": 21,
             "friendlyName": "Window1",
             "height": 1,
             "hostName": "192.168.8.8",
-            "id": 2,
+            "id": 17,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
               "bufferPos": 15,
               "bufferSize": 24,
-              "currentClock": 1733517230.26144,
+              "currentClock": 1733706004.09903,
               "flashVersion": 41,
-              "fpsDrawing": 6,
-              "newestPacket": 4.73849892616272,
-              "oldestPacket": -0.261477947235107,
+              "fpsDrawing": 18,
+              "newestPacket": 4.90090203285217,
+              "oldestPacket": -0.0990760326385498,
               "responseSize": 72,
-              "sequenceNumber": 1255725,
+              "sequenceNumber": 355812,
               "watts": 10,
-              "wifiSignal": -60
+              "wifiSignal": -59
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 2,
+            "queueDepth": 10,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -131,40 +171,56 @@
         ],
         "fps": 3,
         "height": 1,
-        "id": 2,
+        "id": 11,
         "name": "Window1",
         "width": 100
       },
       {
         "currentEffectName": "Blue Window",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "color": {
+                "b": 255,
+                "g": 0,
+                "r": 0
+              },
+              "name": "Blue Window",
+              "type": "SolidColorFill"
+            }
+          ],
+          "fps": 3,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 147,
+            "bytesPerSecond": 129,
             "channel": 0,
             "clientBufferCount": 21,
             "friendlyName": "Window2",
             "height": 1,
             "hostName": "192.168.8.9",
-            "id": 3,
+            "id": 18,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 16,
+              "bufferPos": 17,
               "bufferSize": 24,
-              "currentClock": 1733517230.12901,
+              "currentClock": 1733706003.99069,
               "flashVersion": 41,
-              "fpsDrawing": 5,
-              "newestPacket": 4.87093496322632,
-              "oldestPacket": -0.129041910171509,
+              "fpsDrawing": 24,
+              "newestPacket": 5.00923204421997,
+              "oldestPacket": 0.00926399230957031,
               "responseSize": 72,
-              "sequenceNumber": 1261529,
-              "watts": 7,
-              "wifiSignal": -64
+              "sequenceNumber": 355814,
+              "watts": 30,
+              "wifiSignal": -61
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 2,
+            "queueDepth": 10,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -176,40 +232,56 @@
         ],
         "fps": 3,
         "height": 1,
-        "id": 3,
+        "id": 12,
         "name": "Window2",
         "width": 100
       },
       {
         "currentEffectName": "Green Window",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "color": {
+                "b": 0,
+                "g": 128,
+                "r": 0
+              },
+              "name": "Green Window",
+              "type": "SolidColorFill"
+            }
+          ],
+          "fps": 3,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 147,
+            "bytesPerSecond": 129,
             "channel": 0,
             "clientBufferCount": 21,
             "friendlyName": "Window3",
             "height": 1,
             "hostName": "192.168.8.10",
-            "id": 4,
+            "id": 19,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 16,
+              "bufferPos": 17,
               "bufferSize": 24,
-              "currentClock": 1733517230.19683,
+              "currentClock": 1733706003.97481,
               "flashVersion": 41,
-              "fpsDrawing": 6,
-              "newestPacket": 4.80311298370361,
-              "oldestPacket": -0.196863889694214,
+              "fpsDrawing": 24,
+              "newestPacket": 5.02511501312256,
+              "oldestPacket": 0.0251491069793701,
               "responseSize": 72,
-              "sequenceNumber": 1261465,
-              "watts": 3,
+              "sequenceNumber": 355888,
+              "watts": 30,
               "wifiSignal": -60
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 2,
+            "queueDepth": 10,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -221,40 +293,104 @@
         ],
         "fps": 3,
         "height": 1,
-        "id": 4,
+        "id": 13,
         "name": "Window3",
         "width": 100
       },
       {
         "currentEffectName": "Rainbow Scroll",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "brightness": 1,
+              "density": 0.01,
+              "dotSize": 1,
+              "everyNthDot": 1,
+              "ledColorPerSecond": 2,
+              "ledScrollSpeed": 0,
+              "mirrored": false,
+              "name": "Rainbow Scroll",
+              "palette": {
+                "blend": true,
+                "colors": [
+                  {
+                    "b": 0,
+                    "g": 0,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 80,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 165,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 255,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 255,
+                    "r": 0
+                  },
+                  {
+                    "b": 255,
+                    "g": 150,
+                    "r": 0
+                  },
+                  {
+                    "b": 255,
+                    "g": 0,
+                    "r": 0
+                  },
+                  {
+                    "b": 255,
+                    "g": 0,
+                    "r": 143
+                  }
+                ]
+              },
+              "rampedColor": false,
+              "type": "PaletteEffect"
+            }
+          ],
+          "fps": 20,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 25738,
+            "bytesPerSecond": 11751,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "Cupboard1",
             "height": 1,
             "hostName": "192.168.8.12",
-            "id": 5,
+            "id": 20,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 141,
+              "bufferPos": 100,
               "bufferSize": 180,
-              "currentClock": 1733517230.13128,
+              "currentClock": 1733706004.15103,
               "flashVersion": 41,
               "fpsDrawing": 19,
-              "newestPacket": 6.86867499351502,
-              "oldestPacket": -0.131299018859863,
+              "newestPacket": 5.84892296791077,
+              "oldestPacket": 1.84894895553589,
               "responseSize": 72,
-              "sequenceNumber": 9427968,
-              "watts": 52,
-              "wifiSignal": -78
+              "sequenceNumber": 2369819,
+              "watts": 30,
+              "wifiSignal": -70
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 18,
+            "queueDepth": 8,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -264,32 +400,32 @@
             "width": 500
           },
           {
-            "bytesPerSecond": 22938,
+            "bytesPerSecond": 13245,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "Cupboard2",
             "height": 1,
             "hostName": "192.168.8.29",
-            "id": 6,
+            "id": 21,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 139,
+              "bufferPos": 100,
               "bufferSize": 180,
-              "currentClock": 1733517230.17502,
+              "currentClock": 1733706004.32631,
               "flashVersion": 41,
-              "fpsDrawing": 19,
-              "newestPacket": 6.82492709159851,
-              "oldestPacket": -0.175046920776367,
+              "fpsDrawing": 18,
+              "newestPacket": 5.6736330986023,
+              "oldestPacket": 1.67365908622742,
               "responseSize": 72,
-              "sequenceNumber": 9421225,
-              "watts": 64,
+              "sequenceNumber": 2369702,
+              "watts": 30,
               "wifiSignal": -69
             },
             "offsetX": 500,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 19,
+            "queueDepth": 7,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -299,32 +435,32 @@
             "width": 600
           },
           {
-            "bytesPerSecond": 7468,
+            "bytesPerSecond": 5113,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "Cupboard3",
             "height": 1,
             "hostName": "192.168.8.30",
-            "id": 7,
+            "id": 22,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 141,
+              "bufferPos": 100,
               "bufferSize": 180,
-              "currentClock": 1733517230.10489,
+              "currentClock": 1733706004.02184,
               "flashVersion": 41,
-              "fpsDrawing": 19,
-              "newestPacket": 6.89505696296692,
-              "oldestPacket": -0.104918003082275,
+              "fpsDrawing": 23,
+              "newestPacket": 5.97811698913574,
+              "oldestPacket": 1.97814202308655,
               "responseSize": 72,
-              "sequenceNumber": 9420646,
-              "watts": 12,
-              "wifiSignal": -74
+              "sequenceNumber": 2369523,
+              "watts": 30,
+              "wifiSignal": -62
             },
             "offsetX": 1100,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 18,
+            "queueDepth": 7,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -334,32 +470,32 @@
             "width": 144
           },
           {
-            "bytesPerSecond": 7335,
+            "bytesPerSecond": 3555,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "Cupboard4",
             "height": 1,
             "hostName": "192.168.8.15",
-            "id": 8,
+            "id": 23,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 141,
+              "bufferPos": 100,
               "bufferSize": 180,
-              "currentClock": 1733517230.13402,
+              "currentClock": 1733706004.00178,
               "flashVersion": 41,
-              "fpsDrawing": 19,
-              "newestPacket": 6.86592698097229,
-              "oldestPacket": -0.134047985076904,
+              "fpsDrawing": 18,
+              "newestPacket": 5.99816608428955,
+              "oldestPacket": 1.99819207191467,
               "responseSize": 72,
-              "sequenceNumber": 9420045,
-              "watts": 13,
-              "wifiSignal": -77
+              "sequenceNumber": 2368661,
+              "watts": 30,
+              "wifiSignal": -69
             },
             "offsetX": 1244,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 18,
+            "queueDepth": 7,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -371,40 +507,84 @@
         ],
         "fps": 20,
         "height": 1,
-        "id": 5,
+        "id": 14,
         "name": "Cabinets",
         "width": 1388
       },
       {
         "currentEffectName": "Rainbow Scroll",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "brightness": 1,
+              "density": 1,
+              "dotSize": 4,
+              "everyNthDot": 30,
+              "ledColorPerSecond": 0,
+              "ledScrollSpeed": 5,
+              "mirrored": false,
+              "name": "Rainbow Scroll",
+              "palette": {
+                "blend": true,
+                "colors": [
+                  {
+                    "b": 0,
+                    "g": 0,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 255,
+                    "r": 0
+                  },
+                  {
+                    "b": 255,
+                    "g": 0,
+                    "r": 0
+                  },
+                  {
+                    "b": 128,
+                    "g": 0,
+                    "r": 128
+                  }
+                ]
+              },
+              "rampedColor": false,
+              "type": "PaletteEffect"
+            }
+          ],
+          "fps": 24,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 3719,
+            "bytesPerSecond": 2915,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "CBWEST",
             "height": 1,
             "hostName": "192.168.8.33",
-            "id": 9,
+            "id": 24,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 150,
+              "bufferPos": 87,
               "bufferSize": 180,
-              "currentClock": 1733517230.51649,
+              "currentClock": 1733706007.2405,
               "flashVersion": 41,
               "fpsDrawing": 19,
-              "newestPacket": 5.48344707489014,
-              "oldestPacket": -0.516519069671631,
+              "newestPacket": 2.75944304466248,
+              "oldestPacket": -0.240531921386719,
               "responseSize": 72,
-              "sequenceNumber": 11486613,
+              "sequenceNumber": 2877125,
               "watts": 16,
-              "wifiSignal": -59
+              "wifiSignal": -61
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 15,
+            "queueDepth": 6,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -414,32 +594,32 @@
             "width": 1151
           },
           {
-            "bytesPerSecond": 2925,
+            "bytesPerSecond": 2376,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "CBEAST1",
             "height": 1,
             "hostName": "192.168.8.5",
-            "id": 10,
+            "id": 25,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 146,
+              "bufferPos": 86,
               "bufferSize": 180,
-              "currentClock": 1733517230.6699,
+              "currentClock": 1733706007.29796,
               "flashVersion": 41,
               "fpsDrawing": 24,
-              "newestPacket": 5.33003306388855,
-              "oldestPacket": -0.669934988021851,
+              "newestPacket": 2.70199108123779,
+              "oldestPacket": -0.297983884811401,
               "responseSize": 72,
-              "sequenceNumber": 7714540,
+              "sequenceNumber": 2818249,
               "watts": 11,
-              "wifiSignal": -65
+              "wifiSignal": -66
             },
             "offsetX": 1151,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 15,
+            "queueDepth": 6,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -449,32 +629,32 @@
             "width": 775
           },
           {
-            "bytesPerSecond": 3352,
+            "bytesPerSecond": 2625,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "CBEAST2",
             "height": 1,
             "hostName": "192.168.8.37",
-            "id": 11,
+            "id": 26,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 147,
+              "bufferPos": 88,
               "bufferSize": 180,
-              "currentClock": 1733517230.63414,
+              "currentClock": 1733706007.19521,
               "flashVersion": 41,
               "fpsDrawing": 24,
-              "newestPacket": 5.36579895019531,
-              "oldestPacket": -0.634167909622192,
+              "newestPacket": 2.80472588539124,
+              "oldestPacket": -0.195247888565063,
               "responseSize": 72,
-              "sequenceNumber": 7739371,
+              "sequenceNumber": 2875672,
               "watts": 13,
-              "wifiSignal": -65
+              "wifiSignal": -68
             },
             "offsetX": 1926,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 15,
+            "queueDepth": 6,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -484,32 +664,32 @@
             "width": 926
           },
           {
-            "bytesPerSecond": 3773,
+            "bytesPerSecond": 2888,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "CBEAST3",
             "height": 1,
             "hostName": "192.168.8.31",
-            "id": 12,
+            "id": 27,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 150,
+              "bufferPos": 87,
               "bufferSize": 180,
-              "currentClock": 1733517230.51032,
+              "currentClock": 1733706007.2337,
               "flashVersion": 41,
               "fpsDrawing": 24,
-              "newestPacket": 5.48962306976318,
-              "oldestPacket": -0.5103440284729,
+              "newestPacket": 2.76623892784119,
+              "oldestPacket": -0.233727931976318,
               "responseSize": 72,
-              "sequenceNumber": 7737913,
+              "sequenceNumber": 2874769,
               "watts": 16,
-              "wifiSignal": -76
+              "wifiSignal": -78
             },
             "offsetX": 2852,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 15,
+            "queueDepth": 6,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -521,40 +701,58 @@
         ],
         "fps": 24,
         "height": 1,
-        "id": 6,
+        "id": 15,
         "name": "Cabana",
         "width": 3981
       },
       {
         "currentEffectName": "Fireworks",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "maxSpeed": 175,
+              "name": "Fireworks",
+              "newParticleProbability": 1,
+              "particleFadeTime": 2,
+              "particleHoldTime": 0,
+              "particleIgnition": 0.2,
+              "particlePreignitionTime": 0,
+              "particleSize": 1.516,
+              "type": "Fireworks"
+            }
+          ],
+          "fps": 30,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 31553,
+            "bytesPerSecond": 30942,
             "channel": 0,
             "clientBufferCount": 500,
             "friendlyName": "Ceiling",
             "height": 1,
             "hostName": "192.168.8.60",
-            "id": 13,
+            "id": 28,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 360,
+              "bufferPos": 177,
               "bufferSize": 500,
-              "currentClock": 1733517231.15877,
+              "currentClock": 1733706007.47759,
               "flashVersion": 41,
-              "fpsDrawing": 33,
-              "newestPacket": 12.8411779403687,
-              "oldestPacket": 0.841203927993774,
+              "fpsDrawing": 31,
+              "newestPacket": 9.52234792709351,
+              "oldestPacket": 4.522381067276,
               "responseSize": 72,
-              "sequenceNumber": 5439675,
-              "watts": 4,
-              "wifiSignal": -41
+              "sequenceNumber": 10889904,
+              "watts": 5,
+              "wifiSignal": -48
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 11,
+            "queueDepth": 13,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -566,40 +764,104 @@
         ],
         "fps": 30,
         "height": 1,
-        "id": 7,
+        "id": 16,
         "name": "Ceiling",
         "width": 758
       },
       {
         "currentEffectName": "Rainbow Scroll",
+        "effectsManager": {
+          "currentEffectIndex": 0,
+          "effects": [
+            {
+              "brightness": 1,
+              "density": 1,
+              "dotSize": 1,
+              "everyNthDot": 1,
+              "ledColorPerSecond": 0.25,
+              "ledScrollSpeed": 0,
+              "mirrored": false,
+              "name": "Rainbow Scroll",
+              "palette": {
+                "blend": true,
+                "colors": [
+                  {
+                    "b": 0,
+                    "g": 0,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 80,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 165,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 255,
+                    "r": 255
+                  },
+                  {
+                    "b": 0,
+                    "g": 255,
+                    "r": 0
+                  },
+                  {
+                    "b": 255,
+                    "g": 150,
+                    "r": 0
+                  },
+                  {
+                    "b": 255,
+                    "g": 0,
+                    "r": 0
+                  },
+                  {
+                    "b": 255,
+                    "g": 0,
+                    "r": 143
+                  }
+                ]
+              },
+              "rampedColor": false,
+              "type": "PaletteEffect"
+            }
+          ],
+          "fps": 30,
+          "type": "EffectsManager"
+        },
         "features": [
           {
-            "bytesPerSecond": 2301,
+            "bytesPerSecond": 1764,
             "channel": 0,
             "clientBufferCount": 180,
             "friendlyName": "Tree",
             "height": 1,
             "hostName": "192.168.8.167",
-            "id": 14,
+            "id": 29,
             "isConnected": true,
             "lastClientResponse": {
               "brightness": 100,
-              "bufferPos": 121,
+              "bufferPos": 42,
               "bufferSize": 180,
-              "currentClock": 1733517231.06863,
+              "currentClock": 1733706007.41969,
               "flashVersion": 41,
               "fpsDrawing": 30,
-              "newestPacket": 3.93132209777832,
-              "oldestPacket": -0.0686519145965576,
+              "newestPacket": 0.580265998840332,
+              "oldestPacket": -0.419708967208862,
               "responseSize": 72,
-              "sequenceNumber": 14229514,
+              "sequenceNumber": 3589345,
               "watts": 3,
-              "wifiSignal": -46
+              "wifiSignal": -31
             },
             "offsetX": 0,
             "offsetY": 0,
             "port": 49152,
-            "queueDepth": 11,
+            "queueDepth": 80,
             "queueMaxSize": 500,
             "reconnectCount": 1,
             "redGreenSwap": false,
@@ -611,10 +873,10 @@
         ],
         "fps": 30,
         "height": 1,
-        "id": 8,
+        "id": 17,
         "name": "Tree",
         "width": 32
       }
     ],
     "port": 7777
-  }
+}

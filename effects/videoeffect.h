@@ -193,7 +193,7 @@ public:
 inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect) 
 {
     j = {
-        {"type", "MP4PlaybackEffect"},
+        {"type", "MP4Playback"},
         {"name", effect.Name()},
         {"filePath", effect._filePath}
     };

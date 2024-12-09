@@ -211,6 +211,16 @@ public:
             _workerThread.join();
     }
 
+    void SetEffects(vector<unique_ptr<ILEDEffect>> effects) override 
+    {
+        _effects = std::move(effects);
+    }
+
+    void SetCurrentEffectIndex(int index) override 
+    {
+        _currentEffectIndex = index;
+    }
+
 private:
     bool IsEffectSelected() const
     {
@@ -256,12 +266,12 @@ inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDEffect>& effe
         from_json(j, temp);
         effect = std::move(temp);
     } 
-    else if (type == "SolidColor") {
+    else if (type == "SolidColorFill") {
         std::unique_ptr<SolidColorFill> temp;
         from_json(j, temp);
         effect = std::move(temp);
     } 
-    else if (type == "Palette") {
+    else if (type == "PaletteEffect") {
         std::unique_ptr<PaletteEffect> temp;
         from_json(j, temp);
         effect = std::move(temp);
@@ -281,13 +291,14 @@ inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDEffect>& effe
     }
 }
 
+inline std::unique_ptr<IEffectsManager> CreateEffectsManager(uint16_t fps = 30) 
+{
+    return std::make_unique<EffectsManager>(fps);
+}
 
-
+// JSON serialization functions
 inline void to_json(nlohmann::json& j, const IEffectsManager& manager) 
 {
-    // TODO - Serialize the effects, being sure to call the serializer that belongs
-    // to the specific derviced effect type.
-
     j = {
         {"type", "EffectsManager"},
         {"fps", manager.GetFPS()},
@@ -298,4 +309,7 @@ inline void to_json(nlohmann::json& j, const IEffectsManager& manager)
 
 inline void from_json(const nlohmann::json& j, IEffectsManager& manager) 
 {
+    manager.SetFPS(j.at("fps").get<uint16_t>());
+    vector<unique_ptr<ILEDEffect>> effects = j.at("effects").get<vector<unique_ptr<ILEDEffect>>>();
+    manager.SetEffects(std::move(effects));
 }

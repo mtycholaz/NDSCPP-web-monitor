@@ -98,6 +98,8 @@ public:
     virtual void Stop() = 0;
     virtual void SetFPS(uint16_t fps) = 0;
     virtual uint16_t GetFPS() const = 0;
+    virtual void SetEffects(vector<unique_ptr<ILEDEffect>> effects) = 0;
+    virtual void SetCurrentEffectIndex(int index) = 0;    
 };
 
 // ISocketChannel

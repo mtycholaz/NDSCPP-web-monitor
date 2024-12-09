@@ -508,7 +508,11 @@ inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrContr
 
         // Extract canvases
         for (const auto &canvasJson : j.at("canvases"))
-            ptrController->AddCanvas(canvasJson.get<unique_ptr<ICanvas>>());
+        {
+            unique_ptr<ICanvas> ptrCanvas;
+            from_json(canvasJson, ptrCanvas);
+            ptrController->AddCanvas(std::move(ptrCanvas));
+        }
     } 
     catch (const exception &e) 
     {
