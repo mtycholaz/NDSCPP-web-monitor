@@ -257,10 +257,10 @@ inline void to_json(nlohmann::json& j, const ILEDEffect& effect)
 // Create an effect from JSON and return a unique pointer to it
 
 template<typename T>
-unique_ptr<ILEDEffect> makeFromJson(const nlohmann::json& j) {
-    unique_ptr<T> temp;
-    from_json(j, temp);
-    return temp;
+unique_ptr<ILEDEffect> effectFactory(const nlohmann::json& j) {
+    unique_ptr<T> effect;
+    from_json(j, effect);
+    return effect;
 }
 
 // Dynamically deserialize an effect from JSON based on its indicated type 
@@ -270,12 +270,12 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect)
 {
     static const std::unordered_map<std::string, std::unique_ptr<ILEDEffect>(*)(const nlohmann::json&)> effects_map = 
     {
-        {ColorWaveEffect::EffectTypeName(),   makeFromJson<ColorWaveEffect>},
-        {FireworksEffect::EffectTypeName(),   makeFromJson<FireworksEffect>},
-        {SolidColorFill::EffectTypeName(),    makeFromJson<SolidColorFill>},
-        {PaletteEffect::EffectTypeName(),     makeFromJson<PaletteEffect>},
-        {StarfieldEffect::EffectTypeName(),   makeFromJson<StarfieldEffect>},
-        {MP4PlaybackEffect::EffectTypeName(), makeFromJson<MP4PlaybackEffect>}
+        { ColorWaveEffect::EffectTypeName(),   effectFactory<ColorWaveEffect>   },
+        { FireworksEffect::EffectTypeName(),   effectFactory<FireworksEffect>   },
+        { SolidColorFill::EffectTypeName(),    effectFactory<SolidColorFill>    },
+        { PaletteEffect::EffectTypeName(),     effectFactory<PaletteEffect>     },
+        { StarfieldEffect::EffectTypeName(),   effectFactory<StarfieldEffect>   },
+        { MP4PlaybackEffect::EffectTypeName(), effectFactory<MP4PlaybackEffect> }
     };
     auto it = effects_map.find(j["type"]);
     if (it == effects_map.end())
