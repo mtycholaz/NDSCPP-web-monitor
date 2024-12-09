@@ -254,42 +254,35 @@ inline void to_json(nlohmann::json& j, const ILEDEffect& effect)
         throw std::runtime_error("Unknown effect type for serialization: " + string(typeid(effect).name()));
 }
 
+// Create an effect from JSON and return a unique pointer to it
+
 template<typename T>
-std::unique_ptr<ILEDEffect> create_and_deserialize_effect(const nlohmann::json& j) 
-{
-    std::unique_ptr<T> temp;
+unique_ptr<ILEDEffect> makeFromJson(const nlohmann::json& j) {
+    unique_ptr<T> temp;
     from_json(j, temp);
     return temp;
 }
 
-// Dynamically create an effect based on the "type" field in the JSON
+// Dynamically deserialize an effect from JSON based on its indicated type 
+// and return it on the unique pointer out reference
 
-inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDEffect>& effect) 
+inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect) 
 {
-    std::string type = j.at("type").get<std::string>();
-
-    if (type == ColorWaveEffect::EffectTypeName())
-        effect = create_and_deserialize_effect<ColorWaveEffect>(j);
-    else if (type == FireworksEffect::EffectTypeName())
-        effect = create_and_deserialize_effect<FireworksEffect>(j);
-    else if (type == SolidColorFill::EffectTypeName())
-        effect = create_and_deserialize_effect<SolidColorFill>(j);
-    else if (type == PaletteEffect::EffectTypeName())
-        effect = create_and_deserialize_effect<PaletteEffect>(j);
-    else if (type == StarfieldEffect::EffectTypeName())
-        effect = create_and_deserialize_effect<StarfieldEffect>(j);
-    else if (type == MP4PlaybackEffect::EffectTypeName())
-        effect = create_and_deserialize_effect<MP4PlaybackEffect>(j);
-    else
-        throw std::runtime_error("Unknown effect type for deserialization: " + type);
+    static const std::unordered_map<std::string, std::unique_ptr<ILEDEffect>(*)(const nlohmann::json&)> effects_map = 
+    {
+        {ColorWaveEffect::EffectTypeName(),   makeFromJson<ColorWaveEffect>},
+        {FireworksEffect::EffectTypeName(),   makeFromJson<FireworksEffect>},
+        {SolidColorFill::EffectTypeName(),    makeFromJson<SolidColorFill>},
+        {PaletteEffect::EffectTypeName(),     makeFromJson<PaletteEffect>},
+        {StarfieldEffect::EffectTypeName(),   makeFromJson<StarfieldEffect>},
+        {MP4PlaybackEffect::EffectTypeName(), makeFromJson<MP4PlaybackEffect>}
+    };
+    auto it = effects_map.find(j["type"]);
+    if (it == effects_map.end())
+        throw runtime_error("Unknown effect type for deserialization: " + j["type"].get<string>());       
+    effect = std::move(it->second(j));
 }
 
-inline std::unique_ptr<IEffectsManager> CreateEffectsManager(uint16_t fps = 30) 
-{
-    return std::make_unique<EffectsManager>(fps);
-}
-
-// JSON serialization functions
 inline void to_json(nlohmann::json& j, const IEffectsManager& manager) 
 {
     j = {
