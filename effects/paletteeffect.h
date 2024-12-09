@@ -4,6 +4,10 @@
 // 
 // A versatile effect that scrolls a palette of colors across the canvas.  The effect can be configured
 // with a variety of parameters to control the speed, density, and appearance of the scrolling colors.
+//
+// The palette effect advances one pixel at a time and one color at a time through the supplied palette.
+// The speed of the color change and the speed of the pixel movement can be controlled independently.
+// If left at a density of 1, you get one color per pixel.  At 0.5, you get a new color every two pixels, etc.
 
 using namespace std;
 using namespace std::chrono;
@@ -112,7 +116,6 @@ inline void to_json(nlohmann::json& j, const PaletteEffect & effect)
 {
     j = {
             {"type",              PaletteEffect::EffectTypeName()},
-
             {"name",              effect.Name()},
             {"palette",           effect._Palette},
             {"ledColorPerSecond", effect._LEDColorPerSecond},

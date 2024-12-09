@@ -9,6 +9,14 @@ using namespace std;
 #include "json.hpp"
 #include "pixeltypes.h"
 
+// A pallete is a set of colors that can be queried with a floating point indexer to
+// get blends throughout the palette's range.  The palette can be set to blend or not
+// blend between colors.
+//
+// The palette can be queried with a floating point index, and will return a color
+// of that index and fraction from the set of original colors.  It wraps, so you can 
+// as for index 11.4 on an 8 color palette and it will return the color at index 3.4
+
 class Palette
 {
 protected:

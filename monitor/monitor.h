@@ -109,12 +109,10 @@ inline std::string formatBytes(double bytes)
 inline std::string formatWifiSignal(double signal)
 {
     std::ostringstream oss;
-    if (signal == 1000)
-        oss << "1Gb/s";
-    else if (signal == 10000)
-        oss << "10Gb/s";
+    if (signal >= 100)
+        oss << " LAN";
     else
-        oss << std::abs((int)signal) << "dBm"; // Added abs() and removed decimal places
+        oss << ((int)signal) << "dBm"; // Added abs() and removed decimal places
     return oss.str();
 }
 
@@ -122,7 +120,10 @@ inline std::string formatTimeDelta(double delta)
 {
     std::string meter = buildMeter(delta, 3.0, 5);
     std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << delta << "s " << meter;
+    if (abs(delta) > 100)
+        oss << "Unset";
+    else
+        oss << std::fixed << std::setprecision(1) << delta << "s " << meter;    
     return oss.str();
 }
 

@@ -236,22 +236,21 @@ private:
 
 inline void to_json(nlohmann::json& j, const ILEDEffect& effect) 
 {
-    // Attempt to dynamically cast to each known concrete type and use its to_json handler
-    
-    if (const auto* colorWave = dynamic_cast<const ColorWaveEffect*>(&effect)) 
-        to_json(j, *colorWave);
-    else if (const auto* fireworks = dynamic_cast<const FireworksEffect*>(&effect))
-        to_json(j, *fireworks);
-    else if (const auto* solidColor = dynamic_cast<const SolidColorFill*>(&effect))
-        to_json(j, *solidColor);
-    else if (const auto* palette = dynamic_cast<const PaletteEffect*>(&effect))
-        to_json(j, *palette);
-    else if (const auto* starfield = dynamic_cast<const StarfieldEffect*>(&effect))
-        to_json(j, *starfield);
-    else if (const auto* video = dynamic_cast<const MP4PlaybackEffect*>(&effect))
-        to_json(j, *video);
-    else
-        throw std::runtime_error("Unknown effect type for serialization: " + string(typeid(effect).name()));
+    static const std::unordered_map<std::string, void(*)(nlohmann::json&, const ILEDEffect&)> to_json_map = 
+    {
+        { ColorWaveEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const ColorWaveEffect&>(effect)); } },
+        { FireworksEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const FireworksEffect&>(effect)); } },
+        { SolidColorFill::EffectTypeName(),    [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const SolidColorFill&>(effect)); } },
+        { PaletteEffect::EffectTypeName(),     [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const PaletteEffect&>(effect)); } },
+        { StarfieldEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const StarfieldEffect&>(effect)); } },
+        { MP4PlaybackEffect::EffectTypeName(), [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const MP4PlaybackEffect&>(effect)); } }
+    };
+
+    std::string type = typeid(effect).name();
+    auto it = to_json_map.find(type);
+    if (it == to_json_map.end())
+        throw std::runtime_error("Unknown effect type for serialization: " + type);
+    it->second(j, effect);
 }
 
 // Create an effect from JSON and return a unique pointer to it
@@ -298,4 +297,5 @@ inline void from_json(const nlohmann::json& j, IEffectsManager& manager)
     manager.SetFPS(j.at("fps").get<uint16_t>());
     vector<unique_ptr<ILEDEffect>> effects = j.at("effects").get<vector<unique_ptr<ILEDEffect>>>();
     manager.SetEffects(std::move(effects));
+    manager.SetCurrentEffectIndex(j.at("currentEffectIndex").get<int>());
 }

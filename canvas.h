@@ -116,7 +116,8 @@ public:
 
 inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
 {
-    j = {
+    j = 
+    {
         {"name", canvas.Name()},
         {"id", canvas.Id()},
         {"width", canvas.Graphics().Width()},
@@ -138,38 +139,10 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas)
         j.value("fps", 30u) 
     );
 
-    // Deserialize features if present
-    if (j.contains("features")) 
-    {
-        for (const auto& featureJson : j["features"])
-            canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
-    }
+    // Features()
+    for (const auto& featureJson : j.value("features", nlohmann::json::array()))
+        canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
 
-    // Deserialize the EffectsManager
-    if (j.contains("effectsManager"))
-    {
-        auto & effectsManager = canvas->Effects();  // Get reference to existing manager
-        const auto & managerJson = j["effectsManager"];
-
-        // Set FPS if present
-        if (managerJson.contains("fps")) 
-            effectsManager.SetFPS(managerJson["fps"].get<uint32_t>());    
-
-        // Load effects
-        if (managerJson.contains("effects")) 
-        {
-            for (const auto& effectJson : managerJson["effects"]) 
-            {
-                unique_ptr<ILEDEffect> effect;
-                from_json(effectJson, effect);
-                if (effect) 
-                    effectsManager.AddEffect(std::move(effect));
-                
-            }
-        }
-
-        // Set current effect index
-        if (managerJson.contains("currentEffectIndex")) 
-            effectsManager.SetCurrentEffectIndex(managerJson["currentEffectIndex"].get<size_t>());
-    }
+    // Effects()
+    from_json(j.at("effectsManager"), canvas->Effects());
 }
