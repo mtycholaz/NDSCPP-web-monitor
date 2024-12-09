@@ -142,11 +142,7 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas)
     if (j.contains("features")) 
     {
         for (const auto& featureJson : j["features"])
-        {
-            unique_ptr<ILEDFeature> ptrFeature;
-            from_json(featureJson, ptrFeature);
-            canvas->AddFeature(std::move(ptrFeature));
-        }
+            canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
     }
 
     // Deserialize the EffectsManager
@@ -160,13 +156,15 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas)
             effectsManager.SetFPS(managerJson["fps"].get<uint32_t>());    
 
         // Load effects
-        if (managerJson.contains("effects")) {
-            for (const auto& effectJson : managerJson["effects"]) {
+        if (managerJson.contains("effects")) 
+        {
+            for (const auto& effectJson : managerJson["effects"]) 
+            {
                 unique_ptr<ILEDEffect> effect;
                 from_json(effectJson, effect);
-                if (effect) {
+                if (effect) 
                     effectsManager.AddEffect(std::move(effect));
-                }
+                
             }
         }
 
