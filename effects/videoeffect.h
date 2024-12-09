@@ -94,8 +94,6 @@ private:
         return true;
     }
 
-
-
     void CleanupFFmpeg()
     {
         if (_swsCtx) 
@@ -115,6 +113,12 @@ private:
     }
 
 public:
+
+    inline static string EffectTypeName() 
+    { 
+        return typeid(MP4PlaybackEffect).name();
+    }
+
     MP4PlaybackEffect(const string& name, const string& filePath)
         : LEDEffectBase(name), _filePath(filePath) {}
 
@@ -188,20 +192,23 @@ public:
         av_seek_frame(_formatCtx, _videoStreamIndex, 0, AVSEEK_FLAG_BACKWARD);
     }
 
-    void ToJson(nlohmann::json& j) const override
-    {
-        j = {
-            {"type", "MP4PlaybackEffect"},
-            {"name", Name()},
-            {"filePath", _filePath}
-        };
-    }
-
-    static unique_ptr<MP4PlaybackEffect> FromJson(const nlohmann::json& j)
-    {
-        return make_unique<MP4PlaybackEffect>(
-            j.at("name").get<string>(),
-            j.at("filePath").get<string>()
-        );
-    }
+    friend inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect);
+    friend inline void from_json(const nlohmann::json& j, unique_ptr<MP4PlaybackEffect>& effect);
 };
+
+inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect) 
+{
+    j = {
+        {"type", MP4PlaybackEffect::EffectTypeName()},
+        {"name", effect.Name()},
+        {"filePath", effect._filePath}
+    };
+}
+
+inline void from_json(const nlohmann::json& j, unique_ptr<MP4PlaybackEffect>& effect)
+{
+    effect = make_unique<MP4PlaybackEffect>(
+        j.at("name").get<string>(),
+        j.at("filePath").get<string>()
+    );
+}

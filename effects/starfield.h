@@ -42,6 +42,11 @@ public:
     {
     }
 
+    inline static string EffectTypeName() 
+    { 
+        return typeid(StarfieldEffect).name();
+    }
+
     void Start(ICanvas& canvas) override
     {
         _centerX = canvas.Graphics().Width() / 2;
@@ -80,24 +85,6 @@ public:
             int iy = static_cast<int>(star.y);
             graphics.SetPixel(ix, iy, CRGB(star.color.r, star.color.g, star.color.b));
         }
-    }
-
-    void ToJson(nlohmann::json& j) const override
-    {
-        j = 
-        {
-            {"type", "Starfield"},
-            {"name", Name()},
-            {"starCount", _starCount}
-        };
-    }
-
-    static unique_ptr<StarfieldEffect> FromJson(const nlohmann::json& j)
-    {
-        return make_unique<StarfieldEffect>(
-            j.at("name").get<string>(),
-            j.value("starCount", 100)
-        );
     }
 
 private:
@@ -145,4 +132,25 @@ private:
             color
         };
     }
+
+    friend inline void to_json(nlohmann::json& j, const StarfieldEffect & effect);
+    friend inline void from_json(const nlohmann::json& j, unique_ptr<StarfieldEffect>& effect);
 };
+
+inline void to_json(nlohmann::json& j, const StarfieldEffect & effect)
+{   
+    j = 
+    {
+        {"type", StarfieldEffect::EffectTypeName()},
+        {"name", effect.Name()},
+        {"starCount", effect._starCount}
+    };
+}
+
+inline void from_json(const nlohmann::json& j, unique_ptr<StarfieldEffect>& effect)
+{
+    effect = make_unique<StarfieldEffect>(
+        j.at("name").get<string>(),
+        j.value("starCount", 100)
+    );
+}

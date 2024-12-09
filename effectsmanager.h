@@ -2,6 +2,13 @@
 using namespace std;
 using namespace std::chrono;
 
+#include "effects/colorwaveeffect.h"
+#include "effects/fireworkseffect.h"
+#include "effects/misceffects.h"
+#include "effects/paletteeffect.h"
+#include "effects/starfield.h"
+#include "effects/videoeffect.h"
+
 // EffectsManager
 //
 // Manages a collection of ILEDEffect objects.  The EffectsManager is responsible for
@@ -37,6 +44,25 @@ public:
     uint16_t GetFPS() const override
     {
         return _fps;
+    }
+
+    size_t GetCurrentEffect() const override
+    {
+        return _currentEffectIndex;
+    }
+
+    size_t EffectCount() const override
+    {
+        return _effects.size();
+    }
+
+    vector<reference_wrapper<ILEDEffect>> Effects() const override
+    {
+        vector<reference_wrapper<ILEDEffect>> effects;
+        effects.reserve(_effects.size());
+        for (auto &effect : _effects)
+            effects.push_back(*effect);
+        return effects;
     }
 
     // Add an effect to the manager
@@ -142,6 +168,8 @@ public:
             auto nextFrameTime = steady_clock::now();
             constexpr auto bUseCompression = true;
 
+            StartCurrentEffect(canvas);
+
             while (_running)
             {
                 // Update the effects and enqueue frames
@@ -185,10 +213,89 @@ public:
             _workerThread.join();
     }
 
+    void SetEffects(vector<unique_ptr<ILEDEffect>> effects) override 
+    {
+        _effects = std::move(effects);
+    }
+
+    void SetCurrentEffectIndex(int index) override 
+    {
+        _currentEffectIndex = index;
+    }
+
 private:
     bool IsEffectSelected() const
     {
         return _currentEffectIndex >= 0 && _currentEffectIndex < static_cast<int>(_effects.size());
     }
+
+    friend void to_json(nlohmann::json& j, const EffectsManager& manager);
+    friend void from_json(const nlohmann::json& j, EffectsManager& manager);
 };
 
+
+inline void to_json(nlohmann::json& j, const ILEDEffect& effect) 
+{
+    // Attempt to dynamically cast to each known concrete type and use its to_json handler
+    
+    if (const auto* colorWave = dynamic_cast<const ColorWaveEffect*>(&effect)) 
+        to_json(j, *colorWave);
+    else if (const auto* fireworks = dynamic_cast<const FireworksEffect*>(&effect))
+        to_json(j, *fireworks);
+    else if (const auto* solidColor = dynamic_cast<const SolidColorFill*>(&effect))
+        to_json(j, *solidColor);
+    else if (const auto* palette = dynamic_cast<const PaletteEffect*>(&effect))
+        to_json(j, *palette);
+    else if (const auto* starfield = dynamic_cast<const StarfieldEffect*>(&effect))
+        to_json(j, *starfield);
+    else if (const auto* video = dynamic_cast<const MP4PlaybackEffect*>(&effect))
+        to_json(j, *video);
+    else
+        throw std::runtime_error("Unknown effect type for serialization: " + string(typeid(effect).name()));
+}
+
+// Create an effect from JSON and return a unique pointer to it
+
+template<typename T>
+unique_ptr<ILEDEffect> effectFactory(const nlohmann::json& j) {
+    unique_ptr<T> effect;
+    from_json(j, effect);
+    return effect;
+}
+
+// Dynamically deserialize an effect from JSON based on its indicated type 
+// and return it on the unique pointer out reference
+
+inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect) 
+{
+    static const std::unordered_map<std::string, std::unique_ptr<ILEDEffect>(*)(const nlohmann::json&)> effects_map = 
+    {
+        { ColorWaveEffect::EffectTypeName(),   effectFactory<ColorWaveEffect>   },
+        { FireworksEffect::EffectTypeName(),   effectFactory<FireworksEffect>   },
+        { SolidColorFill::EffectTypeName(),    effectFactory<SolidColorFill>    },
+        { PaletteEffect::EffectTypeName(),     effectFactory<PaletteEffect>     },
+        { StarfieldEffect::EffectTypeName(),   effectFactory<StarfieldEffect>   },
+        { MP4PlaybackEffect::EffectTypeName(), effectFactory<MP4PlaybackEffect> }
+    };
+    auto it = effects_map.find(j["type"]);
+    if (it == effects_map.end())
+        throw runtime_error("Unknown effect type for deserialization: " + j["type"].get<string>());       
+    effect = std::move(it->second(j));
+}
+
+inline void to_json(nlohmann::json& j, const IEffectsManager& manager) 
+{
+    j = {
+        {"type", "EffectsManager"},
+        {"fps", manager.GetFPS()},
+        {"currentEffectIndex", manager.GetCurrentEffect()},
+        {"effects", manager.Effects()}
+    };
+}
+
+inline void from_json(const nlohmann::json& j, IEffectsManager& manager) 
+{
+    manager.SetFPS(j.at("fps").get<uint16_t>());
+    vector<unique_ptr<ILEDEffect>> effects = j.at("effects").get<vector<unique_ptr<ILEDEffect>>>();
+    manager.SetEffects(std::move(effects));
+}

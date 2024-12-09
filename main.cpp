@@ -78,8 +78,10 @@ int main(int argc, char *argv[])
 
     unique_ptr<Controller> ptrController = Controller::CreateFromFile(filename);
     
+    
     // Until the controller can serialize effects, we still need to manually load things.
-    ptrController->LoadSampleCanvases();
+    // unique_ptr<Controller> ptrController = make_unique<Controller>(port);
+    // ptrController->LoadSampleCanvases();
         
     ptrController->Connect();
     ptrController->Start();

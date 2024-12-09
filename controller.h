@@ -120,7 +120,7 @@ class Controller : public IController
             180                     // Client Buffer Count
         );
         canvasMesmerizer->AddFeature(std::move(feature1));
-        canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("Starfield", "./media/mp4/rickroll.mp4"));
+        canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("RickRoll Video", "./media/mp4/rickroll.mp4"));
         canvasMesmerizer->Effects().SetCurrentEffect(0, *canvasMesmerizer);
         _canvases.push_back(std::move(canvasMesmerizer));
 
