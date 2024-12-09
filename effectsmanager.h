@@ -169,7 +169,7 @@ public:
             constexpr auto bUseCompression = true;
 
             StartCurrentEffect(canvas);
-            
+
             while (_running)
             {
                 // Update the effects and enqueue frames
@@ -254,43 +254,34 @@ inline void to_json(nlohmann::json& j, const ILEDEffect& effect)
         throw std::runtime_error("Unknown effect type for serialization: " + string(typeid(effect).name()));
 }
 
+template<typename T>
+std::unique_ptr<ILEDEffect> create_and_deserialize_effect(const nlohmann::json& j) 
+{
+    std::unique_ptr<T> temp;
+    from_json(j, temp);
+    return temp;
+}
+
+// Dynamically create an effect based on the "type" field in the JSON
+
 inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDEffect>& effect) 
 {
     std::string type = j.at("type").get<std::string>();
 
-    if (type == ColorWaveEffect::EffectTypeName()) {
-        std::unique_ptr<ColorWaveEffect> temp;
-        from_json(j, temp);
-        effect = std::move(temp);
-    } 
-    else if (type == FireworksEffect::EffectTypeName()) {
-        std::unique_ptr<FireworksEffect> temp;
-        from_json(j, temp);
-        effect = std::move(temp);
-    } 
-    else if (type == SolidColorFill::EffectTypeName()) {
-        std::unique_ptr<SolidColorFill> temp;
-        from_json(j, temp);
-        effect = std::move(temp);
-    } 
-    else if (type == PaletteEffect::EffectTypeName()) {
-        std::unique_ptr<PaletteEffect> temp;
-        from_json(j, temp);
-        effect = std::move(temp);
-    } 
-    else if (type == StarfieldEffect::EffectTypeName()) {
-        std::unique_ptr<StarfieldEffect> temp;
-        from_json(j, temp);
-        effect = std::move(temp);
-    } 
-    else if (type == MP4PlaybackEffect::EffectTypeName()) {
-        std::unique_ptr<MP4PlaybackEffect> temp;
-        from_json(j, temp);
-        effect = std::move(temp);
-    } 
-    else {
+    if (type == ColorWaveEffect::EffectTypeName())
+        effect = create_and_deserialize_effect<ColorWaveEffect>(j);
+    else if (type == FireworksEffect::EffectTypeName())
+        effect = create_and_deserialize_effect<FireworksEffect>(j);
+    else if (type == SolidColorFill::EffectTypeName())
+        effect = create_and_deserialize_effect<SolidColorFill>(j);
+    else if (type == PaletteEffect::EffectTypeName())
+        effect = create_and_deserialize_effect<PaletteEffect>(j);
+    else if (type == StarfieldEffect::EffectTypeName())
+        effect = create_and_deserialize_effect<StarfieldEffect>(j);
+    else if (type == MP4PlaybackEffect::EffectTypeName())
+        effect = create_and_deserialize_effect<MP4PlaybackEffect>(j);
+    else
         throw std::runtime_error("Unknown effect type for deserialization: " + type);
-    }
 }
 
 inline std::unique_ptr<IEffectsManager> CreateEffectsManager(uint16_t fps = 30) 
