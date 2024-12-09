@@ -18,6 +18,11 @@ public:
     {
     }
 
+    inline static string EffectTypeName() 
+    { 
+        return typeid(ColorWaveEffect).name(); 
+    }
+
     void Start(ICanvas& canvas) override
     {
         // Reset the hue at the start
@@ -56,7 +61,7 @@ public:
 inline void to_json(nlohmann::json& j, const ColorWaveEffect & effect) 
 {
     j = {
-        {"type", "ColorWave"},
+        {"type", ColorWaveEffect::EffectTypeName()},
         {"name", effect.Name()},
         {"speed", effect._speed},
         {"waveFrequency", effect._waveFrequency}

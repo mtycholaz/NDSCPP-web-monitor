@@ -249,45 +249,45 @@ inline void to_json(nlohmann::json& j, const ILEDEffect& effect)
     else if (const auto* video = dynamic_cast<const MP4PlaybackEffect*>(&effect))
         to_json(j, *video);
     else
-        throw std::runtime_error("Unknown effect type for serialization");
+        throw std::runtime_error("Unknown effect type for serialization: " + string(typeid(effect).name()));
 }
 
 inline void from_json(const nlohmann::json& j, std::unique_ptr<ILEDEffect>& effect) 
 {
     std::string type = j.at("type").get<std::string>();
 
-    if (type == "ColorWave") {
+    if (type == ColorWaveEffect::EffectTypeName()) {
         std::unique_ptr<ColorWaveEffect> temp;
         from_json(j, temp);
         effect = std::move(temp);
     } 
-    else if (type == "Fireworks") {
+    else if (type == FireworksEffect::EffectTypeName()) {
         std::unique_ptr<FireworksEffect> temp;
         from_json(j, temp);
         effect = std::move(temp);
     } 
-    else if (type == "SolidColorFill") {
+    else if (type == SolidColorFill::EffectTypeName()) {
         std::unique_ptr<SolidColorFill> temp;
         from_json(j, temp);
         effect = std::move(temp);
     } 
-    else if (type == "PaletteEffect") {
+    else if (type == PaletteEffect::EffectTypeName()) {
         std::unique_ptr<PaletteEffect> temp;
         from_json(j, temp);
         effect = std::move(temp);
     } 
-    else if (type == "Starfield") {
+    else if (type == StarfieldEffect::EffectTypeName()) {
         std::unique_ptr<StarfieldEffect> temp;
         from_json(j, temp);
         effect = std::move(temp);
     } 
-    else if (type == "MP4Playback") {
+    else if (type == MP4PlaybackEffect::EffectTypeName()) {
         std::unique_ptr<MP4PlaybackEffect> temp;
         from_json(j, temp);
         effect = std::move(temp);
     } 
     else {
-        throw std::runtime_error("Unknown effect type for deserialization");
+        throw std::runtime_error("Unknown effect type for deserialization: " + type);
     }
 }
 

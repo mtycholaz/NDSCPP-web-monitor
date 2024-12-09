@@ -54,6 +54,12 @@ public:
           _Mirrored(mirrored)
     {
     }
+
+    inline static string EffectTypeName() 
+    { 
+        return typeid(PaletteEffect).name();
+    }
+
     
     void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
@@ -105,7 +111,8 @@ public:
 inline void to_json(nlohmann::json& j, const PaletteEffect & effect) 
 {
     j = {
-            {"type",              "PaletteEffect"},
+            {"type",              PaletteEffect::EffectTypeName()},
+
             {"name",              effect.Name()},
             {"palette",           effect._Palette},
             {"ledColorPerSecond", effect._LEDColorPerSecond},

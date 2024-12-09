@@ -92,6 +92,11 @@ public:
     {
     }
 
+    inline static string EffectTypeName() 
+    { 
+        return typeid(FireworksEffect).name(); 
+    }
+
     void Update(ICanvas &canvas, milliseconds deltaTime) override
     {
         const auto ledCount = canvas.Graphics().Width() * canvas.Graphics().Height();
@@ -167,7 +172,7 @@ public:
 inline void to_json(nlohmann::json &j, const FireworksEffect &effect)
 {
     j ={
-            {"type",                    "Fireworks"},
+            {"type",                    FireworksEffect::EffectTypeName()},
             {"name",                    effect.Name()},
             {"maxSpeed",                effect._maxSpeed},
             {"newParticleProbability",  effect._newParticleProbability},
