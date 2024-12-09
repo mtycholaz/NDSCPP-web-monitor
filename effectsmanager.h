@@ -168,6 +168,8 @@ public:
             auto nextFrameTime = steady_clock::now();
             constexpr auto bUseCompression = true;
 
+            StartCurrentEffect(canvas);
+            
             while (_running)
             {
                 // Update the effects and enqueue frames

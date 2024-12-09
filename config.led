@@ -1,13 +1,13 @@
 {
     "canvases": [
       {
-        "currentEffectName": "Starfield",
+        "currentEffectName": "RickRoll Video",
         "effectsManager": {
           "currentEffectIndex": 0,
           "effects": [
             {
               "filePath": "./media/mp4/rickroll.mp4",
-              "name": "Starfield",
+              "name": "RickRoll Video",
               "type": "17MP4PlaybackEffect"
             }
           ],
