@@ -1,17 +1,17 @@
 {
     "canvases": [
       {
-        "currentEffectName": "Triangle Video",
+        "currentEffectName": "Money Video",
         "effectsManager": {
           "currentEffectIndex": 0,
           "effects": [
             {
-              "filePath": "./media/mp4/triangle.mp4",
-              "name": "Triangle Video",
+              "filePath": "./media/mp4/goldendollars.mp4",
+              "name": "Money Video",
               "type": "17MP4PlaybackEffect"
             }
           ],
-          "fps": 20,
+          "fps": 24,
           "type": "EffectsManager"
         },
         "features": [
@@ -32,7 +32,7 @@
             "width": 64
           }
         ],
-        "fps": 20,
+        "fps": 24,
         "height": 32,
         "id": 0,
         "name": "Mesmerizer",
