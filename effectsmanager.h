@@ -241,7 +241,8 @@ using EffectSerializer = function<void(nlohmann::json&, const ILEDEffect&)>;
 using EffectDeserializer = function<unique_ptr<ILEDEffect>(const nlohmann::json&)>;
 
 // Factory function to create a pair of effect (de)serialization functions for a given type
-template<typename T> pair<EffectSerializer, EffectDeserializer> factoryPair() 
+template<typename T> 
+pair<EffectSerializer, EffectDeserializer> factoryPair() 
 {
     EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) 
     { 
