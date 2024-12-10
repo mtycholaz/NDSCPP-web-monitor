@@ -237,56 +237,45 @@ private:
 };
 
 // Define type aliases for effect (de)serialization functions for legibility reasons
-
 using EffectSerializer = function<void(nlohmann::json&, const ILEDEffect&)>;
 using EffectDeserializer = function<unique_ptr<ILEDEffect>(const nlohmann::json&)>;
 
+// Factory function to create a pair of effect (de)serialization functions for a given type
+template<typename T> 
+pair<EffectSerializer, EffectDeserializer> factoryPair() 
+{
+    EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) 
+    { 
+        to_json(j, dynamic_cast<const T&>(effect)); 
+    };
+
+    EffectDeserializer deserializer = [](const nlohmann::json& j)
+    { 
+        return j.get<unique_ptr<T>>(); 
+    };
+
+    return make_pair(serializer, deserializer);
+}
+
 // Map with effect (de)serialization functions
 
-map<string, pair<EffectSerializer, EffectDeserializer>> gEffectSerializerFunctions;
-
-// Set the effect (de)serializer functions for one effect type
-
-template <typename T>
-void SetEffectFunctions()
+static const map<string, pair<EffectSerializer, EffectDeserializer>> to_from_json_map =
 {
-    EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const T&>(effect)); };
-    EffectDeserializer deserializer = [](const nlohmann::json& j) { return j.get<unique_ptr<T>>(); };
-
-    gEffectSerializerFunctions[T::EffectTypeName()] = make_pair(serializer, deserializer);
-}
-
-// Register the (de)serializer functions for all effects we know about.
-// This function needs to be updated every time a new effect is added that needs to be (de)serialized.
-
-inline void RegisterEffectSerializers()
-{
-    SetEffectFunctions<ColorWaveEffect>();
-    SetEffectFunctions<FireworksEffect>();
-    SetEffectFunctions<SolidColorFill>();
-    SetEffectFunctions<PaletteEffect>();
-    SetEffectFunctions<StarfieldEffect>();
-    SetEffectFunctions<MP4PlaybackEffect>();
-}
-
-//      Serialization Cheat Sheet
-//      --------------------------------------------------------------------------
-//      IController:      Serializes its properties and the canvas list
-//      ICanvas:          Serializes its properties including the IEffectManager
-//      IEffectMananger:  Serializes its ILEDEffects dynamically for each effect type
-//      ILEDEffect:       Serializes its properties
-//      ILEDFeature:      Serializes its properties
-//      ISocketChannel:   Serializes its properties
-
-// ILEDEffect --> JSON
+    { typeid(ColorWaveEffect).name(),   factoryPair<ColorWaveEffect>() },
+    { typeid(FireworksEffect).name(),   factoryPair<FireworksEffect>() },
+    { typeid(SolidColorFill).name(),    factoryPair<SolidColorFill>() },
+    { typeid(PaletteEffect).name(),     factoryPair<PaletteEffect>() },
+    { typeid(StarfieldEffect).name(),   factoryPair<StarfieldEffect>() },
+    { typeid(MP4PlaybackEffect).name(), factoryPair<MP4PlaybackEffect>() }
+};
 
 // Dynamically serialize an effect to JSON based on its actual type
 
 inline void to_json(nlohmann::json& j, const ILEDEffect& effect) 
 {
     std::string type = typeid(effect).name();
-    auto it = gEffectSerializerFunctions.find(type);
-    if (it == gEffectSerializerFunctions.end())
+    auto it = to_from_json_map.find(type);
+    if (it == to_from_json_map.end())
     {
         logger->error("Unknown effect type for serialization: {}, replacing with default fill", type);
         throw runtime_error("Unknown effect type for serialization: " + type);
@@ -301,8 +290,8 @@ inline void to_json(nlohmann::json& j, const ILEDEffect& effect)
 
 inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect) 
 {
-    auto it = gEffectSerializerFunctions.find(j["type"]);
-    if (it == gEffectSerializerFunctions.end())
+    auto it = to_from_json_map.find(j["type"]);
+    if (it == to_from_json_map.end())
     {
         logger->error("Unknown effect type for deserialization: {}, replacing with magenta fill", j["type"].get<string>());
         effect = std::move(make_unique<SolidColorFill>("Unknown Effect Type", CRGB::Magenta));

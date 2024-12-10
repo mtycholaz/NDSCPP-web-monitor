@@ -74,8 +74,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    RegisterEffectSerializers();
-
     // Load the canvases from the configuration file or use hard-coded table defaults
     // depending on USE_DEMO_DATA being defined or not.
 
