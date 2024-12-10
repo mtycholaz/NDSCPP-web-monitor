@@ -242,7 +242,7 @@ using EffectDeserializer = function<unique_ptr<ILEDEffect>(const nlohmann::json&
 
 // Factory function to create a pair of effect (de)serialization functions for a given type
 template<typename T> 
-pair<EffectSerializer, EffectDeserializer> factoryPair() 
+pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair() 
 {
     EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) 
     { 
@@ -254,19 +254,19 @@ pair<EffectSerializer, EffectDeserializer> factoryPair()
         return j.get<unique_ptr<T>>(); 
     };
 
-    return make_pair(serializer, deserializer);
+    return make_pair(typeid(T).name(), make_pair(serializer, deserializer));
 }
 
 // Map with effect (de)serialization functions
 
 static const map<string, pair<EffectSerializer, EffectDeserializer>> to_from_json_map =
 {
-    { typeid(ColorWaveEffect).name(),   factoryPair<ColorWaveEffect>() },
-    { typeid(FireworksEffect).name(),   factoryPair<FireworksEffect>() },
-    { typeid(SolidColorFill).name(),    factoryPair<SolidColorFill>() },
-    { typeid(PaletteEffect).name(),     factoryPair<PaletteEffect>() },
-    { typeid(StarfieldEffect).name(),   factoryPair<StarfieldEffect>() },
-    { typeid(MP4PlaybackEffect).name(), factoryPair<MP4PlaybackEffect>() }
+    jsonPair<ColorWaveEffect>(),
+    jsonPair<FireworksEffect>(),
+    jsonPair<SolidColorFill>(),
+    jsonPair<PaletteEffect>(),
+    jsonPair<StarfieldEffect>(),
+    jsonPair<MP4PlaybackEffect>()
 };
 
 // Dynamically serialize an effect to JSON based on its actual type
