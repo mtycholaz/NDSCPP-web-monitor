@@ -77,6 +77,8 @@ int main(int argc, char *argv[])
     // Load the canvases from the configuration file or use hard-coded table defaults
     // depending on USE_DEMO_DATA being defined or not.
 
+    #define USE_DEMO_DATA 0
+
     #if USE_DEMO_DATA
         unique_ptr<Controller> ptrController = make_unique<Controller>(port);
         ptrController->LoadSampleCanvases();

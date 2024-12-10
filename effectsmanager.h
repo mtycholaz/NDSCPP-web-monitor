@@ -168,6 +168,11 @@ public:
             auto nextFrameTime = steady_clock::now();
             constexpr auto bUseCompression = true;
 
+            // Starting the canvas should start the effect at least one time, as many effects
+            // have one-time setup in their Start() method
+            
+            StartCurrentEffect(canvas);
+
             while (_running)
             {
                 // Update the effects and enqueue frames

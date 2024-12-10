@@ -58,6 +58,8 @@ public:
 
         if (_currentWindowBytes <= (numeric_limits<uint64_t>::max() - bytes))
             _currentWindowBytes += bytes;
+        else
+            _currentWindowBytes = numeric_limits<uint64_t>::max();
     }
 
     uint64_t UpdateBytesPerSecond()
