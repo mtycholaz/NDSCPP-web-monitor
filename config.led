@@ -1,13 +1,13 @@
 {
     "canvases": [
       {
-        "currentEffectName": "RickRoll Video",
+        "currentEffectName": "Triangle Video",
         "effectsManager": {
           "currentEffectIndex": 0,
           "effects": [
             {
-              "filePath": "./media/mp4/rickroll.mp4",
-              "name": "RickRoll Video",
+              "filePath": "./media/mp4/triangle.mp4",
+              "name": "Triangle Video",
               "type": "17MP4PlaybackEffect"
             }
           ],
