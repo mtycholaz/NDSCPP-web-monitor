@@ -168,8 +168,6 @@ public:
             auto nextFrameTime = steady_clock::now();
             constexpr auto bUseCompression = true;
 
-            StartCurrentEffect(canvas);
-
             while (_running)
             {
                 // Update the effects and enqueue frames
@@ -236,7 +234,7 @@ private:
 
 inline void to_json(nlohmann::json& j, const ILEDEffect& effect) 
 {
-    static const std::unordered_map<std::string, void(*)(nlohmann::json&, const ILEDEffect&)> to_json_map = 
+    static const std::map<std::string, void(*)(nlohmann::json&, const ILEDEffect&)> to_json_map = 
     {
         { ColorWaveEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const ColorWaveEffect&>(effect)); } },
         { FireworksEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const FireworksEffect&>(effect)); } },
@@ -249,9 +247,22 @@ inline void to_json(nlohmann::json& j, const ILEDEffect& effect)
     std::string type = typeid(effect).name();
     auto it = to_json_map.find(type);
     if (it == to_json_map.end())
-        throw std::runtime_error("Unknown effect type for serialization: " + type);
+    {
+        logger->error("Unknown effect type for serialization: {}, replacing with default fill", type);
+        throw runtime_error("Unknown effect type for serialization: " + type);
+    }
     it->second(j, effect);
 }
+
+//      Serialization Cheat Sheet
+//      --------------------------------------------------------------------------
+//      IController:      Serializes its properties and the canvas list
+//      ICanvas:          Serializes its properties including the IEffectManager
+//      IEffectMananger:  Serializes its ILEDEffects dynamically for each effect type
+//      ILEDEffect:       Serializes its properties
+//      ILEDFeature:      Serializes its properties
+//      ISocketChannel:   Serializes its properties
+
 
 // Create an effect from JSON and return a unique pointer to it
 
@@ -265,9 +276,11 @@ unique_ptr<ILEDEffect> effectFactory(const nlohmann::json& j) {
 // Dynamically deserialize an effect from JSON based on its indicated type 
 // and return it on the unique pointer out reference
 
+// ILEDEffect <-- JSON
+
 inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect) 
 {
-    static const std::unordered_map<std::string, std::unique_ptr<ILEDEffect>(*)(const nlohmann::json&)> effects_map = 
+    static const std::map<std::string, std::unique_ptr<ILEDEffect>(*)(const nlohmann::json&)> effects_map = 
     {
         { ColorWaveEffect::EffectTypeName(),   effectFactory<ColorWaveEffect>   },
         { FireworksEffect::EffectTypeName(),   effectFactory<FireworksEffect>   },
@@ -278,9 +291,16 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect)
     };
     auto it = effects_map.find(j["type"]);
     if (it == effects_map.end())
-        throw runtime_error("Unknown effect type for deserialization: " + j["type"].get<string>());       
+    {
+        logger->error("Unknown effect type for deserialization: {}, replacing with magenta fill", j["type"].get<string>());
+        effect = std::move(make_unique<SolidColorFill>("Unknown Effect Type", CRGB::Magenta));
+        return;
+    }
+     
     effect = std::move(it->second(j));
 }
+
+// IEffectsManager <-- JSON
 
 inline void to_json(nlohmann::json& j, const IEffectsManager& manager) 
 {
@@ -291,6 +311,8 @@ inline void to_json(nlohmann::json& j, const IEffectsManager& manager)
         {"effects", manager.Effects()}
     };
 }
+
+// IEffectManager --> JSON
 
 inline void from_json(const nlohmann::json& j, IEffectsManager& manager) 
 {
