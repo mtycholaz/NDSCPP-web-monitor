@@ -103,6 +103,7 @@ public:
         {
             if (_features[i]->Id() == featureId)
             {
+                _features[i]->Socket().Stop();
                 _features.erase(_features.begin() + i);
                 return true;
             }
@@ -132,21 +133,23 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
 }
 
 // ICanvas <-- JSON
-
-inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas) 
+inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas) 
 {
     // Create canvas with required fields
-    canvas = make_unique<Canvas>(
-        j.at("name").get<string>(),
+    canvas = std::make_unique<Canvas>(
+        j.at("name").get<std::string>(),
         j.at("width").get<uint32_t>(),
         j.at("height").get<uint32_t>(),
-        j.value("fps", 30u) 
+        j.value("fps", 30u) // Default FPS to 30 if not provided
     );
 
     // Features()
     for (const auto& featureJson : j.value("features", nlohmann::json::array()))
-        canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
+        canvas->AddFeature(std::move(featureJson.get<unique_ptr<ILEDFeature>>()));
 
-    // Effects()
-    from_json(j.at("effectsManager"), canvas->Effects());
+    // Validate and deserialize EffectsManager
+    if (j.contains("effectsManager")) 
+    {
+        from_json(j.at("effectsManager"), canvas->Effects());
+    }
 }

@@ -26,15 +26,8 @@ protected:
         cleanupTestData();
     }
 
-    void cleanupTestData() {
-        // Get all canvases and delete them
-        auto response = cpr::Get(cpr::Url{BASE_URL + "/canvases"});
-        if (response.status_code == 200) {
-            auto canvases = json::parse(response.text);
-            for (const auto& canvas : canvases) {
-                cpr::Delete(cpr::Url{BASE_URL + "/canvases/" + std::to_string(canvas["id"].get<int>())});
-            }
-        }
+    void cleanupTestData() 
+    {
     }
 };
 
@@ -71,12 +64,12 @@ TEST_F(APITest, GetSpecificSocket) {
     }
 }
 
-/*
 // Test Canvas CRUD operations
+
 TEST_F(APITest, CanvasCRUD) {
     // Create canvas
     json canvasData = {
-        {"id", 1},
+        {"id", -1},  // Allow the server to assign the ID
         {"name", "Test Canvas"},
         {"width", 100},
         {"height", 100}
@@ -89,58 +82,85 @@ TEST_F(APITest, CanvasCRUD) {
     );
     ASSERT_EQ(createResponse.status_code, 201);
 
+    // Parse the response to get the new ID
+    auto createJson = json::parse(createResponse.text);
+    ASSERT_TRUE(createJson.contains("id"));  // Ensure the response contains "id"
+    int newId = createJson["id"].get<int>();
+    ASSERT_GT(newId, 0);  // Verify the ID is valid
+
     // Read all canvases
     auto listResponse = cpr::Get(cpr::Url{BASE_URL + "/canvases"});
     ASSERT_EQ(listResponse.status_code, 200);
     auto canvases = json::parse(listResponse.text);
     ASSERT_FALSE(canvases.empty());
 
-    // Read specific canvas
-    auto getResponse = cpr::Get(cpr::Url{BASE_URL + "/canvases/1"});
+    // Read specific canvas using the new ID
+    auto getResponse = cpr::Get(cpr::Url{BASE_URL + "/canvases/" + std::to_string(newId)});
     ASSERT_EQ(getResponse.status_code, 200);
     auto canvas = json::parse(getResponse.text);
     ASSERT_EQ(canvas["name"], "Test Canvas");
 
-    // Delete canvas
-    auto deleteResponse = cpr::Delete(cpr::Url{BASE_URL + "/canvases/1"});
+    // Delete the canvas using the new ID
+    auto deleteResponse = cpr::Delete(cpr::Url{BASE_URL + "/canvases/" + std::to_string(newId)});
     ASSERT_EQ(deleteResponse.status_code, 200);
 
     // Verify deletion
-    auto verifyResponse = cpr::Get(cpr::Url{BASE_URL + "/canvases/1"});
+    auto verifyResponse = cpr::Get(cpr::Url{BASE_URL + "/canvases/" + std::to_string(newId)});
     ASSERT_EQ(verifyResponse.status_code, 404);
 }
 
+
 // Test Feature operations within a canvas
+
 TEST_F(APITest, CanvasFeatureOperations) {
     // First create a canvas
     json canvasData = {
-        {"id", 1},
+        {"id", -1}, // Let the server assign the ID
         {"name", "Feature Test Canvas"},
         {"width", 100},
         {"height", 100}
     };
-    
-    cpr::Post(
+
+    // Send the POST request and capture the response
+    auto createCanvasResponse = cpr::Post(
         cpr::Url{BASE_URL + "/canvases"},
         cpr::Body{canvasData.dump()},
         cpr::Header{{"Content-Type", "application/json"}}
     );
 
-    // Create feature
-    json featureData = {
-        {"type", "LED"},
-        {"x", 50},
-        {"y", 50},
-        {"color", "#FF0000"}
-    };
+    // Assert the response status
+    ASSERT_EQ(createCanvasResponse.status_code, 201); // Ensure the canvas was created successfully
+
+    // Parse the response body to extract the new ID
+    auto responseJson = json::parse(createCanvasResponse.text);
+    int newCanvasId = responseJson["id"].get<int>();
+
+    // Use the new ID in subsequent operations
+    ASSERT_GT(newCanvasId, 0); // Validate the ID is a positive number
     
+    // Create feature with all required fields
+    json featureData = {
+        {"type", "LEDFeature"},
+        {"hostName", "example-host"},
+        {"friendlyName", "Test Feature"},
+        {"port", 1234},
+        {"width", 32},
+        {"height", 16},
+        {"offsetX", 50},
+        {"offsetY", 50},
+        {"reversed", false},
+        {"channel", 1},
+        {"redGreenSwap", false},
+        {"clientBufferCount", 8}
+    };
+
     auto createFeatureResponse = cpr::Post(
         cpr::Url{BASE_URL + "/canvases/1/features"},
         cpr::Body{featureData.dump()},
         cpr::Header{{"Content-Type", "application/json"}}
     );
     ASSERT_EQ(createFeatureResponse.status_code, 200);
-    
+
     auto featureInfo = json::parse(createFeatureResponse.text);
     int featureId = featureInfo["id"].get<int>();
 
@@ -149,9 +169,13 @@ TEST_F(APITest, CanvasFeatureOperations) {
         cpr::Url{BASE_URL + "/canvases/1/features/" + std::to_string(featureId)}
     );
     ASSERT_EQ(deleteFeatureResponse.status_code, 200);
+
+    // Delete the canvas
+    auto deleteCanvasResponse = cpr::Delete(
+        cpr::Url{BASE_URL + "/canvases/" + std::to_string(newCanvasId)}
+    );
 }
 
-*/
 
 // Test error cases
 TEST_F(APITest, ErrorHandling) {

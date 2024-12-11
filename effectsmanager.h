@@ -8,6 +8,7 @@ using namespace std::chrono;
 #include "effects/paletteeffect.h"
 #include "effects/starfield.h"
 #include "effects/videoeffect.h"
+#include "effects/bouncingballeffect.h"
 
 // EffectsManager
 //
@@ -261,6 +262,7 @@ pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair()
 
 static const map<string, pair<EffectSerializer, EffectDeserializer>> to_from_json_map =
 {
+    jsonPair<BouncingBallEffect>(),
     jsonPair<ColorWaveEffect>(),
     jsonPair<FireworksEffect>(),
     jsonPair<SolidColorFill>(),

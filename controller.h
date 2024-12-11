@@ -117,9 +117,9 @@ class Controller : public IController
             180                     // Client Buffer Count
         );
         canvasMesmerizer->AddFeature(std::move(feature1));
-        canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("RickRoll Video", "./media/mp4/rickroll.mp4"));
+        canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("Money Video", "./media/mp4/goldendollars.mp4"));
         canvasMesmerizer->Effects().SetCurrentEffect(0, *canvasMesmerizer);
-        _canvases.push_back(std::move(canvasMesmerizer));
+        //_canvases.push_back(std::move(canvasMesmerizer));
 
         //---------------------------------------------------------------------
 
@@ -328,7 +328,7 @@ class Controller : public IController
                 500                  // Client Buffer Count
             );
             canvasCeiling->AddFeature(std::move(featureCeiling));
-            canvasCeiling->Effects().AddEffect(make_unique<FireworksEffect>("Fireworks"));
+            canvasCeiling->Effects().AddEffect(make_unique<BouncingBallEffect>("Bouncing Balls"));
             canvasCeiling->Effects().SetCurrentEffect(0, *canvasCeiling);
             _canvases.push_back(std::move(canvasCeiling));
         }
@@ -386,7 +386,7 @@ class Controller : public IController
             canvas->Effects().Stop();
     }
 
-    bool AddCanvas(unique_ptr<ICanvas> ptrCanvas) override
+    uint32_t AddCanvas(unique_ptr<ICanvas> ptrCanvas) override
     {
         logger->debug("Adding canvas {}...", ptrCanvas->Name());
 
@@ -397,12 +397,14 @@ class Controller : public IController
         {
             GetCanvasById(ptrCanvas->Id());
             logger->error("Canvas with ID {} already exists.", ptrCanvas->Id());
-            return false;
+            return -1;
         }
         catch(const out_of_range &)               
         {
+            auto newId = _canvases.size();
+            ptrCanvas->SetId(newId);
             _canvases.push_back(std::move(ptrCanvas));    
-            return true;
+            return newId;
         }
     }
 
@@ -410,12 +412,18 @@ class Controller : public IController
     {
         logger->debug("Deleting canvas {}...", id);
         
-        try {
-            GetCanvasById(id); // Verify canvas exists
+        try 
+        {
+            auto &canvas = GetCanvasById(id);
+            canvas.Effects().Stop();
+            for (auto &feature : canvas.Features())
+                feature.get().Socket().Stop();
+            
+            // Erase the canvas from _canvases
             _canvases.erase(
-                remove_if(_canvases.begin(), _canvases.end(),
-                    [id](const auto& canvas) { return canvas->Id() == id; }),
+                remove_if(_canvases.begin(), _canvases.end(), [id](const auto &canvas) { return canvas->Id() == id; }),
                 _canvases.end());
+
             return true;
         }
         catch(const out_of_range&) {

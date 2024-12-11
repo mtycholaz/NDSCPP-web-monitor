@@ -215,22 +215,25 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
 
 inline void from_json(const nlohmann::json& j, unique_ptr<ILEDFeature>& feature) 
 {
-    if (j.at("type").get<string>() != "LEDFeature") 
+    // Ensure the type matches
+    if (j.at("type").get<std::string>() != "LEDFeature") 
     {
-        throw runtime_error("Invalid feature type in JSON");
+        throw std::runtime_error("Invalid feature type in JSON");
     }
 
-    feature = make_unique<LEDFeature>(
-        j.at("hostName").get<string>(),
-        j.at("friendlyName").get<string>(),
+    // Use `at` for all fields since they are mandatory
+    feature = std::make_unique<LEDFeature>(
+        j.at("hostName").get<std::string>(),
+        j.at("friendlyName").get<std::string>(),
         j.at("port").get<uint16_t>(),
         j.at("width").get<uint32_t>(),
-        j.value("height", 1u),
-        j.value("offsetX", 0u),
-        j.value("offsetY", 0u),
-        j.value("reversed", false),
-        j.value("channel", uint8_t(0)),
-        j.value("redGreenSwap", false),
-        j.value("clientBufferCount", 8u)
+        j.at("height").get<uint32_t>(),
+        j.at("offsetX").get<uint32_t>(),
+        j.at("offsetY").get<uint32_t>(),
+        j.at("reversed").get<bool>(),
+        j.at("channel").get<uint8_t>(),
+        j.at("redGreenSwap").get<bool>(),
+        j.at("clientBufferCount").get<uint32_t>()
     );
 }
+
