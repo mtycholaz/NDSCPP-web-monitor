@@ -27,7 +27,7 @@ import { Canvas } from 'src/app/services';
 export class MonitorComponent {
 
     lastRefresh: Date = new Date();
-    autoRefresh = false;
+    autoRefresh = true;
     refresh$ = timer(0, 3000).pipe(
         filter(() => this.autoRefresh),
         tap(() => this.refresh.emit()),

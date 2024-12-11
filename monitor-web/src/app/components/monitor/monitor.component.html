@@ -1,4 +1,7 @@
 <mat-card>
+    <mat-card-header>
+        <mat-card-title>NightDriver Monitor</mat-card-title>
+    </mat-card-header>
     <mat-table [dataSource]="canvases()">
         <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
@@ -39,7 +42,11 @@
             <mat-icon>refresh</mat-icon>
             Refresh
         </button>
-        <mat-checkbox [checked]="autoRefresh" (change)="autoRefresh = $event.checked">Auto update?</mat-checkbox>
+        <mat-checkbox
+            [checked]="autoRefresh"
+            (change)="autoRefresh = $event.checked"
+            >Auto update?</mat-checkbox
+        >
         <div class="last-update">
             Last updated:
             <time>{{ lastRefresh | date : 'yyyy-MM-dd hh:mm:ss' }}</time>
