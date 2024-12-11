@@ -58,6 +58,8 @@ public:
 
         if (_currentWindowBytes <= (numeric_limits<uint64_t>::max() - bytes))
             _currentWindowBytes += bytes;
+        else
+            _currentWindowBytes = numeric_limits<uint64_t>::max();
     }
 
     uint64_t UpdateBytesPerSecond()
@@ -540,11 +542,8 @@ private:
                         continue;  // Check for more data
                     }
                 }
-                else if (byteCount > 0)
-                {
-                    logger->warn("Invalid byte count reading response from {} [{}]", _hostName, _friendlyName);
-                }
-                
+
+                logger->warn("Invalid byte count reading response from {} [{}]", _hostName, _friendlyName);
                 // Invalid byte count; eat the contents
                 vector<uint8_t> tempBuffer(byteCount);
                 recv(_socketFd, tempBuffer.data(), byteCount, 0);
@@ -767,6 +766,8 @@ private:
     }
 };
 
+// ISocketChannel --> JSON
+
 inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
 {
     try
@@ -793,6 +794,8 @@ inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
         j = nullptr;
     }
 }
+
+// ISocketChannel <-- JSON
 
 inline void from_json(const nlohmann::json& j, unique_ptr<ISocketChannel>& socket) 
 {

@@ -74,14 +74,17 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Load the canvases from the configuration file
+    // Load the canvases from the configuration file or use hard-coded table defaults
+    // depending on USE_DEMO_DATA being defined or not.
 
-    unique_ptr<Controller> ptrController = Controller::CreateFromFile(filename);
-    
-    
-    // Until the controller can serialize effects, we still need to manually load things.
-    // unique_ptr<Controller> ptrController = make_unique<Controller>(port);
-    // ptrController->LoadSampleCanvases();
+    #define USE_DEMO_DATA 0
+
+    #if USE_DEMO_DATA
+        unique_ptr<Controller> ptrController = make_unique<Controller>(port);
+        ptrController->LoadSampleCanvases();
+    #else
+        unique_ptr<Controller> ptrController = Controller::CreateFromFile(filename);
+    #endif    
         
     ptrController->Connect();
     ptrController->Start();
