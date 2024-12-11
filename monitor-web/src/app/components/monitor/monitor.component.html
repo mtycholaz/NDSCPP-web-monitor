@@ -1,0 +1,48 @@
+<mat-card>
+    <mat-table [dataSource]="canvases()">
+        <ng-container matColumnDef="name">
+            <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{ element.name }} </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="feature">
+            <mat-header-cell *matHeaderCellDef> Feature </mat-header-cell>
+            <mat-cell *matCellDef="let element">
+                {{ element.features[0].friendlyName }}
+            </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="host">
+            <mat-header-cell *matHeaderCellDef> Host </mat-header-cell>
+            <mat-cell *matCellDef="let element">
+                {{ element.features[0].hostName }}
+            </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="fps">
+            <mat-header-cell *matHeaderCellDef> FPS </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{ element.fps }} </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="effect">
+            <mat-header-cell *matHeaderCellDef> Effect </mat-header-cell>
+            <mat-cell *matCellDef="let element">
+                {{ element.currentEffectName }}
+            </mat-cell>
+        </ng-container>
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+    </mat-table>
+    <ng-container *ngIf="canvases().length === 0">
+        <mat-card-content>
+            <p class="empty">No canvases found. Try refreshing.</p>
+        </mat-card-content>
+    </ng-container>
+    <mat-card-actions class="actions">
+        <button mat-raised-button (click)="onRefreshClicked()">
+            <mat-icon>refresh</mat-icon>
+            Refresh
+        </button>
+        <mat-checkbox [checked]="autoRefresh" (change)="autoRefresh = $event.checked">Auto update?</mat-checkbox>
+        <div class="last-update">
+            Last updated:
+            <time>{{ lastRefresh | date : 'yyyy-MM-dd hh:mm:ss' }}</time>
+        </div>
+    </mat-card-actions>
+</mat-card>
