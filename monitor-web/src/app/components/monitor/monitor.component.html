@@ -28,7 +28,7 @@
                 <mat-label> Display Columns </mat-label>
             </mat-form-field>
         </div>
-        <mat-table  [dataSource]="dataSource" [trackBy]="trackByFn">
+        <mat-table [dataSource]="dataSource" [trackBy]="trackByFn">
             <ng-container matColumnDef="canvasName">
                 <mat-header-cell *matHeaderCellDef> Canvas </mat-header-cell>
                 <mat-cell *matCellDef="let element">
@@ -56,9 +56,11 @@
             <ng-container matColumnDef="reconnectCount">
                 <mat-header-cell *matHeaderCellDef> Cx </mat-header-cell>
                 <mat-cell *matCellDef="let element">
-                    <span class="reconnect" [ngClass]="element.reconnectStatus">{{
-                        element.reconnectCount || '--'
-                    }}</span>
+                    <span
+                        class="reconnect"
+                        [ngClass]="element.reconnectStatus"
+                        >{{ element.reconnectCount || '--' }}</span
+                    >
                 </mat-cell>
             </ng-container>
             <ng-container matColumnDef="fps">
@@ -80,7 +82,20 @@
             </ng-container>
             <ng-container matColumnDef="queueDepth">
                 <mat-header-cell *matHeaderCellDef> Queue </mat-header-cell>
-                <mat-cell *matCellDef="let element"> -- </mat-cell>
+                <mat-cell *matCellDef="let element">
+                    <ng-container
+                        *ngIf="element.isConnected"
+                        [ngTemplateOutlet]="queue"
+                        [ngTemplateOutletContext]="{
+                            $implicit: {
+                                value: element.queueDepth,
+                                max: element.queueMaxSize,
+                                status: element.queueStatus
+                            }
+                        }"
+                    >
+                    </ng-container>
+                </mat-cell>
             </ng-container>
             <ng-container matColumnDef="buffer">
                 <mat-header-cell *matHeaderCellDef> Buffer </mat-header-cell>
@@ -100,17 +115,37 @@
                 </mat-cell>
             </ng-container>
             <ng-container matColumnDef="signal">
-                <mat-header-cell *matHeaderCellDef> Signal Data </mat-header-cell>
-                <mat-cell *matCellDef="let element"> -- </mat-cell>
+                <mat-header-cell *matHeaderCellDef> Signal </mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    <span [ngClass]="element.wifiSignalStatus">{{
+                        element.wifiSignal
+                    }}</span>
+                </mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="dataRate">
+                <mat-header-cell *matHeaderCellDef> Data </mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    <ng-container *ngIf="element.isConnected; else empty">
+                        {{ element.bandwidth | formatSize }}/s</ng-container
+                    >
+                </mat-cell>
             </ng-container>
             <ng-container matColumnDef="delta">
                 <mat-header-cell *matHeaderCellDef> Delta </mat-header-cell>
-                <mat-cell *matCellDef="let element"> -- </mat-cell>
+                <mat-cell *matCellDef="let element">
+                    <ng-container *ngIf="element.isConnected; else empty">
+                        <span [ngClass]="element.deltaStatus">{{
+                            element.delta | formatDelta
+                        }}</span>
+                    </ng-container>
+                </mat-cell>
             </ng-container>
             <ng-container matColumnDef="flash">
                 <mat-header-cell *matHeaderCellDef> Flash </mat-header-cell>
                 <mat-cell *matCellDef="let element">
-                    {{ element.flashVersion || '--' }}
+                    {{
+                        element.flashVersion ? 'v' + element.flashVersion : '--'
+                    }}
                 </mat-cell>
             </ng-container>
             <ng-container matColumnDef="status">
@@ -125,7 +160,9 @@
                     {{ element.currentEffectName }}
                 </mat-cell>
             </ng-container>
-            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-header-row
+                *matHeaderRowDef="displayedColumns"
+            ></mat-header-row>
             <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
         </mat-table>
         <ng-container *ngIf="canvases().length === 0">
@@ -137,10 +174,15 @@
 </mat-card>
 
 <ng-template #compare let-data>
-    <ng-container *ngIf="data.isConnected">
+    <ng-container *ngIf="data.isConnected; else empty">
         <span [ngClass]="data.status">{{ data.first }}</span>
         /
         <span>{{ data.second }}</span>
     </ng-container>
-    <ng-container *ngIf="!data.isConnected"> -- </ng-container>
 </ng-template>
+
+<ng-template #queue let-data>
+    <progress [ngClass]="data.status" [value]="data.value" [max]="data.max"></progress>
+</ng-template>
+
+<ng-template #empty>--</ng-template>

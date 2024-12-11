@@ -34,3 +34,21 @@ mat-table {
         color: #ff0000;
     }
 }
+
+progress {
+    border: 1px solid #969696;
+    width: 100%;
+    height: 30px;
+}
+progress::-webkit-progress-bar {
+    background-color: transparent;
+}
+progress.good::-webkit-progress-value {
+    background-color: #00b900;
+}
+progress.warning::-webkit-progress-value {
+    background-color: #ffcc00;
+}
+progress.danger::-webkit-progress-value {
+    background-color: #ff0000;
+}

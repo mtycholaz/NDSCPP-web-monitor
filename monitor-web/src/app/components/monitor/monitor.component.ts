@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     Component,
     HostListener,
@@ -7,19 +7,20 @@ import {
     output,
     SimpleChanges,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { filter, tap, timer } from 'rxjs';
 
+import { FormatDeltaPipe, FormatSizePipe } from '../../pipes';
 import { Canvas, Feature } from '../../services';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { FormsModule } from '@angular/forms';
-import { MatSelectModule, MatSelectChange } from '@angular/material/select';
 
 interface RowData {
     isConnected: boolean;
@@ -29,16 +30,21 @@ interface RowData {
     size: string;
     reconnectCount: number | null;
     reconnectStatus: 'good' | 'warning' | 'danger' | '' | null;
-    canvasfps: number | null;
-    featurefps: number | null;
+    canvasFps: number | null;
+    featureFps: number | null;
     fpsStatus: 'good' | 'warning' | '' | null;
     queueDepth: number | null;
+    queueMaxSize: number | null;
+    queueStatus: 'good' | 'warning' | 'danger' | '' | null;
     bufferSize: number | null;
     bufferPosition: number | null;
     bufferStatus: 'good' | 'warning' | 'danger' | '' | null;
-    wifiSignal: number | null;
+    wifiSignal: string | null;
+    wifiSignalStatus: 'good' | 'warning' | 'danger' | '' | null;
     bandwidth: number | null;
     currentTime: number | null;
+    delta: number | null;
+    deltaStatus: 'good' | 'warning' | 'danger' | '' | null;
     flashVersion: string | null;
     status: 'connected' | 'disconnected';
     currentEffectName: string;
@@ -60,6 +66,8 @@ interface RowData {
         MatInputModule,
         FormsModule,
         MatSelectModule,
+        FormatSizePipe,
+        FormatDeltaPipe,
     ],
 })
 export class MonitorComponent implements OnChanges {
@@ -88,6 +96,7 @@ export class MonitorComponent implements OnChanges {
         'queueDepth',
         'buffer',
         'signal',
+        'dataRate',
         'delta',
         'flash',
         'status',
@@ -103,7 +112,8 @@ export class MonitorComponent implements OnChanges {
         { key: 'FPS', value: 'fps' },
         { key: 'Queue', value: 'queueDepth' },
         { key: 'Buffer', value: 'buffer' },
-        { key: 'Signal Data', value: 'signal' },
+        { key: 'Signal', value: 'signal' },
+        { key: 'Data', value: 'dataRate' },
         { key: 'Delta', value: 'delta' },
         { key: 'Flash', value: 'flash' },
         { key: 'Status', value: 'status' },
@@ -141,6 +151,7 @@ export class MonitorComponent implements OnChanges {
     }
 
     transformFeatureToRowData(canvas: Canvas, feature: Feature) {
+        const now = new Date().getTime();
         const isConnected = feature.isConnected;
         const reconnectCount =
             feature.reconnectCount !== undefined
@@ -161,8 +172,8 @@ export class MonitorComponent implements OnChanges {
                 : reconnectCount < 10
                 ? 'warning'
                 : 'danger',
-            canvasfps: canvas.fps,
-            featurefps: 90,
+            canvasFps: canvas.fps,
+            featureFps: 90,
             fpsStatus: null,
             bufferSize: null,
             bufferPosition: null,
@@ -180,29 +191,49 @@ export class MonitorComponent implements OnChanges {
             const fps = lastClientResponse.fpsDrawing;
             const bufferPos = lastClientResponse.bufferPos;
             const bufferSize = lastClientResponse.bufferSize;
-            const signal = lastClientResponse.wifiSignal;
+            const signal = Math.abs(lastClientResponse.wifiSignal);
             const bytesPerSecond = feature.bytesPerSecond;
             const currentTime = lastClientResponse.currentClock;
+            const queueDepth = feature.queueDepth;
+            const queueMaxSize = feature.queueMaxSize;
             const flashVersion =
                 lastClientResponse.flashVersion !== undefined
                     ? lastClientResponse.flashVersion.toString()
                     : null;
             const ratio = bufferPos / bufferSize;
 
-            data.featurefps = fps;
+            data.featureFps = fps;
             data.bufferSize = bufferSize;
             data.bufferPosition = bufferPos;
-            data.wifiSignal = signal;
+            data.wifiSignal = signal >= 100 ? 'LAN' : `${~~signal} dBm`;
             data.bandwidth = bytesPerSecond;
             data.currentTime = currentTime;
+            data.delta = currentTime - now;
             data.flashVersion = flashVersion;
             data.status = 'connected';
+            data.queueDepth = queueDepth;
+            data.queueMaxSize = queueMaxSize;
+            data.queueStatus =
+                queueDepth < 100
+                    ? 'good'
+                    : queueDepth < 250
+                    ? 'warning'
+                    : 'danger';
 
             data.fpsStatus = fps < 0.8 * canvas.fps ? 'warning' : 'good';
             data.bufferStatus =
                 ratio >= 0.25 && ratio <= 0.85
                     ? 'good'
                     : ratio > 0.95
+                    ? 'warning'
+                    : 'danger';
+
+            data.wifiSignalStatus =
+                signal >= 100
+                    ? ''
+                    : signal < 70
+                    ? 'good'
+                    : signal < 80
                     ? 'warning'
                     : 'danger';
         }
@@ -231,6 +262,7 @@ export class MonitorComponent implements OnChanges {
     }
 
     update() {
+
         const data = this.canvases().reduce((acc, canvas) => {
             const features = canvas.features.map((feature) =>
                 this.transformFeatureToRowData(canvas, feature)
