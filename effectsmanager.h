@@ -244,8 +244,7 @@ using EffectDeserializer = function<unique_ptr<ILEDEffect>(const nlohmann::json&
 template<typename T> 
 pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair() 
 {
-    EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) 
-    { 
+    EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) { 
         to_json(j, dynamic_cast<const T&>(effect)); 
     };
 
@@ -298,7 +297,7 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect)
         return;
     }
      
-    effect = std::move(it->second.second(j));
+    effect = it->second.second(j);
 }
 
 // IEffectsManager <-- JSON
