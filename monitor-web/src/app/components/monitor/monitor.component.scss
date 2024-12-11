@@ -2,9 +2,35 @@
     text-align: center;
 }
 
-.actions {
-    gap: 10px;
+mat-table {
+    box-shadow: var(--mat-sys-level2);
 }
 
-.last-updated {
+.filters {
+    gap: 10px;
+    display: flex;
+}
+
+.good {
+    color: #00b900;
+}
+
+.warning {
+    color: #ffcc00;
+}
+
+.danger {
+    color: #ff0000;
+}
+
+.mat-column-status {
+    text-transform: uppercase;
+
+    .connected {
+        color: #00b900;
+    }
+
+    .disconnected {
+        color: #ff0000;
+    }
 }

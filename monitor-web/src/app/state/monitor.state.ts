@@ -28,8 +28,8 @@ export class MonitorState {
     @Action(MonitorActions.LoadControllerData)
     loadControllerData(ctx: StateContext<StateModel>, action: MonitorActions.LoadControllerData) {
         return this.monitorService.getCanvases().pipe(
-            tap((response) => {
-                ctx.patchState({ canvases: response.controller.canvases });
+            tap((canvases) => {
+                ctx.patchState({ canvases });
             })
         )
     }

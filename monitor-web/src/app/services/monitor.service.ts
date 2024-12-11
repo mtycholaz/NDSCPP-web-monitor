@@ -6,16 +6,8 @@ export class MonitorService {
     constructor(private http: HttpClient) {}
 
     getCanvases() {
-        return this.http.get<ControllerResponse>(
-            'http://localhost:7777/api/controller'
-        );
+        return this.http.get<Canvas[]>('http://localhost:7777/api/canvases');
     }
-}
-
-interface ControllerResponse {
-    controller: {
-        canvases: Canvas[];
-    };
 }
 
 export interface Canvas {
@@ -24,7 +16,7 @@ export interface Canvas {
         currentEffectIndex: number;
         effects: Effect[];
         fps: number;
-        type: 'EffectsManager';
+        type: string;
     };
     features: Feature[];
     fps: number;
@@ -34,7 +26,7 @@ export interface Canvas {
     width: number;
 }
 
-interface Feature {
+export interface Feature {
     bytesPerSecond: number;
     channel: number;
     clientBufferCount: number;
@@ -43,12 +35,12 @@ interface Feature {
     hostName: string;
     id: number;
     isConnected: boolean;
-    lastClientResponse: {
+    lastClientResponse?: {
         brightness: number;
         bufferPos: number;
         bufferSize: number;
         currentClock: number;
-        flashVersion: number;
+        flashVersion?: number | string;
         fpsDrawing: number;
         newestPacket: number;
         oldestPacket: number;
