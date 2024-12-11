@@ -20,13 +20,13 @@ using namespace std::chrono;
 
 class EffectsManager : public IEffectsManager
 {
-public:
     uint16_t _fps;
     int _currentEffectIndex; // Index of the current effect
     atomic<bool> _running;
     vector<unique_ptr<ILEDEffect>> _effects;
     thread _workerThread;
 
+public:
     EffectsManager(uint16_t fps = 30) : _fps(fps), _currentEffectIndex(-1), _running(false) // No effect selected initially
     {
     }
@@ -168,6 +168,9 @@ public:
             auto nextFrameTime = steady_clock::now();
             constexpr auto bUseCompression = true;
 
+            // Starting the canvas should start the effect at least one time, as many effects
+            // have one-time setup in their Start() method
+            
             StartCurrentEffect(canvas);
 
             while (_running)
@@ -233,54 +236,71 @@ private:
     friend void from_json(const nlohmann::json& j, EffectsManager& manager);
 };
 
+// Define type aliases for effect (de)serialization functions for legibility reasons
+using EffectSerializer = function<void(nlohmann::json&, const ILEDEffect&)>;
+using EffectDeserializer = function<unique_ptr<ILEDEffect>(const nlohmann::json&)>;
+
+// Factory function to create a pair of effect (de)serialization functions for a given type
+template<typename T> 
+pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair() 
+{
+    EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) { 
+        to_json(j, dynamic_cast<const T&>(effect)); 
+    };
+
+    EffectDeserializer deserializer = [](const nlohmann::json& j)
+    { 
+        return j.get<unique_ptr<T>>(); 
+    };
+
+    return make_pair(typeid(T).name(), make_pair(serializer, deserializer));
+}
+
+// Map with effect (de)serialization functions
+
+static const map<string, pair<EffectSerializer, EffectDeserializer>> to_from_json_map =
+{
+    jsonPair<ColorWaveEffect>(),
+    jsonPair<FireworksEffect>(),
+    jsonPair<SolidColorFill>(),
+    jsonPair<PaletteEffect>(),
+    jsonPair<StarfieldEffect>(),
+    jsonPair<MP4PlaybackEffect>()
+};
+
+// Dynamically serialize an effect to JSON based on its actual type
 
 inline void to_json(nlohmann::json& j, const ILEDEffect& effect) 
 {
-    static const std::unordered_map<std::string, void(*)(nlohmann::json&, const ILEDEffect&)> to_json_map = 
-    {
-        { ColorWaveEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const ColorWaveEffect&>(effect)); } },
-        { FireworksEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const FireworksEffect&>(effect)); } },
-        { SolidColorFill::EffectTypeName(),    [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const SolidColorFill&>(effect)); } },
-        { PaletteEffect::EffectTypeName(),     [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const PaletteEffect&>(effect)); } },
-        { StarfieldEffect::EffectTypeName(),   [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const StarfieldEffect&>(effect)); } },
-        { MP4PlaybackEffect::EffectTypeName(), [](nlohmann::json& j, const ILEDEffect& effect) { to_json(j, dynamic_cast<const MP4PlaybackEffect&>(effect)); } }
-    };
-
     std::string type = typeid(effect).name();
-    auto it = to_json_map.find(type);
-    if (it == to_json_map.end())
-        throw std::runtime_error("Unknown effect type for serialization: " + type);
-    it->second(j, effect);
-}
-
-// Create an effect from JSON and return a unique pointer to it
-
-template<typename T>
-unique_ptr<ILEDEffect> effectFactory(const nlohmann::json& j) {
-    unique_ptr<T> effect;
-    from_json(j, effect);
-    return effect;
+    auto it = to_from_json_map.find(type);
+    if (it == to_from_json_map.end())
+    {
+        logger->error("Unknown effect type for serialization: {}, replacing with default fill", type);
+        throw runtime_error("Unknown effect type for serialization: " + type);
+    }
+    it->second.first(j, effect);
 }
 
 // Dynamically deserialize an effect from JSON based on its indicated type 
 // and return it on the unique pointer out reference
 
+// ILEDEffect <-- JSON
+
 inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect) 
 {
-    static const std::unordered_map<std::string, std::unique_ptr<ILEDEffect>(*)(const nlohmann::json&)> effects_map = 
+    auto it = to_from_json_map.find(j["type"]);
+    if (it == to_from_json_map.end())
     {
-        { ColorWaveEffect::EffectTypeName(),   effectFactory<ColorWaveEffect>   },
-        { FireworksEffect::EffectTypeName(),   effectFactory<FireworksEffect>   },
-        { SolidColorFill::EffectTypeName(),    effectFactory<SolidColorFill>    },
-        { PaletteEffect::EffectTypeName(),     effectFactory<PaletteEffect>     },
-        { StarfieldEffect::EffectTypeName(),   effectFactory<StarfieldEffect>   },
-        { MP4PlaybackEffect::EffectTypeName(), effectFactory<MP4PlaybackEffect> }
-    };
-    auto it = effects_map.find(j["type"]);
-    if (it == effects_map.end())
-        throw runtime_error("Unknown effect type for deserialization: " + j["type"].get<string>());       
-    effect = std::move(it->second(j));
+        logger->error("Unknown effect type for deserialization: {}, replacing with magenta fill", j["type"].get<string>());
+        effect = std::move(make_unique<SolidColorFill>("Unknown Effect Type", CRGB::Magenta));
+        return;
+    }
+     
+    effect = it->second.second(j);
 }
+
+// IEffectsManager <-- JSON
 
 inline void to_json(nlohmann::json& j, const IEffectsManager& manager) 
 {
@@ -292,10 +312,11 @@ inline void to_json(nlohmann::json& j, const IEffectsManager& manager)
     };
 }
 
+// IEffectManager --> JSON
+
 inline void from_json(const nlohmann::json& j, IEffectsManager& manager) 
 {
     manager.SetFPS(j.at("fps").get<uint16_t>());
-    vector<unique_ptr<ILEDEffect>> effects = j.at("effects").get<vector<unique_ptr<ILEDEffect>>>();
-    manager.SetEffects(std::move(effects));
+    manager.SetEffects(j.at("effects").get<vector<unique_ptr<ILEDEffect>>>());
     manager.SetCurrentEffectIndex(j.at("currentEffectIndex").get<int>());
 }

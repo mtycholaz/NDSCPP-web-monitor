@@ -68,9 +68,6 @@ class Controller : public IController
         return ptrController;
     }
 
-
-
-
     uint16_t GetPort() const override
     {
         return _port;
@@ -94,10 +91,10 @@ class Controller : public IController
         GetCanvasById(canvasId).RemoveFeatureById(featureId);
     }
 
-
     // LoadSampleCanvases
     //
-    // Until we have full load and save ability, this function will be used to load sample canvases.
+    // This function will be used to load sample canvases if you need a manual data set
+    // and cannot load a config file for some reason.
 
     void LoadSampleCanvases()
     {
@@ -480,6 +477,8 @@ class Controller : public IController
     }
 };
 
+// IController --> JSON
+
 inline void to_json(nlohmann::json &j, const IController &controller)
 {
     try
@@ -495,6 +494,8 @@ inline void to_json(nlohmann::json &j, const IController &controller)
         j = nullptr;
     }
 }
+
+// JSON --> Controller
 
 inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrController) 
 {

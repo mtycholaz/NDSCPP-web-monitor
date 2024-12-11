@@ -114,6 +114,8 @@ public:
     friend void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas);
 };
 
+// ICanvas --> JSON
+
 inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
 {
     j = 
@@ -128,6 +130,8 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
         {"effectsManager", canvas.Effects()}
     };
 }
+
+// ICanvas <-- JSON
 
 inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas) 
 {
