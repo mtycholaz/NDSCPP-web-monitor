@@ -49,10 +49,7 @@ public:
         CROW_ROUTE(_crowApp, "/api/controller")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
             {
-                nlohmann::json response;
-                response["controller"] = _controller;
-                return response.dump();
-
+                return crow::response(nlohmann::json{{"controller", _controller}}.dump());
             });
 
         // Enumerate just the sockets
@@ -60,11 +57,7 @@ public:
         CROW_ROUTE(_crowApp, "/api/sockets")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
             {
-                auto socketsJson = nlohmann::json::array();
-                for (const auto &socket : _controller.GetSockets())
-                    socketsJson.push_back(socket); // Assumes `to_json` is defined for `socket`
-
-                return socketsJson.dump();
+                return crow::response(nlohmann::json{{"sockets", _controller.GetSockets()}}.dump());
             });
 
 

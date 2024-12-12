@@ -187,25 +187,25 @@ public:
 inline void to_json(nlohmann::json& j, const ILEDFeature & feature) 
 {
     j = {
-            {"type", "LEDFeature"},
-            {"id", feature.Id()},
-            {"hostName", feature.Socket().HostName()},
-            {"friendlyName", feature.Socket().FriendlyName()},
-            {"port", feature.Socket().Port()},
-            {"width", feature.Width()},
-            {"height", feature.Height()},
-            {"offsetX", feature.OffsetX()},
-            {"offsetY", feature.OffsetY()},
-            {"reversed", feature.Reversed()},
-            {"channel", feature.Channel()},
-            {"redGreenSwap", feature.RedGreenSwap()},
+            {"type",              "LEDFeature"},
+            {"id",                feature.Id()},
+            {"hostName",          feature.Socket().HostName()},
+            {"friendlyName",      feature.Socket().FriendlyName()},
+            {"port",              feature.Socket().Port()},
+            {"width",             feature.Width()},
+            {"height",            feature.Height()},
+            {"offsetX",           feature.OffsetX()},
+            {"offsetY",           feature.OffsetY()},
+            {"reversed",          feature.Reversed()},
+            {"channel",           feature.Channel()},
+            {"redGreenSwap",      feature.RedGreenSwap()},
             {"clientBufferCount", feature.ClientBufferCount()},
-            {"timeOffset", feature.TimeOffset()},
-            {"bytesPerSecond", feature.Socket().GetLastBytesPerSecond()},
-            {"isConnected", feature.Socket().IsConnected()},
-            {"queueDepth", feature.Socket().GetCurrentQueueDepth()},
-            {"queueMaxSize", feature.Socket().GetQueueMaxSize()},
-            {"reconnectCount", feature.Socket().GetReconnectCount()}
+            {"timeOffset",        feature.TimeOffset()},
+            {"bytesPerSecond",    feature.Socket().GetLastBytesPerSecond()},
+            {"isConnected",       feature.Socket().IsConnected()},
+            {"queueDepth",        feature.Socket().GetCurrentQueueDepth()},
+            {"queueMaxSize",      feature.Socket().GetQueueMaxSize()},
+            {"reconnectCount",    feature.Socket().GetReconnectCount()}
         };
 
     const auto &response = feature.Socket().LastClientResponse();

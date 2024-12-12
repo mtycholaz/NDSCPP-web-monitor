@@ -11,6 +11,7 @@ using namespace std;
 #include "ledfeature.h"
 #include "effectsmanager.h"
 #include <vector>
+#include <mutex>
 
 class Canvas : public ICanvas
 {
@@ -20,6 +21,7 @@ class Canvas : public ICanvas
     EffectsManager          _effects;
     string                  _name;
     vector<unique_ptr<ILEDFeature>> _features;
+    mutable std::mutex     _featuresMutex;
 
 public:
     Canvas(string name, uint32_t width, uint32_t height, uint16_t fps = 30) : 
@@ -68,6 +70,7 @@ public:
 
     vector<reference_wrapper<ILEDFeature>> Features() override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         vector<reference_wrapper<ILEDFeature>> features;
         features.reserve(_features.size());
         for_each(_features.begin(), _features.end(),
@@ -79,7 +82,9 @@ public:
 
     const vector<reference_wrapper<ILEDFeature>> Features() const override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         vector<reference_wrapper<ILEDFeature>> features;
+        features.reserve(_features.size());
         for (auto &feature : _features)
             features.push_back(*feature);
         return features;
@@ -87,11 +92,11 @@ public:
 
     uint32_t AddFeature(unique_ptr<ILEDFeature> feature) override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         if (!feature)
             throw invalid_argument("Cannot add a null feature.");
 
         feature->SetCanvas(this);
-
         uint32_t id = feature->Id();
         _features.push_back(std::move(feature));
         return id;    
@@ -99,6 +104,7 @@ public:
 
     bool RemoveFeatureById(uint16_t featureId) override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         for (size_t i = 0; i < _features.size(); ++i)
         {
             if (_features[i]->Id() == featureId)
@@ -121,18 +127,19 @@ inline void to_json(nlohmann::json& j, const ICanvas & canvas)
 {
     j = 
     {
-        {"name", canvas.Name()},
-        {"id", canvas.Id()},
-        {"width", canvas.Graphics().Width()},
-        {"height", canvas.Graphics().Height()},
-        {"fps", canvas.Effects().GetFPS()},
+        {"name",              canvas.Name()},
+        {"id",                canvas.Id()},
+        {"width",             canvas.Graphics().Width()},
+        {"height",            canvas.Graphics().Height()},
+        {"fps",               canvas.Effects().GetFPS()},
         {"currentEffectName", canvas.Effects().CurrentEffectName()},
-        {"features", canvas.Features()},
-        {"effectsManager", canvas.Effects()}
+        {"features",          canvas.Features()},
+        {"effectsManager",    canvas.Effects()}
     };
 }
 
 // ICanvas <-- JSON
+
 inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas) 
 {
     // Create canvas with required fields

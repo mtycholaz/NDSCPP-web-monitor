@@ -20,6 +20,7 @@ using namespace std;
 #include "palette.h"
 #include "effects/paletteeffect.h"
 #include "effects/fireworkseffect.h"
+#include <mutex>
 
 class Controller;
 inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrController);
@@ -30,6 +31,7 @@ class Controller : public IController
 
     vector<unique_ptr<ICanvas>> _canvases;
     uint16_t                    _port;
+    mutable std::mutex          _canvasMutex;
 
   public:
 
@@ -43,6 +45,7 @@ class Controller : public IController
 
     vector<reference_wrapper<ICanvas>> Canvases() const override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         vector<reference_wrapper<ICanvas>> canvases;
         canvases.reserve(_canvases.size());
         for (const auto& canvas : _canvases)
@@ -80,6 +83,7 @@ class Controller : public IController
 
     bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Adding feature to canvas {}...", canvasId);
         GetCanvasById(canvasId).AddFeature(std::move(feature));
         return true;
@@ -87,6 +91,7 @@ class Controller : public IController
 
     void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Removing feature {} from canvas {}...", featureId, canvasId);
         GetCanvasById(canvasId).RemoveFeatureById(featureId);
     }
@@ -98,6 +103,7 @@ class Controller : public IController
 
     void LoadSampleCanvases()
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Loading sample canvases...");
 
         _canvases.clear();
@@ -354,6 +360,7 @@ class Controller : public IController
 
     void Connect() override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Connecting canvases...");
 
         for (const auto &canvas : _canvases)
@@ -363,6 +370,7 @@ class Controller : public IController
 
     void Disconnect() override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Disconnecting canvases...");
 
         for (const auto &canvas : _canvases)
@@ -372,6 +380,7 @@ class Controller : public IController
 
     void Start() override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Starting canvases...");
 
         for (auto &canvas : _canvases)
@@ -380,6 +389,7 @@ class Controller : public IController
 
     void Stop() override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Stopping canvases...");
 
         for (auto &canvas : _canvases)
@@ -393,6 +403,7 @@ class Controller : public IController
         // This is a bit odd; we try get the current canvas with the ID specified by the new one,
         // and we only proceed in the exception case if the canvas doesn't exist, where we add it
 
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         try
         {
             GetCanvasById(ptrCanvas->Id());
@@ -411,7 +422,7 @@ class Controller : public IController
     bool DeleteCanvasById(uint32_t id) override
     {
         logger->debug("Deleting canvas {}...", id);
-        
+
         try 
         {
             auto &canvas = GetCanvasById(id);
@@ -419,6 +430,7 @@ class Controller : public IController
             for (auto &feature : canvas.Features())
                 feature.get().Socket().Stop();
             
+            std::lock_guard<std::mutex> lock(_canvasMutex);
             // Erase the canvas from _canvases
             _canvases.erase(
                 remove_if(_canvases.begin(), _canvases.end(), [id](const auto &canvas) { return canvas->Id() == id; }),
@@ -426,7 +438,8 @@ class Controller : public IController
 
             return true;
         }
-        catch(const out_of_range&) {
+        catch(const out_of_range&) 
+        {
             logger->error("Canvas with ID {} not found in DeleteCanvasById.", id);
             return false;
         }
@@ -436,7 +449,9 @@ class Controller : public IController
     {
         logger->debug("Updating canvas {}...", ptrCanvas->Name());
 
-        try {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
+        try 
+        {
             // Find index of canvas we want to update
             auto canvasId = ptrCanvas->Id();
             for (size_t i = 0; i < _canvases.size(); ++i) {
@@ -447,25 +462,28 @@ class Controller : public IController
             }
             throw out_of_range("Canvas not found");
         }
-        catch(const out_of_range&) {
+        catch(const out_of_range&) 
+        {
             logger->error("Canvas with ID {} not found in UpdateCanvas.", ptrCanvas->Id());
             return false;
         }
     }
 
+    // GetCanvasById - Return a reference to the canvas in _canvases with the specified ID.
+    //
+    // Note that you should already be holding the mutex BEFORE you call this function!
+    
     ICanvas & GetCanvasById(uint16_t id) const override
     {
-        // Find and return the canvas with the matching ID
-        for (auto &canvas : _canvases)
+        for (const auto &canvas : _canvases)
             if (canvas->Id() == id)
-                return *canvas.get();
-
-        logger->debug("Canvas with ID {} not found in GetCanvasById.", id);
-        throw out_of_range("Canvas not found");
+                return *canvas;
+        throw out_of_range("Canvas not found: " + to_string(id));
     }
 
     vector<reference_wrapper<ISocketChannel>> GetSockets() const override
     {
+        std::lock_guard<std::mutex> lock(_canvasMutex);
         vector<reference_wrapper<ISocketChannel>> sockets;
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
@@ -475,13 +493,12 @@ class Controller : public IController
 
     const ISocketChannel & GetSocketById(uint16_t id) const override
     {
-        for (auto &canvas : _canvases)
-            for (auto &feature : canvas->Features())
-                if (feature.get().Socket().Id() == id)
+        std::lock_guard<std::mutex> lock(_canvasMutex);
+        for (const auto &canvas : _canvases)
+            for (const auto &feature : canvas->Features())
+                if (feature.get().Id() == id)
                     return feature.get().Socket();
-
-        logger->error("Socket with ID {} not found in GetSocketById.", id);                     
-        throw out_of_range("Socket not found by id");
+        throw out_of_range("Socket not found: " + to_string(id));
     }
 };
 
@@ -492,10 +509,7 @@ inline void to_json(nlohmann::json &j, const IController &controller)
     try
     {
         j["port"] = controller.GetPort();
-        j["canvases"] = nlohmann::json::array();
-        
-        for (const auto ptrCanvas : controller.Canvases())
-            j["canvases"].push_back(ptrCanvas);
+        j["canvases"] = controller.Canvases();
     }
     catch (const exception &e)
     {
