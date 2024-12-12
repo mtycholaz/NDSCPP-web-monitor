@@ -76,7 +76,7 @@ sudo apt update
 sudo apt install cmake
 git clone https://github.com/libcpr/cpr.git
 cd cpr && mkdir build && cd build
-cmake .. -DCPR_USE_SYSTEM_CURL=ON -DCMAKE_CXX_STANDARD=20
+cmake .. -DCPR_USE_SYSTEM_CURL=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_CXX_STANDARD=20
 cmake --build . --parallel
 sudo cmake --install .
 cd ../..
@@ -84,7 +84,7 @@ cd ../..
 
 The `cpr` directory has been included in .gitignore, so these steps will not pollute your git branch.
 
-After installing prerequisites, the tests can be built using `make -C tests` and executed by running `tests/tests`.
+After installing prerequisites, the tests can be built using `make -C tests` and executed by running `LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib ./tests/tests`.
 
 ## Interfaces Overview
 
