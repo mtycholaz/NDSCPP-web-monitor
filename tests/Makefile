@@ -1,11 +1,11 @@
 # Compiler settings
-CXX = g++
+CXX = clang++
 CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -O2
 INCLUDES = -I.
 LDFLAGS =
 
 # Libraries needed
-LIBS = -lgtest -lgtest_main -lcpr -pthread 
+LIBS = -lpthread -lcurl -lcpr -lgtest_main -lgtest  
 
 # Binary name
 TARGET = tests
@@ -22,14 +22,6 @@ ifeq ($(UNAME_S), Darwin)
     # macOS-specific settings using Homebrew
     INCLUDES += -I$(shell brew --prefix)/include/
     LDFLAGS += -L$(shell brew --prefix)/lib/
-    
-    # Add common Homebrew installation paths for required libraries
-    INCLUDES += -I$(shell brew --prefix googletest)/include/
-    INCLUDES += -I$(shell brew --prefix nlohmann-json)/include/
-    INCLUDES += -I$(shell brew --prefix cpr)/include/
-    
-    LDFLAGS += -L$(shell brew --prefix googletest)/lib/
-    LDFLAGS += -L$(shell brew --prefix cpr)/lib/
 endif
 
 # Default target
@@ -38,7 +30,7 @@ all: $(TARGET)
 # Link the target binary
 $(TARGET): $(OBJECTS)
 	@echo "Linking $@..."
-	@$(CXX) $(OBJECTS) $(LDFLAGS) -o $(TARGET) $(LIBS)
+	@$(CXX) $(LDFLAGS) $(LIBS) -o $(TARGET) $(OBJECTS)
 
 # Compile source files
 %.o: %.cpp
@@ -58,8 +50,6 @@ test: $(TARGET)
 # Install dependencies on macOS
 install-deps-mac:
 	@echo "Installing dependencies via Homebrew..."
-	@brew install googletest
-	@brew install cpr
-	@brew install nlohmann-json
+	@brew install googletest cpr
 
 .PHONY: all clean test install-deps-mac
