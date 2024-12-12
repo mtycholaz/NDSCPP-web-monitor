@@ -2,15 +2,6 @@
 #include <cpr/cpr.h> // Modern C++ HTTP library
 #include <../json.hpp>
 
-// Best guess for Ubuntu:
-// sudo apt-get install libgtest-dev libcpr-dev nlohmann-json3-dev
-// g++ -o api_tests api_tests.cpp -lgtest -lgtest_main -lcpr -pthread
-//
-// For MacOS
-//
-// brew install googletest
-// brew install cpr
-
 using json = nlohmann::json;
 const std::string BASE_URL = "http://localhost:7777/api";
 
