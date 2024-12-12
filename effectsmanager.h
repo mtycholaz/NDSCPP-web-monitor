@@ -189,16 +189,15 @@ public:
                 UpdateCurrentEffect(canvas, frameDuration);
                 for (const auto &feature : canvas.Features())
                 {
-                    auto &featureRef = feature.get(); // Access the referenced object
-                    auto frame = featureRef.GetDataFrame();
+                    auto frame = feature->GetDataFrame();
                     if (bUseCompression)
                     {
-                        auto compressedFrame = featureRef.Socket().CompressFrame(frame);
-                        featureRef.Socket().EnqueueFrame(std::move(compressedFrame));
+                        auto compressedFrame = feature->Socket().CompressFrame(frame);
+                        feature->Socket().EnqueueFrame(std::move(compressedFrame));
                     }
                     else
                     {
-                        featureRef.Socket().EnqueueFrame(std::move(frame));
+                        feature->Socket().EnqueueFrame(std::move(frame));
                     }
                 }
 
@@ -289,7 +288,7 @@ inline void to_json(nlohmann::json &j, const ILEDEffect &effect)
     auto it = to_from_json_map.find(type);
     if (it == to_from_json_map.end())
     {
-        logger->error("Unknown effect type for serialization: {}, replacing with default fill", type);
+        logger->error("Unknown effect type for serialization: {}", type);
         throw runtime_error("Unknown effect type for serialization: " + type);
     }
     it->second.first(j, effect);

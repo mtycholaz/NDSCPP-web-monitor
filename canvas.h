@@ -20,7 +20,7 @@ class Canvas : public ICanvas
     BaseGraphics            _graphics;
     EffectsManager          _effects;
     string                  _name;
-    vector<unique_ptr<ILEDFeature>> _features;
+    vector<shared_ptr<ILEDFeature>> _features;
     mutable std::mutex     _featuresMutex;
 
 public:
@@ -68,29 +68,19 @@ public:
         return _effects;
     }
 
-    vector<reference_wrapper<ILEDFeature>> Features() override
+    vector<shared_ptr<ILEDFeature>>  Features() override
     {
         std::lock_guard<std::mutex> lock(_featuresMutex);
-        vector<reference_wrapper<ILEDFeature>> features;
-        features.reserve(_features.size());
-        for_each(_features.begin(), _features.end(),
-            [&features](const auto& feature) {
-                features.push_back(*feature);
-            });
-        return features;
+        return _features;
     }
 
-    const vector<reference_wrapper<ILEDFeature>> Features() const override
+    const vector<shared_ptr<ILEDFeature>> Features() const override
     {
         std::lock_guard<std::mutex> lock(_featuresMutex);
-        vector<reference_wrapper<ILEDFeature>> features;
-        features.reserve(_features.size());
-        for (auto &feature : _features)
-            features.push_back(*feature);
-        return features;
+        return _features;
     }
 
-    uint32_t AddFeature(unique_ptr<ILEDFeature> feature) override
+    uint32_t AddFeature(shared_ptr<ILEDFeature> feature) override
     {
         std::lock_guard<std::mutex> lock(_featuresMutex);
         if (!feature)
@@ -123,20 +113,28 @@ public:
 
 // ICanvas --> JSON
 
-inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
+inline void to_json(nlohmann::json& j, const ICanvas& canvas) 
 {
-    j = 
-    {
+    // Serialize the features
+    vector<nlohmann::json> serializedFeatures;
+    for (const auto& feature : canvas.Features()) {
+        if (feature) {
+            serializedFeatures.push_back(*feature); // Dereference the shared pointer
+        }
+    }
+
+    j = {
         {"name",              canvas.Name()},
         {"id",                canvas.Id()},
         {"width",             canvas.Graphics().Width()},
         {"height",            canvas.Graphics().Height()},
         {"fps",               canvas.Effects().GetFPS()},
         {"currentEffectName", canvas.Effects().CurrentEffectName()},
-        {"features",          canvas.Features()},
-        {"effectsManager",    canvas.Effects()}
+        {"features",          serializedFeatures}, // Serialized feature data
+        {"effectsManager",    canvas.Effects()}    // EffectsManager must have a `to_json`
     };
 }
+
 
 // ICanvas <-- JSON
 
@@ -152,7 +150,7 @@ inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas)
 
     // Features()
     for (const auto& featureJson : j.value("features", nlohmann::json::array()))
-        canvas->AddFeature(std::move(featureJson.get<unique_ptr<ILEDFeature>>()));
+        canvas->AddFeature(featureJson.get<shared_ptr<ILEDFeature>>());
 
     // Validate and deserialize EffectsManager
     if (j.contains("effectsManager")) 

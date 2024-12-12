@@ -213,7 +213,7 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
         j["lastClientResponse"] = response;
 }
 
-inline void from_json(const nlohmann::json& j, unique_ptr<ILEDFeature>& feature) 
+inline void from_json(const nlohmann::json& j, shared_ptr<ILEDFeature> & feature) 
 {
     // Ensure the type matches
     if (j.at("type").get<std::string>() != "LEDFeature") 
@@ -222,7 +222,7 @@ inline void from_json(const nlohmann::json& j, unique_ptr<ILEDFeature>& feature)
     }
 
     // Use `at` for all fields since they are mandatory
-    feature = std::make_unique<LEDFeature>(
+    feature = std::make_shared<LEDFeature>(
         j.at("hostName").get<std::string>(),
         j.at("friendlyName").get<std::string>(),
         j.at("port").get<uint16_t>(),

@@ -365,7 +365,7 @@ class Controller : public IController
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature.get().Socket().Start();
+                feature->Socket().Start();
     }
 
     void Disconnect() override
@@ -375,7 +375,7 @@ class Controller : public IController
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature.get().Socket().Stop();
+                feature->Socket().Stop();
     }
 
     void Start() override
@@ -428,7 +428,7 @@ class Controller : public IController
             auto &canvas = GetCanvasById(id);
             canvas.Effects().Stop();
             for (auto &feature : canvas.Features())
-                feature.get().Socket().Stop();
+                feature->Socket().Stop();
             
             std::lock_guard<std::mutex> lock(_canvasMutex);
             // Erase the canvas from _canvases
@@ -487,7 +487,7 @@ class Controller : public IController
         vector<reference_wrapper<ISocketChannel>> sockets;
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                sockets.push_back(feature.get().Socket());
+                sockets.push_back(feature->Socket());
         return sockets;
     }
 
@@ -496,8 +496,8 @@ class Controller : public IController
         std::lock_guard<std::mutex> lock(_canvasMutex);
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                if (feature.get().Id() == id)
-                    return feature.get().Socket();
+                if (feature->Id() == id)
+                    return feature->Socket();
         throw out_of_range("Socket not found: " + to_string(id));
     }
 };
