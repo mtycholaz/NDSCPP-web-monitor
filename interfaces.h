@@ -208,11 +208,11 @@ public:
     virtual uint16_t GetPort() const = 0;
     virtual void     SetPort(uint16_t port) = 0;
 
-    virtual vector<reference_wrapper<ICanvas>> Canvases() const = 0;
+    virtual vector<shared_ptr<ICanvas>> Canvases() const = 0;
     virtual uint32_t AddCanvas(shared_ptr<ICanvas> ptrCanvas) = 0;
     virtual bool DeleteCanvasById(uint32_t id) = 0;
-    virtual bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) = 0;
-    virtual bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) = 0;
+    virtual bool UpdateCanvas(shared_ptr<ICanvas> ptrCanvas) = 0;
+    virtual bool AddFeatureToCanvas(uint16_t canvasId, shared_ptr<ILEDFeature> feature) = 0;
     virtual void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) = 0;
     virtual shared_ptr<ICanvas> GetCanvasById(uint16_t id) const = 0;
     virtual const ISocketChannel & GetSocketById(uint16_t id) const = 0;

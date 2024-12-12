@@ -36,7 +36,7 @@ public:
     }
 
     friend inline void to_json(nlohmann::json& j, const SolidColorFill & effect);
-    friend inline void from_json(const nlohmann::json& j, unique_ptr<SolidColorFill>& effect);
+    friend inline void from_json(const nlohmann::json& j, shared_ptr<SolidColorFill>& effect);
 };
 
 inline void to_json(nlohmann::json& j, const SolidColorFill & effect) 

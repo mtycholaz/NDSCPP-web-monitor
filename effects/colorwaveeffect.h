@@ -55,7 +55,7 @@ public:
     }
 
     friend inline void to_json(nlohmann::json& j, const ColorWaveEffect & effect);
-    friend inline void from_json(const nlohmann::json& j, unique_ptr<ColorWaveEffect>& effect);
+    friend inline void from_json(const nlohmann::json& j, shared_ptr<ColorWaveEffect>& effect);
 };
 
 inline void to_json(nlohmann::json& j, const ColorWaveEffect & effect) 

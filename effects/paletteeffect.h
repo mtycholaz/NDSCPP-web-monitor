@@ -109,7 +109,7 @@ public:
     }
 
     friend inline void to_json(nlohmann::json& j, const PaletteEffect & effect);
-    friend inline void from_json(const nlohmann::json& j, unique_ptr<PaletteEffect>& effect);
+    friend inline void from_json(const nlohmann::json& j, shared_ptr<PaletteEffect>& effect);
 };
 
 inline void to_json(nlohmann::json& j, const PaletteEffect & effect) 

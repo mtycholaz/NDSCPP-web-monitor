@@ -165,7 +165,7 @@ public:
     }
 
     friend inline void to_json(nlohmann::json &j, const FireworksEffect &effect);
-    friend inline void from_json(const nlohmann::json &j, unique_ptr<FireworksEffect> &effect);
+    friend inline void from_json(const nlohmann::json &j, shared_ptr<FireworksEffect> &effect);
    
 };
 

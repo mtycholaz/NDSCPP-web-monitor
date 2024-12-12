@@ -43,14 +43,10 @@ class Controller : public IController
     {
     }
 
-    vector<reference_wrapper<ICanvas>> Canvases() const override
+    vector<shared_ptr<ICanvas>> Canvases() const override
     {
         std::lock_guard<std::mutex> lock(_canvasMutex);
-        vector<reference_wrapper<ICanvas>> canvases;
-        canvases.reserve(_canvases.size());
-        for (const auto& canvas : _canvases)
-            canvases.push_back(*canvas);
-        return canvases;
+        return _canvases;
     }
 
     static unique_ptr<Controller> CreateFromFile(const string& filePath) 
@@ -81,11 +77,11 @@ class Controller : public IController
         _port = port;
     }
 
-    bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) override
+    bool AddFeatureToCanvas(uint16_t canvasId, shared_ptr<ILEDFeature> feature) override
     {
         std::lock_guard<std::mutex> lock(_canvasMutex);
         logger->debug("Adding feature to canvas {}...", canvasId);
-        GetCanvasById(canvasId)->AddFeature(std::move(feature));
+        GetCanvasById(canvasId)->AddFeature(feature);
         return true;
     }
 
@@ -445,7 +441,7 @@ class Controller : public IController
         }
     }
 
-    bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) override
+    bool UpdateCanvas(shared_ptr<ICanvas> ptrCanvas) override
     {
         logger->debug("Updating canvas {}...", ptrCanvas->Name());
 
@@ -456,7 +452,7 @@ class Controller : public IController
             auto canvasId = ptrCanvas->Id();
             for (size_t i = 0; i < _canvases.size(); ++i) {
                 if (_canvases[i]->Id() == canvasId) {
-                    _canvases[i] = std::move(ptrCanvas);
+                    _canvases[i] = ptrCanvas;
                     return true;
                 }
             }
@@ -509,7 +505,8 @@ inline void to_json(nlohmann::json &j, const IController &controller)
     try
     {
         j["port"] = controller.GetPort();
-        j["canvases"] = controller.Canvases();
+        for (const auto &canvas : controller.Canvases())
+            j["canvases"].push_back(*canvas);
     }
     catch (const exception &e)
     {

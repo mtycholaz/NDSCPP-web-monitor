@@ -134,7 +134,7 @@ private:
     }
 
     friend inline void to_json(nlohmann::json& j, const StarfieldEffect & effect);
-    friend inline void from_json(const nlohmann::json& j, unique_ptr<StarfieldEffect>& effect);
+    friend inline void from_json(const nlohmann::json& j, shared_ptr<StarfieldEffect>& effect);
 };
 
 inline void to_json(nlohmann::json& j, const StarfieldEffect & effect)

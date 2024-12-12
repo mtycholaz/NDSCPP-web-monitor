@@ -135,10 +135,18 @@ inline void to_json(nlohmann::json& j, const ICanvas& canvas)
     };
 }
 
+inline void to_json(nlohmann::json& j, const std::shared_ptr<ICanvas>& canvasPtr) 
+{
+    if (canvasPtr) {
+        j = *canvasPtr; // Use the `to_json` function for ICanvas
+    } else {
+        j = nullptr; // Handle null pointers gracefully
+    }
+}
 
 // ICanvas <-- JSON
 
-inline void from_json(const nlohmann::json& j, shared_ptr<ICanvas>& canvas) 
+inline void from_json(const nlohmann::json& j, shared_ptr<ICanvas> & canvas) 
 {
     // Create canvas with required fields
     canvas = std::make_shared<Canvas>(

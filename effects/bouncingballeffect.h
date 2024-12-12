@@ -112,7 +112,7 @@ public:
     }
 
     friend inline void to_json(nlohmann::json& j, const BouncingBallEffect& effect);
-    friend inline void from_json(const nlohmann::json& j, unique_ptr<BouncingBallEffect>& effect);
+    friend inline void from_json(const nlohmann::json& j, shared_ptr<BouncingBallEffect>& effect);
 };
 
 inline void to_json(nlohmann::json& j, const BouncingBallEffect& effect) 
