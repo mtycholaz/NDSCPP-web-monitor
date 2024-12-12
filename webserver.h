@@ -120,7 +120,7 @@ public:
                     if (id < 0 || id >= allCanvases.size())
                         return {crow::NOT_FOUND, R"({"error": "Canvas not found"})"};
 
-                    return nlohmann::json(_controller.GetCanvasById(id)).dump(); 
+                    return nlohmann::json(*_controller.GetCanvasById(id)).dump(); 
                 }
                 catch(const std::exception& e)
                 {
@@ -139,7 +139,7 @@ public:
                         // Parse and deserialize JSON payload
                         auto jsonPayload = nlohmann::json::parse(req.body);
 
-                        uint32_t newID = _controller.AddCanvas(std::move(jsonPayload.get<unique_ptr<ICanvas>>()));
+                        uint32_t newID = _controller.AddCanvas(jsonPayload.get<shared_ptr<ICanvas>>());
                         if (newID == -1)
                             return {400, "Error, likely canvas with that ID already exists."};
 
@@ -160,7 +160,7 @@ public:
                     {
                         auto reqJson = nlohmann::json::parse(req.body);
                         auto feature = reqJson.get<shared_ptr<ILEDFeature>>();
-                        auto newId = _controller.GetCanvasById(canvasId).AddFeature(feature);
+                        auto newId = _controller.GetCanvasById(canvasId)->AddFeature(feature);
                         return nlohmann::json{{"id", newId}}.dump();
                     } 
                     catch (const exception& e) 
@@ -177,8 +177,8 @@ public:
                 {
                     try
                     {
-                        auto & canvas = _controller.GetCanvasById(canvasId);
-                        canvas.RemoveFeatureById(featureId);
+                        auto canvas = _controller.GetCanvasById(canvasId);
+                        canvas->RemoveFeatureById(featureId);
                         return crow::response(crow::OK);
                     }
                     catch(const std::exception& e)

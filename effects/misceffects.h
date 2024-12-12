@@ -48,9 +48,9 @@ inline void to_json(nlohmann::json& j, const SolidColorFill & effect)
     };
 }
 
-inline void from_json(const nlohmann::json& j, unique_ptr<SolidColorFill>& effect) 
+inline void from_json(const nlohmann::json& j, shared_ptr<SolidColorFill>& effect) 
 {
-    effect = make_unique<SolidColorFill>(
+    effect = make_shared<SolidColorFill>(
             j.at("name").get<string>(),
             j.at("color").get<CRGB>() // Assumes `from_json` for CRGB is already defined
         );

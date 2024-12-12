@@ -147,9 +147,9 @@ inline void to_json(nlohmann::json& j, const StarfieldEffect & effect)
     };
 }
 
-inline void from_json(const nlohmann::json& j, unique_ptr<StarfieldEffect>& effect)
+inline void from_json(const nlohmann::json& j, shared_ptr<StarfieldEffect>& effect)
 {
-    effect = make_unique<StarfieldEffect>(
+    effect = make_shared<StarfieldEffect>(
         j.at("name").get<string>(),
         j.value("starCount", 100)
     );

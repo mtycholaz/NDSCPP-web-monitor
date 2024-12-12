@@ -127,9 +127,9 @@ inline void to_json(nlohmann::json& j, const BouncingBallEffect& effect)
     };
 }
 
-inline void from_json(const nlohmann::json& j, unique_ptr<BouncingBallEffect>& effect) 
+inline void from_json(const nlohmann::json& j, shared_ptr<BouncingBallEffect>& effect) 
 {
-    effect = make_unique<BouncingBallEffect>(
+    effect = make_shared<BouncingBallEffect>(
         j.at("name").get<string>(),
         j.at("ballCount").get<size_t>(),
         j.at("ballSize").get<size_t>(),

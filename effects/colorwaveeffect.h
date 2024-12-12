@@ -68,9 +68,9 @@ inline void to_json(nlohmann::json& j, const ColorWaveEffect & effect)
     };
 }
 
-inline void from_json(const nlohmann::json& j, unique_ptr<ColorWaveEffect>& effect) 
+inline void from_json(const nlohmann::json& j, shared_ptr<ColorWaveEffect>& effect) 
 {
-    effect =  make_unique<ColorWaveEffect>(
+    effect =  make_shared<ColorWaveEffect>(
         j.at("name").get<string>(),
         j.value("speed", 0.5),
         j.value("waveFrequency", 10.0)

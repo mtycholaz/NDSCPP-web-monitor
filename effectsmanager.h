@@ -26,7 +26,7 @@ class EffectsManager : public IEffectsManager
     int _currentEffectIndex; // Index of the current effect
     atomic<bool> _running;
     mutable std::mutex _effectsMutex;  // Add mutex as member
-    vector<unique_ptr<ILEDEffect>> _effects;
+    vector<shared_ptr<ILEDEffect>> _effects;
     thread _workerThread;
 
 public:
@@ -59,19 +59,14 @@ public:
         return _effects.size();
     }
 
-    vector<reference_wrapper<ILEDEffect>> Effects() const override
+    vector<shared_ptr<ILEDEffect>> Effects() const override
     {
         std::lock_guard<std::mutex> lock(_effectsMutex);
-
-        vector<reference_wrapper<ILEDEffect>> effects;
-        effects.reserve(_effects.size());
-        for (auto &effect : _effects)
-            effects.push_back(*effect);
-        return effects;
+        return _effects;
     }
 
     // Add an effect to the manager
-    void AddEffect(unique_ptr<ILEDEffect> effect) override
+    void AddEffect(shared_ptr<ILEDEffect> effect) override
     {
         std::lock_guard<std::mutex> lock(_effectsMutex);
 
@@ -85,7 +80,7 @@ public:
     }
 
     // Remove an effect from the manager
-    void RemoveEffect(unique_ptr<ILEDEffect> &effect) override
+    void RemoveEffect(shared_ptr<ILEDEffect> &effect) override
     {
         std::lock_guard<std::mutex> lock(_effectsMutex);
 
@@ -225,7 +220,7 @@ public:
             _workerThread.join();
     }
 
-    void SetEffects(vector<unique_ptr<ILEDEffect>> effects) override
+    void SetEffects(vector<shared_ptr<ILEDEffect>> effects) override
     {
         std::lock_guard<std::mutex> lock(_effectsMutex);
         _effects = std::move(effects);
@@ -248,7 +243,7 @@ private:
 
 // Define type aliases for effect (de)serialization functions for legibility reasons
 using EffectSerializer = function<void(nlohmann::json &, const ILEDEffect &)>;
-using EffectDeserializer = function<unique_ptr<ILEDEffect>(const nlohmann::json &)>;
+using EffectDeserializer = function<shared_ptr<ILEDEffect>(const nlohmann::json &)>;
 
 // Factory function to create a pair of effect (de)serialization functions for a given type
 template <typename T>
@@ -261,7 +256,7 @@ pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair()
 
     EffectDeserializer deserializer = [](const nlohmann::json &j)
     {
-        return j.get<unique_ptr<T>>();
+        return j.get<shared_ptr<T>>();
     };
 
     return make_pair(typeid(T).name(), make_pair(serializer, deserializer));
@@ -299,13 +294,13 @@ inline void to_json(nlohmann::json &j, const ILEDEffect &effect)
 
 // ILEDEffect <-- JSON
 
-inline void from_json(const nlohmann::json &j, unique_ptr<ILEDEffect> &effect)
+inline void from_json(const nlohmann::json &j, shared_ptr<ILEDEffect> & effect)
 {
     auto it = to_from_json_map.find(j["type"]);
     if (it == to_from_json_map.end())
     {
         logger->error("Unknown effect type for deserialization: {}, replacing with magenta fill", j["type"].get<string>());
-        effect = std::move(make_unique<SolidColorFill>("Unknown Effect Type", CRGB::Magenta));
+        effect = make_shared<SolidColorFill>("Unknown Effect Type", CRGB::Magenta);
         return;
     }
 
@@ -316,18 +311,26 @@ inline void from_json(const nlohmann::json &j, unique_ptr<ILEDEffect> &effect)
 
 inline void to_json(nlohmann::json &j, const IEffectsManager &manager)
 {
-    j = {
+    j = 
+    {
         {"type", "EffectsManager"},
         {"fps", manager.GetFPS()},
-        {"currentEffectIndex", manager.GetCurrentEffect()},
-        {"effects", manager.Effects()}};
-}
+        {"currentEffectIndex", manager.GetCurrentEffect()}
+    };
+        
+    for (const auto &effect : manager.Effects())
+    {
+        nlohmann::json effectJson;
+        to_json(effectJson, *effect);
+        j["effects"].push_back(effectJson);
+    }
+};
 
 // IEffectManager --> JSON
 
 inline void from_json(const nlohmann::json &j, IEffectsManager &manager)
 {
     manager.SetFPS(j.at("fps").get<uint16_t>());
-    manager.SetEffects(j.at("effects").get<vector<unique_ptr<ILEDEffect>>>());
+    manager.SetEffects(j.at("effects").get<vector<shared_ptr<ILEDEffect>>>());
     manager.SetCurrentEffectIndex(j.at("currentEffectIndex").get<int>());
 }

@@ -108,7 +108,7 @@ public:
     }
 
     friend void to_json(nlohmann::json& j, const ICanvas & canvas);
-    friend void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas);
+    friend void from_json(const nlohmann::json& j, shared_ptr<ICanvas>& canvas);
 };
 
 // ICanvas --> JSON
@@ -138,10 +138,10 @@ inline void to_json(nlohmann::json& j, const ICanvas& canvas)
 
 // ICanvas <-- JSON
 
-inline void from_json(const nlohmann::json& j, std::unique_ptr<ICanvas>& canvas) 
+inline void from_json(const nlohmann::json& j, shared_ptr<ICanvas>& canvas) 
 {
     // Create canvas with required fields
-    canvas = std::make_unique<Canvas>(
+    canvas = std::make_shared<Canvas>(
         j.at("name").get<std::string>(),
         j.at("width").get<uint32_t>(),
         j.at("height").get<uint32_t>(),
