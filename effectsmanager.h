@@ -22,12 +22,12 @@ using namespace std::chrono;
 
 class EffectsManager : public IEffectsManager
 {
-    uint16_t _fps;
-    int _currentEffectIndex; // Index of the current effect
-    atomic<bool> _running;
-    mutable std::mutex _effectsMutex;  // Add mutex as member
+    uint16_t      _fps;
+    int           _currentEffectIndex; // Index of the current effect
+    atomic<bool>  _running;
+    mutable mutex _effectsMutex;  // Add mutex as member
     vector<shared_ptr<ILEDEffect>> _effects;
-    thread _workerThread;
+    thread        _workerThread;
 
 public:
     EffectsManager(uint16_t fps = 30) : _fps(fps), _currentEffectIndex(-1), _running(false) // No effect selected initially
@@ -61,14 +61,14 @@ public:
 
     vector<shared_ptr<ILEDEffect>> Effects() const override
     {
-        std::lock_guard<std::mutex> lock(_effectsMutex);
+        lock_guard lock(_effectsMutex);
         return _effects;
     }
 
     // Add an effect to the manager
     void AddEffect(shared_ptr<ILEDEffect> effect) override
     {
-        std::lock_guard<std::mutex> lock(_effectsMutex);
+        lock_guard lock(_effectsMutex);
 
         if (!effect)
             throw invalid_argument("Cannot add a null effect.");
@@ -82,7 +82,7 @@ public:
     // Remove an effect from the manager
     void RemoveEffect(shared_ptr<ILEDEffect> &effect) override
     {
-        std::lock_guard<std::mutex> lock(_effectsMutex);
+        lock_guard lock(_effectsMutex);
 
         if (!effect)
             throw invalid_argument("Cannot remove a null effect.");
@@ -153,7 +153,7 @@ public:
 
     void ClearEffects() override
     {
-        std::lock_guard<std::mutex> lock(_effectsMutex);
+        lock_guard lock(_effectsMutex);
         _effects.clear();
         _currentEffectIndex = -1;
     }
@@ -222,7 +222,7 @@ public:
 
     void SetEffects(vector<shared_ptr<ILEDEffect>> effects) override
     {
-        std::lock_guard<std::mutex> lock(_effectsMutex);
+        lock_guard lock(_effectsMutex);
         _effects = std::move(effects);
     }
 
