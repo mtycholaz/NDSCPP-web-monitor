@@ -21,7 +21,7 @@ class Canvas : public ICanvas
     EffectsManager          _effects;
     string                  _name;
     vector<shared_ptr<ILEDFeature>> _features;
-    mutable std::mutex     _featuresMutex;
+    mutable mutex           _featuresMutex;
 
 public:
     Canvas(string name, uint32_t width, uint32_t height, uint16_t fps = 30) : 
@@ -74,18 +74,19 @@ public:
 
     vector<shared_ptr<ILEDFeature>>  Features() override
     {
-        std::lock_guard<std::mutex> lock(_featuresMutex);
+        lock_guard lock(_featuresMutex);
         return _features;
     }
 
     const vector<shared_ptr<ILEDFeature>> Features() const override
     {
+        lock_guard lock(_featuresMutex);
         return _features;
     }
 
     uint32_t AddFeature(shared_ptr<ILEDFeature> feature) override
     {
-        std::lock_guard<std::mutex> lock(_featuresMutex);
+        lock_guard lock(_featuresMutex);
         if (!feature)
             throw invalid_argument("Cannot add a null feature.");
 
@@ -97,7 +98,7 @@ public:
 
     bool RemoveFeatureById(uint16_t featureId) override
     {
-        std::lock_guard<std::mutex> lock(_featuresMutex);
+        lock_guard lock(_featuresMutex);
         for (size_t i = 0; i < _features.size(); ++i)
         {
             if (_features[i]->Id() == featureId)

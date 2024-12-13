@@ -31,7 +31,7 @@ class Controller : public IController
 
     vector<shared_ptr<ICanvas>> _canvases;
     uint16_t                    _port;
-    mutable std::mutex          _canvasMutex;
+    mutable mutex               _canvasMutex;
 
   public:
 
@@ -45,7 +45,7 @@ class Controller : public IController
 
     vector<shared_ptr<ICanvas>> Canvases() const override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         return _canvases;
     }
 
@@ -79,7 +79,7 @@ class Controller : public IController
 
     bool AddFeatureToCanvas(uint16_t canvasId, shared_ptr<ILEDFeature> feature) override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         logger->debug("Adding feature to canvas {}...", canvasId);
         GetCanvasById(canvasId)->AddFeature(feature);
         return true;
@@ -87,7 +87,7 @@ class Controller : public IController
 
     void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         logger->debug("Removing feature {} from canvas {}...", featureId, canvasId);
         GetCanvasById(canvasId)->RemoveFeatureById(featureId);
     }
@@ -99,7 +99,7 @@ class Controller : public IController
 
     void LoadSampleCanvases()
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         logger->debug("Loading sample canvases...");
 
         _canvases.clear();
@@ -356,7 +356,7 @@ class Controller : public IController
 
     void Connect() override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         logger->debug("Connecting canvases...");
 
         for (const auto &canvas : _canvases)
@@ -366,7 +366,7 @@ class Controller : public IController
 
     void Disconnect() override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         logger->debug("Disconnecting canvases...");
 
         for (const auto &canvas : _canvases)
@@ -376,7 +376,7 @@ class Controller : public IController
 
     void Start() override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         logger->debug("Starting canvases...");
 
         for (auto &canvas : _canvases)
@@ -385,7 +385,7 @@ class Controller : public IController
 
     void Stop() override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         logger->debug("Stopping canvases...");
 
         for (auto &canvas : _canvases)
@@ -399,7 +399,7 @@ class Controller : public IController
         // This is a bit odd; we try get the current canvas with the ID specified by the new one,
         // and we only proceed in the exception case if the canvas doesn't exist, where we add it
 
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         try
         {
             GetCanvasById(ptrCanvas->Id());
@@ -426,7 +426,7 @@ class Controller : public IController
             for (auto &feature : canvas->Features())
                 feature->Socket()->Stop();
             
-            std::lock_guard<std::mutex> lock(_canvasMutex);
+            lock_guard lock(_canvasMutex);
             // Erase the canvas from _canvases
             _canvases.erase(
                 remove_if(_canvases.begin(), _canvases.end(), [id](const auto &canvas) { return canvas->Id() == id; }),
@@ -445,7 +445,7 @@ class Controller : public IController
     {
         logger->debug("Updating canvas {}...", ptrCanvas->Name());
 
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         try 
         {
             // Find index of canvas we want to update
@@ -489,7 +489,7 @@ class Controller : public IController
 
     const shared_ptr<ISocketChannel> GetSocketById(uint16_t id) const override
     {
-        std::lock_guard<std::mutex> lock(_canvasMutex);
+        lock_guard lock(_canvasMutex);
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
                 if (feature->Id() == id)
