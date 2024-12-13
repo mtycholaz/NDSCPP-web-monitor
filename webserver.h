@@ -12,7 +12,7 @@ using namespace std;
 
 class WebServer
 {
-    mutable shared_mutex _mutex;
+    mutable shared_mutex _apiMutex;
 
     struct HeaderMiddleware
     {
@@ -53,7 +53,7 @@ public:
             {
                 try
                 {
-                    shared_lock readLock(_mutex);
+                    shared_lock readLock(_apiMutex);
                     return nlohmann::json{{"controller", _controller}}.dump();
                 }
                 catch(const std::exception& e)
@@ -70,7 +70,7 @@ public:
             {
                 try
                 {
-                    shared_lock readLock(_mutex);
+                    shared_lock readLock(_apiMutex);
                     return nlohmann::json{{"sockets", _controller.GetSockets()}}.dump();
                 }
                 catch(const std::exception& e)
@@ -88,7 +88,7 @@ public:
             {
                 try
                 {
-                    shared_lock readLock(_mutex);
+                    shared_lock readLock(_apiMutex);
                     return nlohmann::json{{"socket", _controller.GetSocketById(socketId)}}.dump();
                 }
                 catch(const std::exception& e)
@@ -105,7 +105,7 @@ public:
             {
                 try
                 {
-                    shared_lock readLock(_mutex);
+                    shared_lock readLock(_apiMutex);
                     return nlohmann::json(_controller.Canvases()).dump();
                 }
                 catch(const std::exception& e)
@@ -122,7 +122,7 @@ public:
             {
                 try
                 {
-                    shared_lock readLock(_mutex);
+                    shared_lock readLock(_apiMutex);
                     auto allCanvases = _controller.Canvases();
                     if (id < 0 || id >= allCanvases.size())
                         return {crow::NOT_FOUND, R"({"error": "Canvas not found"})"};
@@ -146,7 +146,7 @@ public:
                         // Parse and deserialize JSON payload
                         auto jsonPayload = nlohmann::json::parse(req.body);
 
-                        unique_lock writeLock(_mutex);
+                        unique_lock writeLock(_apiMutex);
                         uint32_t newID = _controller.AddCanvas(jsonPayload.get<shared_ptr<ICanvas>>());
                         writeLock.unlock();
 
@@ -171,7 +171,7 @@ public:
                         auto reqJson = nlohmann::json::parse(req.body);
                         auto feature = reqJson.get<shared_ptr<ILEDFeature>>();
 
-                        unique_lock writeLock(_mutex);
+                        unique_lock writeLock(_apiMutex);
                         auto newId = _controller.GetCanvasById(canvasId)->AddFeature(feature);
                         writeLock.unlock();
 
@@ -191,7 +191,7 @@ public:
                 {
                     try
                     {
-                        unique_lock writeLock(_mutex);
+                        unique_lock writeLock(_apiMutex);
                         auto canvas = _controller.GetCanvasById(canvasId);
                         canvas->RemoveFeatureById(featureId);
                         writeLock.unlock();
@@ -212,7 +212,7 @@ public:
                 {
                     try
                     {
-                        unique_lock writeLock(_mutex);
+                        unique_lock writeLock(_apiMutex);
                         _controller.DeleteCanvasById(id);
                         writeLock.unlock();
 
