@@ -252,7 +252,7 @@ export class MonitorComponent implements OnChanges {
 
     // listen for the control key and refresh the data when it is pressed
     @HostListener('document:keydown.control')
-    onControlR() {
+    onControlDown() {
         this.autoRefresh = false;
     }
 

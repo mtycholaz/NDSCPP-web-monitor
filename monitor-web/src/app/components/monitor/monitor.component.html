@@ -134,7 +134,7 @@
                 <mat-header-cell *matHeaderCellDef> Delta </mat-header-cell>
                 <mat-cell *matCellDef="let element">
                     <ng-container *ngIf="element.isConnected; else empty">
-                        <span [ngClass]="element.deltaStatus">{{
+                        <span class="delta" [ngClass]="element.deltaStatus">{{
                             element.delta | formatDelta
                         }}</span>
                     </ng-container>
