@@ -21,4 +21,5 @@ export const appRoutes: Route[] = [
             ) => store.dispatch(new MonitorActions.LoadControllerData()),
         },
     },
+    { path: '**', redirectTo: '' },
 ];
