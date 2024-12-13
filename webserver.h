@@ -148,7 +148,7 @@ public:
 
                         unique_lock writeLock(_mutex);
                         uint32_t newID = _controller.AddCanvas(jsonPayload.get<shared_ptr<ICanvas>>());
-                        writeLock.release();
+                        writeLock.unlock();
 
                         if (newID == -1)
                             return {crow::BAD_REQUEST, "Error, likely canvas with that ID already exists."};
@@ -173,7 +173,7 @@ public:
 
                         unique_lock writeLock(_mutex);
                         auto newId = _controller.GetCanvasById(canvasId)->AddFeature(feature);
-                        writeLock.release();
+                        writeLock.unlock();
 
                         return nlohmann::json{{"id", newId}}.dump();
                     } 
@@ -194,7 +194,7 @@ public:
                         unique_lock writeLock(_mutex);
                         auto canvas = _controller.GetCanvasById(canvasId);
                         canvas->RemoveFeatureById(featureId);
-                        writeLock.release();
+                        writeLock.unlock();
                         
                         return crow::response(crow::OK);
                     }
@@ -212,9 +212,9 @@ public:
                 {
                     try
                     {
-                        unique_lock lock(_mutex);
+                        unique_lock writeLock(_mutex);
                         _controller.DeleteCanvasById(id);
-                        lock.release();
+                        writeLock.unlock();
 
                         return crow::response(crow::OK);
                     }
