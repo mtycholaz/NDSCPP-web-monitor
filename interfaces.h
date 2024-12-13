@@ -163,8 +163,8 @@ public:
     virtual vector<uint8_t> GetPixelData() const = 0;
     virtual vector<uint8_t> GetDataFrame() const = 0;    
 
-    virtual ISocketChannel & Socket() = 0;
-    virtual const ISocketChannel & Socket() const = 0;
+    virtual shared_ptr<ISocketChannel> Socket() = 0;
+    virtual const shared_ptr<ISocketChannel> Socket() const = 0;
 
 };
 
@@ -215,6 +215,6 @@ public:
     virtual bool AddFeatureToCanvas(uint16_t canvasId, shared_ptr<ILEDFeature> feature) = 0;
     virtual void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) = 0;
     virtual shared_ptr<ICanvas> GetCanvasById(uint16_t id) const = 0;
-    virtual const ISocketChannel & GetSocketById(uint16_t id) const = 0;
-    virtual vector<reference_wrapper<ISocketChannel>> GetSockets() const = 0;
+    virtual const shared_ptr<ISocketChannel> GetSocketById(uint16_t id) const = 0;
+    virtual vector<shared_ptr<ISocketChannel>> GetSockets() const = 0;
 };

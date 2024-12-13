@@ -28,7 +28,7 @@ class LEDFeature : public ILEDFeature
     uint8_t     _channel;
     bool        _redGreenSwap;
     uint32_t    _clientBufferCount;
-    SocketChannel _socketChannel;
+    shared_ptr<ISocketChannel> _ptrSocketChannel;
     static atomic<uint32_t> _nextId;
     uint32_t _id;    
 
@@ -52,9 +52,9 @@ public:
           _channel(channel),
           _redGreenSwap(redGreenSwap),
           _clientBufferCount(clientBufferCount),
-          _socketChannel(hostName, friendlyName, port),
           _id(_nextId++)
     {
+        _ptrSocketChannel = make_shared<SocketChannel>(hostName, friendlyName, port);
     }
 
     uint32_t Id() const override 
@@ -86,14 +86,14 @@ public:
         return(_clientBufferCount * kBufferFillRatio) / _canvas->Effects().GetFPS();
     }
     
-    virtual ISocketChannel & Socket() override 
+    virtual shared_ptr<ISocketChannel> Socket() override 
     {
-        return _socketChannel;
+        return _ptrSocketChannel;
     }
 
-    virtual const ISocketChannel & Socket() const override 
+    virtual const shared_ptr<ISocketChannel> Socket() const override 
     {
-        return _socketChannel;
+        return _ptrSocketChannel;
     }
     
     vector<uint8_t> GetPixelData() const override 
@@ -189,9 +189,9 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
     j = {
             {"type",              "LEDFeature"},
             {"id",                feature.Id()},
-            {"hostName",          feature.Socket().HostName()},
-            {"friendlyName",      feature.Socket().FriendlyName()},
-            {"port",              feature.Socket().Port()},
+            {"hostName",          feature.Socket()->HostName()},
+            {"friendlyName",      feature.Socket()->FriendlyName()},
+            {"port",              feature.Socket()->Port()},
             {"width",             feature.Width()},
             {"height",            feature.Height()},
             {"offsetX",           feature.OffsetX()},
@@ -201,14 +201,14 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
             {"redGreenSwap",      feature.RedGreenSwap()},
             {"clientBufferCount", feature.ClientBufferCount()},
             {"timeOffset",        feature.TimeOffset()},
-            {"bytesPerSecond",    feature.Socket().GetLastBytesPerSecond()},
-            {"isConnected",       feature.Socket().IsConnected()},
-            {"queueDepth",        feature.Socket().GetCurrentQueueDepth()},
-            {"queueMaxSize",      feature.Socket().GetQueueMaxSize()},
-            {"reconnectCount",    feature.Socket().GetReconnectCount()}
+            {"bytesPerSecond",    feature.Socket()->GetLastBytesPerSecond()},
+            {"isConnected",       feature.Socket()->IsConnected()},
+            {"queueDepth",        feature.Socket()->GetCurrentQueueDepth()},
+            {"queueMaxSize",      feature.Socket()->GetQueueMaxSize()},
+            {"reconnectCount",    feature.Socket()->GetReconnectCount()}
         };
 
-    const auto &response = feature.Socket().LastClientResponse();
+    const auto &response = feature.Socket()->LastClientResponse();
     if (response.size == sizeof(ClientResponse))
         j["lastClientResponse"] = response;
 }

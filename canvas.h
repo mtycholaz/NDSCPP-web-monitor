@@ -50,21 +50,25 @@ public:
 
     ILEDGraphics & Graphics() override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _graphics;
     }
     
     const ILEDGraphics& Graphics() const override 
     { 
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _graphics; 
     }
 
     IEffectsManager & Effects() override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _effects;
     }
 
     const IEffectsManager & Effects() const override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _effects;
     }
 
@@ -76,7 +80,6 @@ public:
 
     const vector<shared_ptr<ILEDFeature>> Features() const override
     {
-        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _features;
     }
 
@@ -88,7 +91,7 @@ public:
 
         feature->SetCanvas(this);
         uint32_t id = feature->Id();
-        _features.push_back(std::move(feature));
+        _features.push_back(feature);
         return id;    
     }
 
@@ -99,7 +102,7 @@ public:
         {
             if (_features[i]->Id() == featureId)
             {
-                _features[i]->Socket().Stop();
+                _features[i]->Socket()->Stop();
                 _features.erase(_features.begin() + i);
                 return true;
             }

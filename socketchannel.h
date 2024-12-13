@@ -795,6 +795,17 @@ inline void to_json(nlohmann::json &j, const ISocketChannel & socket)
     }
 }
 
+inline void to_json(nlohmann::json &j, const shared_ptr<ISocketChannel> ptrSocket)
+{
+    if (!ptrSocket)
+    {
+        j = nullptr;
+        return;
+    }
+
+    j = *ptrSocket;
+}
+
 // ISocketChannel <-- JSON
 
 inline void from_json(const nlohmann::json& j, shared_ptr<ISocketChannel>& socket) 

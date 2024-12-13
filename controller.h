@@ -361,7 +361,7 @@ class Controller : public IController
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature->Socket().Start();
+                feature->Socket()->Start();
     }
 
     void Disconnect() override
@@ -371,7 +371,7 @@ class Controller : public IController
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature->Socket().Stop();
+                feature->Socket()->Stop();
     }
 
     void Start() override
@@ -410,7 +410,7 @@ class Controller : public IController
         {
             auto newId = _canvases.size();
             ptrCanvas->SetId(newId);
-            _canvases.push_back(std::move(ptrCanvas));    
+            _canvases.push_back(ptrCanvas);    
             return newId;
         }
     }
@@ -424,7 +424,7 @@ class Controller : public IController
             auto canvas = GetCanvasById(id);
             canvas->Effects().Stop();
             for (auto &feature : canvas->Features())
-                feature->Socket().Stop();
+                feature->Socket()->Stop();
             
             std::lock_guard<std::mutex> lock(_canvasMutex);
             // Erase the canvas from _canvases
@@ -434,10 +434,10 @@ class Controller : public IController
 
             return true;
         }
-        catch(const out_of_range&) 
+        catch(const out_of_range& e) 
         {
             logger->error("Canvas with ID {} not found in DeleteCanvasById.", id);
-            return false;
+            throw e;
         }
     }
 
@@ -477,17 +477,17 @@ class Controller : public IController
         throw out_of_range("Canvas not found: " + to_string(id));
     }
 
-    vector<reference_wrapper<ISocketChannel>> GetSockets() const override
+    vector<shared_ptr<ISocketChannel>> GetSockets() const override
     {
         std::lock_guard<std::mutex> lock(_canvasMutex);
-        vector<reference_wrapper<ISocketChannel>> sockets;
+        vector<shared_ptr<ISocketChannel>> sockets;
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
                 sockets.push_back(feature->Socket());
         return sockets;
     }
 
-    const ISocketChannel & GetSocketById(uint16_t id) const override
+    const shared_ptr<ISocketChannel> GetSocketById(uint16_t id) const override
     {
         std::lock_guard<std::mutex> lock(_canvasMutex);
         for (const auto &canvas : _canvases)

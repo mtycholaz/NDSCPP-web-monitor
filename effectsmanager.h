@@ -72,7 +72,7 @@ public:
 
         if (!effect)
             throw invalid_argument("Cannot add a null effect.");
-        _effects.push_back(std::move(effect));
+        _effects.push_back(effect);
 
         // Automatically set the first effect as current if none is selected
         if (_currentEffectIndex == -1)
@@ -187,12 +187,12 @@ public:
                     auto frame = feature->GetDataFrame();
                     if (bUseCompression)
                     {
-                        auto compressedFrame = feature->Socket().CompressFrame(frame);
-                        feature->Socket().EnqueueFrame(std::move(compressedFrame));
+                        auto compressedFrame = feature->Socket()->CompressFrame(frame);
+                        feature->Socket()->EnqueueFrame(std::move(compressedFrame));
                     }
                     else
                     {
-                        feature->Socket().EnqueueFrame(std::move(frame));
+                        feature->Socket()->EnqueueFrame(std::move(frame));
                     }
                 }
 
