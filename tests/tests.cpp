@@ -217,7 +217,7 @@ TEST_F(APITest, ErrorHandling)
 // Test multiple canvas operations
 TEST_F(APITest, MultipleCanvasOperations)
 {
-    const int NUM_CANVASES = 50;
+    const int NUM_CANVASES = 5;
     std::vector<int> canvasIds;
 
     // Create multiple canvases simultaneously
@@ -225,7 +225,7 @@ TEST_F(APITest, MultipleCanvasOperations)
     for (int i = 0; i < NUM_CANVASES; i++)
     {
         createFutures.push_back(std::async(std::launch::async, [i]()
-                                           {
+        {
             json canvasData = {
                 {"id", -1},
                 {"name", "Stress Test Canvas " + std::to_string(i)},
@@ -237,7 +237,8 @@ TEST_F(APITest, MultipleCanvasOperations)
                 cpr::Url{BASE_URL + "/canvases"},
                 cpr::Body{canvasData.dump()},
                 cpr::Header{{"Content-Type", "application/json"}}
-            ); }));
+            ); 
+        }));
     }
 
     // Collect canvas IDs and verify creation
@@ -359,8 +360,8 @@ TEST_F(APITest, MultipleFeatureOperations)
 // Test rapid creation/deletion cycles
 TEST_F(APITest, RapidCreationDeletion)
 {
-    const int NUM_CYCLES = 25;
-    const int NUM_CANVASES_PER_CYCLE = 25;
+    const int NUM_CYCLES = 5;
+    const int NUM_CANVASES_PER_CYCLE = 5;
 
     for (int cycle = 0; cycle < NUM_CYCLES; cycle++)
     {

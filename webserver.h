@@ -176,6 +176,7 @@ public:
                         writeLock.unlock();
 
                         return nlohmann::json{{"id", newId}}.dump();
+
                     } 
                     catch (const exception& e) 
                     {
