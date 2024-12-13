@@ -96,10 +96,11 @@ TEST_F(APITest, GetSpecificSocket)
 
 TEST_F(APITest, CanvasCRUD)
 {
+    std::string canvasName = "Test Canvas " + std::to_string(std::time(nullptr));
     // Create canvas
     json canvasData = {
         {"id", -1}, // Allow the server to assign the ID
-        {"name", "Test Canvas"},
+        {"name", canvasName},
         {"width", 100},
         {"height", 100}};
 
@@ -125,7 +126,7 @@ TEST_F(APITest, CanvasCRUD)
     auto getResponse = cpr::Get(cpr::Url{BASE_URL + "/canvases/" + std::to_string(newId)});
     ASSERT_EQ(getResponse.status_code, 200);
     auto canvas = json::parse(getResponse.text);
-    ASSERT_EQ(canvas["name"], "Test Canvas");
+    ASSERT_EQ(canvas["name"], canvasName);
 
     // Delete the canvas using the new ID
     auto deleteResponse = cpr::Delete(cpr::Url{BASE_URL + "/canvases/" + std::to_string(newId)});
@@ -143,7 +144,7 @@ TEST_F(APITest, CanvasFeatureOperations)
     // First create a canvas
     json canvasData = {
         {"id", -1}, // Let the server assign the ID
-        {"name", "Feature Test Canvas"},
+        {"name", "Test Canvas " + std::to_string(std::time(nullptr))},
         {"width", 100},
         {"height", 100}};
 
@@ -228,7 +229,7 @@ TEST_F(APITest, MultipleCanvasOperations)
         {
             json canvasData = {
                 {"id", -1},
-                {"name", "Stress Test Canvas " + std::to_string(i)},
+                {"name", "Test Canvas " + std::to_string(i) + std::to_string(std::time(nullptr))},
                 {"width", 100},
                 {"height", 100}
             };
@@ -281,7 +282,7 @@ TEST_F(APITest, MultipleFeatureOperations)
     // Create a test canvas
     json canvasData = {
         {"id", -1},
-        {"name", "Feature Stress Test Canvas"},
+        {"name", "Feature Stress Test Canvas " + std::to_string(std::time(nullptr))},
         {"width", 1000},
         {"height", 1000}};
 
@@ -372,7 +373,7 @@ TEST_F(APITest, RapidCreationDeletion)
         {
             json canvasData = {
                 {"id", -1},
-                {"name", "Cycle " + std::to_string(cycle) + " Canvas " + std::to_string(i)},
+                { "name", "Cycle " + std::to_string(cycle) + " Canvas " + std::to_string(i) + " " + std::to_string(std::time(nullptr)) },   
                 {"width", 100},
                 {"height", 100}};
 
