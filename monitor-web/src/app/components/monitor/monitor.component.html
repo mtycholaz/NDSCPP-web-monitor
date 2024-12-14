@@ -28,44 +28,44 @@
                 <mat-label> Display Columns </mat-label>
             </mat-form-field>
         </div>
-        <mat-table [dataSource]="dataSource" [trackBy]="trackByFn">
+        <table mat-table [dataSource]="dataSource" [trackBy]="trackByFn">
             <ng-container matColumnDef="canvasName">
-                <mat-header-cell *matHeaderCellDef> Canvas </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Canvas</th>
+                <td mat-cell *matCellDef="let element">
                     {{ element.canvasName }}
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="featureName">
-                <mat-header-cell *matHeaderCellDef> Feature </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Feature</th>
+                <td mat-cell *matCellDef="let element">
                     {{ element.featureName }}
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="host">
-                <mat-header-cell *matHeaderCellDef> Host </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Host</th>
+                <td mat-cell *matCellDef="let element">
                     {{ element.hostName }}
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="size">
-                <mat-header-cell *matHeaderCellDef> Size </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Size</th>
+                <td mat-cell *matCellDef="let element">
                     {{ element.size }}
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="reconnectCount">
-                <mat-header-cell *matHeaderCellDef> Cx </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Cx</th>
+                <td mat-cell *matCellDef="let element">
                     <span
                         class="reconnect"
                         [ngClass]="element.reconnectStatus"
                         >{{ element.reconnectCount || '--' }}</span
                     >
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="fps">
-                <mat-header-cell *matHeaderCellDef> FPS </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>FPS</th>
+                <td mat-cell *matCellDef="let element">
                     <ng-container
                         [ngTemplateOutlet]="compare"
                         [ngTemplateOutletContext]="{
@@ -78,11 +78,11 @@
                         }"
                     >
                     </ng-container>
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="queueDepth">
-                <mat-header-cell *matHeaderCellDef> Queue </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Queue</th>
+                <td mat-cell *matCellDef="let element">
                     <ng-container
                         *ngIf="element.isConnected"
                         [ngTemplateOutlet]="queue"
@@ -95,11 +95,11 @@
                         }"
                     >
                     </ng-container>
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="buffer">
-                <mat-header-cell *matHeaderCellDef> Buffer </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Buffer</th>
+                <td mat-cell *matCellDef="let element">
                     <ng-container
                         [ngTemplateOutlet]="compare"
                         [ngTemplateOutletContext]="{
@@ -112,64 +112,60 @@
                         }"
                     >
                     </ng-container>
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="signal">
-                <mat-header-cell *matHeaderCellDef> Signal </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Signal</th>
+                <td mat-cell *matCellDef="let element">
                     <span [ngClass]="element.wifiSignalStatus">{{
                         element.wifiSignal
                     }}</span>
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="dataRate">
-                <mat-header-cell *matHeaderCellDef> Data </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Data</th>
+                <td mat-cell *matCellDef="let element">
                     <ng-container *ngIf="element.isConnected; else empty">
                         {{ element.bandwidth | formatSize }}/s</ng-container
                     >
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="delta">
-                <mat-header-cell *matHeaderCellDef> Delta </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Delta</th>
+                <td mat-cell *matCellDef="let element">
                     <ng-container *ngIf="element.isConnected; else empty">
                         <span class="delta" [ngClass]="element.deltaStatus">{{
                             element.delta | formatDelta
                         }}</span>
                     </ng-container>
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="flash">
-                <mat-header-cell *matHeaderCellDef> Flash </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Flash</th>
+                <td mat-cell *matCellDef="let element">
                     {{
                         element.flashVersion ? 'v' + element.flashVersion : '--'
                     }}
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="status">
-                <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let element">
                     <span [ngClass]="element.status">{{ element.status }}</span>
-                </mat-cell>
+                </td>
             </ng-container>
             <ng-container matColumnDef="effect">
-                <mat-header-cell *matHeaderCellDef> Effect </mat-header-cell>
-                <mat-cell *matCellDef="let element">
+                <th mat-header-cell *matHeaderCellDef>Effect</th>
+                <td mat-cell *matCellDef="let element">
                     {{ element.currentEffectName }}
-                </mat-cell>
+                </td>
             </ng-container>
-            <mat-header-row
-                *matHeaderRowDef="displayedColumns"
-            ></mat-header-row>
-            <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
-        </mat-table>
-        <ng-container *ngIf="canvases().length === 0">
-            <mat-card-content>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            <ng-template matNoDataRow>
                 <p class="empty">No canvases found. Try refreshing.</p>
-            </mat-card-content>
-        </ng-container>
+            </ng-template>
+        </table>
     </mat-card-content>
 </mat-card>
 
@@ -182,7 +178,12 @@
 </ng-template>
 
 <ng-template #queue let-data>
-    <progress [ngClass]="data.status" [value]="data.value" [max]="data.max"></progress>
+    <span class="display-value">{{ data.value }} / {{ data.max }}</span>
+    <progress
+        [ngClass]="data.status"
+        [value]="data.value"
+        [max]="data.max"
+    ></progress>
 </ng-template>
 
 <ng-template #empty>--</ng-template>

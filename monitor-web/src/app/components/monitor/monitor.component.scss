@@ -2,8 +2,15 @@
     text-align: center;
 }
 
-mat-table {
+table {
     box-shadow: var(--mat-sys-level2);
+
+    th,
+    td {
+        max-width: 100%;
+        white-space: nowrap;
+        padding: 0 8px;
+    }
 }
 
 .filters {
@@ -23,19 +30,7 @@ mat-table {
     color: #ff0000;
 }
 
-.mat-column-status {
-    text-transform: uppercase;
-
-    .connected {
-        color: #00b900;
-    }
-
-    .disconnected {
-        color: #ff0000;
-    }
-}
-
-.delta{
+.delta {
     white-space: nowrap;
 }
 
@@ -55,4 +50,68 @@ progress.warning::-webkit-progress-value {
 }
 progress.danger::-webkit-progress-value {
     background-color: #ff0000;
+}
+
+.mat-column-canvasName {
+    width: 100px;
+}
+.mat-column-featureName {
+    width: 100px;
+}
+.mat-column-host {
+    width: 140px;
+}
+.mat-column-size {
+    width: 70px;
+}
+.mat-column-reconnectCount {
+    width: 35px;
+}
+.mat-column-fps {
+    width: 60px;
+}
+
+.mat-column-queueDepth {
+    position: relative;
+
+    .display-value {
+        position: absolute;
+        top: 15px;
+        margin-left: auto;
+        margin-right: auto;
+        left: 0;
+        right: 0;
+        text-align: center;
+    }
+}
+.mat-column-buffer {
+    width: 80px;
+}
+.mat-column-signal {
+    width: 60px;
+}
+.mat-column-dataRate {
+    width: 70px;
+}
+.mat-column-delta {
+    width: 120px;
+}
+.mat-column-flash {
+    width: 50px;
+}
+
+.mat-column-status {
+    width: 70px;
+    text-transform: uppercase;
+
+    .connected {
+        color: #00b900;
+    }
+
+    .disconnected {
+        color: #ff0000;
+    }
+}
+.mat-column-effect {
+    width: 160px;
 }
