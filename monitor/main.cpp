@@ -1,4 +1,3 @@
-#include <ncurses.h>
 #include <curl/curl.h>
 #include <chrono>
 #include <thread>
