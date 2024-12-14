@@ -55,15 +55,14 @@ inline std::wstring buildProgressBar(double value, double maximum, int width = 1
     int remainder = static_cast<int>((exactBlocks - fullBlocks) * 8);
     
     std::wstring bar;
-    bar.reserve(width); // wstring::reserve reserves characters, not bytes
-    
-    if (fullBlocks > 0)
-        bar.append(fullBlocks - 1, blocks[8]);
+    bar.reserve(width); // wstring::reserve() reserves characters, not bytes
+    bar.append(fullBlocks, blocks[8]);
     
     if (fullBlocks < width) {
         bar += blocks[remainder];
         bar.append(width - fullBlocks - 1, blocks[0]);
     }
+    
     return bar;
 }
 
