@@ -1,5 +1,3 @@
-#define _XOPEN_SOURCE_EXTENDED 1
-#include <ncursesw/ncurses.h>
 #include <curl/curl.h>
 #include <chrono>
 #include <thread>

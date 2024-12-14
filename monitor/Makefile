@@ -5,7 +5,7 @@ INCLUDES = -I.
 LDFLAGS =
 
 # Libraries needed
-LIBS = -lcurl -lfmt
+LIBS = -lcurl -lfmt -lncursesw
 
 # Binary name
 TARGET = ledmon
@@ -21,9 +21,9 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Darwin)
     INCLUDES += -I$(shell brew --prefix)/include/ -I$(shell brew --prefix ncurses)/include/
     LDFLAGS += -L$(shell brew --prefix)/lib/ -L$(shell brew --prefix ncurses)/lib/
-	LIBS += -lncurses
-else
-    LIBS += -lncursesw
+#	LIBS += -lncurses
+#else
+#    LIBS += -lncursesw
 endif
 
 # Default target
