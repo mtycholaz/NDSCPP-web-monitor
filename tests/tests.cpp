@@ -381,6 +381,7 @@ TEST_F(APITest, RapidCreationDeletion)
                 cpr::Url{BASE_URL + "/canvases"},
                 cpr::Body{canvasData.dump()},
                 cpr::Header{{"Content-Type", "application/json"}});
+                
             ASSERT_EQ(response.status_code, 201);
             auto jsonResponse = json::parse(response.text);
             cycleCanvasIds.push_back(jsonResponse["id"].get<int>());

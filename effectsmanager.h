@@ -180,22 +180,26 @@ public:
 
             while (_running)
             {
-                // Update the effects and enqueue frames
-                UpdateCurrentEffect(canvas, frameDuration);
-                for (const auto &feature : canvas.Features())
                 {
-                    auto frame = feature->GetDataFrame();
-                    if (bUseCompression)
+                    lock_guard lock(_effectsMutex);
+
+                    // Update the effects and enqueue frames
+                    UpdateCurrentEffect(canvas, frameDuration);
+                    for (const auto &feature : canvas.Features())
                     {
-                        auto compressedFrame = feature->Socket()->CompressFrame(frame);
-                        feature->Socket()->EnqueueFrame(std::move(compressedFrame));
-                    }
-                    else
-                    {
-                        feature->Socket()->EnqueueFrame(std::move(frame));
+                        auto frame = feature->GetDataFrame();
+                        if (bUseCompression)
+                        {
+                            auto compressedFrame = feature->Socket()->CompressFrame(frame);
+                            feature->Socket()->EnqueueFrame(std::move(compressedFrame));
+                        }
+                        else
+                        {
+                            feature->Socket()->EnqueueFrame(std::move(frame));
+                        }
                     }
                 }
-
+                
                 // We wait here while periodically checking _running
                 
                 auto now = steady_clock::now();
