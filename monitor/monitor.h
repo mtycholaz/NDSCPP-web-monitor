@@ -1,6 +1,6 @@
 #define _XOPEN_SOURCE_EXTENDED 1
 #include <locale.h>
-#include <ncurses.h>
+#include <ncursesw/ncurses.h>
 #include <curl/curl.h>
 #include <chrono>
 #include <thread>
