@@ -33,7 +33,7 @@ jobs:
 
     - name: Set up dependencies (macOS)
       if: matrix.os == 'macos-latest'
-      run: brew install asio ffmpeg spdlog googletest cpr
+      run: brew install asio ffmpeg spdlog googletest cpr ncurses
 
     - name: Create secrets.h
       run: cp secrets.example.h secrets.h

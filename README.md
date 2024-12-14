@@ -47,10 +47,10 @@ This repository is designed for programmers familiar with modern C++ (C++20 and 
 
 This project uses clang++ and make, and is dependent on the libraries for asio (because Crow uses it), pthreads, z, avformat, avcodec, avutil, swscale, swresample and spdlog. For the "ledmon" monitor application in the monitor directory, the ncurses and curl libraries are required.
 
-On the Mac, you'll have to install asio, ffmpeg and spdlog using Homebrew; the other required libraries are usually already installed:
+On the Mac, you'll have to install asio, ffmpeg, ncurses and spdlog using Homebrew; the other required libraries are usually already installed:
 
 ```shell
-brew install asio ffmpeg spdlog
+brew install asio ffmpeg ncurses spdlog
 ```
 
 On Ubuntu, dev versions for all libraries except ncurses and pthreads have to be installed (ncurses already gets pulled in by llvm/clang):

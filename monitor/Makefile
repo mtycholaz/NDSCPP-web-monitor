@@ -5,7 +5,7 @@ INCLUDES = -I.
 LDFLAGS =
 
 # Libraries needed
-LIBS = -lncurses -lcurl -lfmt
+LIBS = -lcurl -lfmt -lncursesw
 
 # Binary name
 TARGET = ledmon
@@ -19,8 +19,8 @@ OBJECTS = $(SOURCES:.cpp=.o)
 # Detect platform
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Darwin)
-    INCLUDES += -I$(shell brew --prefix)/include/
-    LDFLAGS += -L$(shell brew --prefix)/lib/
+    INCLUDES += -I$(shell brew --prefix)/include/ -I$(shell brew --prefix ncurses)/include/
+    LDFLAGS += -L$(shell brew --prefix)/lib/ -L$(shell brew --prefix ncurses)/lib/
 endif
 
 # Default target
