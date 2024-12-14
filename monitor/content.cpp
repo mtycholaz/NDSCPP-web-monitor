@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE_EXTENDED 1
 #include <ncurses.h>
 #include <curl/curl.h>
 #include <chrono>
@@ -134,9 +135,9 @@ void Monitor::drawContent()
                             int queueColor = queueDepth < 100 ? 1 : 
                                            queueDepth < 250 ? 6 : 2;
 
-                            std::string bar = buildProgressBar(queueDepth, kFatQueue, 6);
+                            std::wstring bar = buildProgressBar(queueDepth, kFatQueue, 6);
                             wattron(contentWin, COLOR_PAIR(queueColor));
-                            mvwprintw(contentWin, row - scrollOffset, x, bar.c_str(), COLUMNS[6].second, queueDepth);
+                            mvwaddwstr(contentWin, row - scrollOffset, x, bar.c_str());
                             // If the queue is too big to show by bar alone, add a numeric indicator atop it
                             if (queueDepth > kFatQueue)
                             {

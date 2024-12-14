@@ -43,10 +43,10 @@ inline std::string buildMeter(double value, double threshold, int width = 21)
     return meter;
 }
 
-inline std::string buildProgressBar(double value, double maximum, int width = 10) 
+inline std::wstring buildProgressBar(double value, double maximum, int width = 10) 
 {
-    static const std::array<const char*, 9> blocks = {
-        " ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"
+    static const std::array<const wchar_t, 9> blocks = {
+        L' ', L'▏', L'▎', L'▍', L'▌', L'▋', L'▊', L'▉', L'█'
     };
     
     double percentage = std::min(1.0, std::max(0.0, value / maximum));
@@ -54,16 +54,15 @@ inline std::string buildProgressBar(double value, double maximum, int width = 10
     int fullBlocks = static_cast<int>(exactBlocks);
     int remainder = static_cast<int>((exactBlocks - fullBlocks) * 8);
     
-    std::string bar;
-    bar.reserve(width * 3);
+    std::wstring bar;
+    bar.reserve(width); // wstring::reserve reserves characters, not bytes
     
-    for (int i = 0; i < fullBlocks; i++) {
-        bar += blocks[8];
-    }
+    if (fullBlocks > 0)
+        bar.append(fullBlocks - 1, blocks[8]);
     
     if (fullBlocks < width) {
         bar += blocks[remainder];
-        bar.append(width - fullBlocks - 1, blocks[0][0]);
+        bar.append(width - fullBlocks - 1, blocks[0]);
     }
     return bar;
 }
@@ -182,7 +181,7 @@ public:
     {
         werase(headerWin);
         box(headerWin, 0, 0);
-        mvwprintw(headerWin, 0, 2, " NightDriver Monitor ");
+        mvwaddstr(headerWin, 0, 2, " NightDriver Monitor ");
 
         int x = 1;
         wattron(headerWin, COLOR_PAIR(3));
@@ -202,8 +201,8 @@ public:
     {
         werase(footerWin);
         box(footerWin, 0, 0);
-        mvwprintw(footerWin, 0, 2, " Controls ");
-        mvwprintw(footerWin, 1, 2, "Q:Quit  ↑/↓:Scroll  R:Refresh");
+        mvwaddstr(footerWin, 0, 2, " Controls ");
+        mvwaddwstr(footerWin, 1, 2, L"Q:Quit  ↑/↓:Scroll  R:Refresh");
         wrefresh(footerWin);
     }
 
