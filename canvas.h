@@ -25,11 +25,16 @@ class Canvas : public ICanvas
 
 public:
     Canvas(string name, uint32_t width, uint32_t height, uint16_t fps = 30) : 
-        _id(_nextId++),
+        _id(NextId()),
         _graphics(width, height), 
         _effects(fps),
         _name(name)
     {
+    }
+
+    static uint32_t NextId()
+    {
+        return ++_nextId;
     }
 
     string Name() const override

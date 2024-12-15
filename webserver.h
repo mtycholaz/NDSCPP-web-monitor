@@ -123,10 +123,6 @@ public:
                 try
                 {
                     shared_lock readLock(_apiMutex);
-                    auto allCanvases = _controller.Canvases();
-                    if (id < 0 || id >= allCanvases.size())
-                        return {crow::NOT_FOUND, R"({"error": "Canvas not found"})"};
-
                     return nlohmann::json(*_controller.GetCanvasById(id)).dump(); 
                 }
                 catch(const std::exception& e)

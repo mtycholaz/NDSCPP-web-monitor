@@ -408,7 +408,7 @@ class Controller : public IController
         }
         catch(const out_of_range &)               
         {
-            auto newId = _canvases.size();
+            auto newId = Canvas::NextId();
             ptrCanvas->SetId(newId);
             _canvases.push_back(ptrCanvas);    
             return newId;
@@ -421,12 +421,13 @@ class Controller : public IController
 
         try 
         {
+            lock_guard lock(_canvasMutex);
+
             auto canvas = GetCanvasById(id);
             canvas->Effects().Stop();
             for (auto &feature : canvas->Features())
                 feature->Socket()->Stop();
             
-            lock_guard lock(_canvasMutex);
             // Erase the canvas from _canvases
             _canvases.erase(
                 remove_if(_canvases.begin(), _canvases.end(), [id](const auto &canvas) { return canvas->Id() == id; }),
