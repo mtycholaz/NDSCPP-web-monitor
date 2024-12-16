@@ -71,6 +71,7 @@ interface RowData {
     ],
 })
 export class MonitorComponent implements OnChanges {
+    readonly QUEUE_MAX_SIZE = 25;
     filter = '';
     dataSource = new MatTableDataSource([] as RowData[]);
     lastRefresh: Date = new Date();
@@ -234,6 +235,15 @@ export class MonitorComponent implements OnChanges {
                     : signal < 70
                     ? 'good'
                     : signal < 80
+                    ? 'warning'
+                    : 'danger';
+
+            data.deltaStatus =
+                Math.abs(data.delta) > 100
+                    ? ''
+                    : Math.abs(data.delta) < 2.0
+                    ? 'good'
+                    : Math.abs(data.delta) < 3.0
                     ? 'warning'
                     : 'danger';
         }
