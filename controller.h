@@ -20,6 +20,7 @@ using namespace std;
 #include "palette.h"
 #include "effects/paletteeffect.h"
 #include "effects/fireworkseffect.h"
+#include <mutex>
 
 class Controller;
 inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrController);
@@ -28,8 +29,9 @@ class Controller : public IController
 {
   private:
 
-    vector<unique_ptr<ICanvas>> _canvases;
+    vector<shared_ptr<ICanvas>> _canvases;
     uint16_t                    _port;
+    mutable mutex               _canvasMutex;
 
   public:
 
@@ -41,13 +43,10 @@ class Controller : public IController
     {
     }
 
-    vector<reference_wrapper<ICanvas>> Canvases() const override
+    vector<shared_ptr<ICanvas>> Canvases() const override
     {
-        vector<reference_wrapper<ICanvas>> canvases;
-        canvases.reserve(_canvases.size());
-        for (const auto& canvas : _canvases)
-            canvases.push_back(*canvas);
-        return canvases;
+        lock_guard lock(_canvasMutex);
+        return _canvases;
     }
 
     static unique_ptr<Controller> CreateFromFile(const string& filePath) 
@@ -78,17 +77,19 @@ class Controller : public IController
         _port = port;
     }
 
-    bool AddFeatureToCanvas(uint16_t canvasId, unique_ptr<ILEDFeature> feature) override
+    bool AddFeatureToCanvas(uint16_t canvasId, shared_ptr<ILEDFeature> feature) override
     {
+        lock_guard lock(_canvasMutex);
         logger->debug("Adding feature to canvas {}...", canvasId);
-        GetCanvasById(canvasId).AddFeature(std::move(feature));
+        GetCanvasById(canvasId)->AddFeature(feature);
         return true;
     }
 
     void RemoveFeatureFromCanvas(uint16_t canvasId, uint16_t featureId) override
     {
+        lock_guard lock(_canvasMutex);
         logger->debug("Removing feature {} from canvas {}...", featureId, canvasId);
-        GetCanvasById(canvasId).RemoveFeatureById(featureId);
+        GetCanvasById(canvasId)->RemoveFeatureById(featureId);
     }
 
     // LoadSampleCanvases
@@ -98,14 +99,15 @@ class Controller : public IController
 
     void LoadSampleCanvases()
     {
+        lock_guard lock(_canvasMutex);
         logger->debug("Loading sample canvases...");
 
         _canvases.clear();
 
         // Define a Canvas for the Mesmerizer
 
-        auto canvasMesmerizer = make_unique<Canvas>("Mesmerizer", 64, 32, 20);
-        auto feature1 = make_unique<LEDFeature>(
+        auto canvasMesmerizer = make_shared<Canvas>("Mesmerizer", 64, 32, 20);
+        auto feature1 = make_shared<LEDFeature>(
             "192.168.8.161",        // Hostname
             "Mesmerizer",           // Friendly Name
             49152,                  // Port
@@ -117,16 +119,16 @@ class Controller : public IController
             180                     // Client Buffer Count
         );
         canvasMesmerizer->AddFeature(std::move(feature1));
-        canvasMesmerizer->Effects().AddEffect(make_unique<MP4PlaybackEffect>("RickRoll Video", "./media/mp4/rickroll.mp4"));
+        canvasMesmerizer->Effects().AddEffect(make_shared<MP4PlaybackEffect>("Money Video", "./media/mp4/goldendollars.mp4"));
         canvasMesmerizer->Effects().SetCurrentEffect(0, *canvasMesmerizer);
-        _canvases.push_back(std::move(canvasMesmerizer));
+        //_canvases.push_back(canvasMesmerizer);
 
         //---------------------------------------------------------------------
 
         // Define a Canvas for the Workbench Banner
 
-        auto canvasBanner = make_unique<Canvas>("Banner", 512, 32, 24);
-        auto featureBanner = make_unique<LEDFeature>(
+        auto canvasBanner = make_shared<Canvas>("Banner", 512, 32, 24);
+        auto featureBanner = make_shared<LEDFeature>(
             "192.168.1.98",     // Hostname
             "Banner",           // Friendly Name
             49152,              // Port∏
@@ -137,14 +139,14 @@ class Controller : public IController
             false,              // Red-Green Swap
             500);
         canvasBanner->AddFeature(std::move(featureBanner));
-        canvasBanner->Effects().AddEffect(make_unique<StarfieldEffect>("Starfield", 100));
+        canvasBanner->Effects().AddEffect(make_shared<StarfieldEffect>("Starfield", 100));
         canvasBanner->Effects().SetCurrentEffect(0, *canvasBanner);
-        _canvases.push_back(std::move(canvasBanner));
+        _canvases.push_back(canvasBanner);
 
         //---------------------------------------------------------------------
 
-        auto canvasWindow1 = make_unique<Canvas>("Window1", 100, 1, 3);
-        auto featureWindow1 = make_unique<LEDFeature>(
+        auto canvasWindow1 = make_shared<Canvas>("Window1", 100, 1, 3);
+        auto featureWindow1 = make_shared<LEDFeature>(
             "192.168.8.8",       // Hostname
             "Window1",           // Friendly Name
             49152,               // Port∏
@@ -155,14 +157,14 @@ class Controller : public IController
             false,               // Red-Green Swap
             21);
         canvasWindow1->AddFeature(std::move(featureWindow1));
-        canvasWindow1->Effects().AddEffect(make_unique<SolidColorFill>("Yellow Window", CRGB(255, 112, 0)));
+        canvasWindow1->Effects().AddEffect(make_shared<SolidColorFill>("Yellow Window", CRGB(255, 112, 0)));
         canvasWindow1->Effects().SetCurrentEffect(0, *canvasWindow1);
-        _canvases.push_back(std::move(canvasWindow1));
+        _canvases.push_back(canvasWindow1);
 
         //---------------------------------------------------------------------
 
-        auto canvasWindow2 = make_unique<Canvas>("Window2", 100, 1, 3);
-        auto featureWindow2 = make_unique<LEDFeature>(
+        auto canvasWindow2 = make_shared<Canvas>("Window2", 100, 1, 3);
+        auto featureWindow2 = make_shared<LEDFeature>(
             "192.168.8.9",       // Hostname
             "Window2",           // Friendly Name
             49152,               // Port∏
@@ -173,14 +175,14 @@ class Controller : public IController
             false,               // Red-Green Swap
             21);
         canvasWindow2->AddFeature(std::move(featureWindow2));
-        canvasWindow2->Effects().AddEffect(make_unique<SolidColorFill>("Blue Window", CRGB::Blue));
+        canvasWindow2->Effects().AddEffect(make_shared<SolidColorFill>("Blue Window", CRGB::Blue));
         canvasWindow2->Effects().SetCurrentEffect(0, *canvasWindow2);
-        _canvases.push_back(std::move(canvasWindow2));
+        _canvases.push_back(canvasWindow2);
 
         //---------------------------------------------------------------------
 
-        auto canvasWindow3 = make_unique<Canvas>("Window3", 100, 1, 3);
-        auto featureWindow3 = make_unique<LEDFeature>(
+        auto canvasWindow3 = make_shared<Canvas>("Window3", 100, 1, 3);
+        auto featureWindow3 = make_shared<LEDFeature>(
             "192.168.8.10",      // Hostname
             "Window3",           // Friendly Name
             49152,               // Port∏
@@ -191,9 +193,9 @@ class Controller : public IController
             false,               // Red-Green Swap
             21);
         canvasWindow3->AddFeature(std::move(featureWindow3));
-        canvasWindow3->Effects().AddEffect(make_unique<SolidColorFill>("Green Window", CRGB::Green));
+        canvasWindow3->Effects().AddEffect(make_shared<SolidColorFill>("Green Window", CRGB::Green));
         canvasWindow3->Effects().SetCurrentEffect(0, *canvasWindow3);
-        _canvases.push_back(std::move(canvasWindow3));
+        _canvases.push_back(canvasWindow3);
 
         //---------------------------------------------------------------------
 
@@ -205,8 +207,8 @@ class Controller : public IController
             constexpr auto start4 = length1 + length2 + length3, length4 = 144;
             constexpr auto totalLength = length1 + length2 + length3 + length4;
 
-            auto canvasCabinets = make_unique<Canvas>("Cabinets", totalLength, 1, 20);
-            auto featureCabinets1 = make_unique<LEDFeature>(
+            auto canvasCabinets = make_shared<Canvas>("Cabinets", totalLength, 1, 20);
+            auto featureCabinets1 = make_shared<LEDFeature>(
                 "192.168.8.12",       // Hostname
                 "Cupboard1",          // Friendly Name
                 49152,                // Port∏
@@ -216,7 +218,7 @@ class Controller : public IController
                 0,                    // Channel
                 false,                // Red-Green Swap
                 180);
-            auto featureCabinets2 = make_unique<LEDFeature>(
+            auto featureCabinets2 = make_shared<LEDFeature>(
                 "192.168.8.29",       // Hostname
                 "Cupboard2",          // Friendly Name
                 49152,                // Port∏
@@ -226,7 +228,7 @@ class Controller : public IController
                 0,                    // Channel
                 false,                // Red-Green Swap
                 180);
-            auto featureCabinets3 = make_unique<LEDFeature>(
+            auto featureCabinets3 = make_shared<LEDFeature>(
                 "192.168.8.30",       // Hostname
                 "Cupboard3",          // Friendly Name
                 49152,                // Port∏
@@ -236,7 +238,7 @@ class Controller : public IController
                 0,                    // Channel
                 false,                // Red-Green Swap
                 180);
-            auto featureCabinets4 = make_unique<LEDFeature>(
+            auto featureCabinets4 = make_shared<LEDFeature>(
                 "192.168.8.15",       // Hostname
                 "Cupboard4",          // Friendly Name
                 49152,                // Port∏
@@ -251,9 +253,9 @@ class Controller : public IController
             canvasCabinets->AddFeature(std::move(featureCabinets2));
             canvasCabinets->AddFeature(std::move(featureCabinets3));
             canvasCabinets->AddFeature(std::move(featureCabinets4));
-            canvasCabinets->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", StandardPalettes::Rainbow, 2.0, 0.0, 0.01));
+            canvasCabinets->Effects().AddEffect(make_shared<PaletteEffect>("Rainbow Scroll", StandardPalettes::Rainbow, 2.0, 0.0, 0.01));
             canvasCabinets->Effects().SetCurrentEffect(0, *canvasCabinets);
-            _canvases.push_back(std::move(canvasCabinets));
+            _canvases.push_back(canvasCabinets);
         }
 
         // Cabana - Christmas lights that wrap around my guest house
@@ -264,8 +266,8 @@ class Controller : public IController
             constexpr auto start4 = length1 + length2 + length3, length4 = 8 * 144 - 23;
             constexpr auto totalLength = length1 + length2 + length3 + length4;
 
-            auto canvasCabana = make_unique<Canvas>("Cabana", totalLength, 1, 24);
-            auto featureCabana1 = make_unique<LEDFeature>(
+            auto canvasCabana = make_shared<Canvas>("Cabana", totalLength, 1, 24);
+            auto featureCabana1 = make_shared<LEDFeature>(
                 "192.168.8.33",     // Hostname
                 "CBWEST",           // Friendly Name
                 49152,              // Port∏
@@ -275,7 +277,7 @@ class Controller : public IController
                 0,                  // Channel
                 false,              // Red-Green Swap
                 180);
-            auto featureCabana2 = make_unique<LEDFeature>(
+            auto featureCabana2 = make_shared<LEDFeature>(
                 "192.168.8.5",      // Hostname
                 "CBEAST1",          // Friendly Name
                 49152,              // Port∏
@@ -285,7 +287,7 @@ class Controller : public IController
                 0,                  // Channel
                 false,              // Red-Green Swap
                 180);
-            auto featureCabana3 = make_unique<LEDFeature>(
+            auto featureCabana3 = make_shared<LEDFeature>(
                 "192.168.8.37",     // Hostname
                 "CBEAST2",          // Friendly Name
                 49152,              // Port∏
@@ -295,7 +297,7 @@ class Controller : public IController
                 0,                  // Channel
                 false,              // Red-Green Swap
                 180);
-            auto featureCabana4 = make_unique<LEDFeature>(
+            auto featureCabana4 = make_shared<LEDFeature>(
                 "192.168.8.31",     // Hostname
                 "CBEAST3",          // Friendly Name
                 49152,              // Port∏
@@ -310,13 +312,13 @@ class Controller : public IController
             canvasCabana->AddFeature(std::move(featureCabana2));
             canvasCabana->AddFeature(std::move(featureCabana3));
             canvasCabana->AddFeature(std::move(featureCabana4));
-            canvasCabana->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", StandardPalettes::ChristmasLights, 0.0, 5.0, 1.0, 30, 4));
+            canvasCabana->Effects().AddEffect(make_shared<PaletteEffect>("Rainbow Scroll", StandardPalettes::ChristmasLights, 0.0, 5.0, 1.0, 30, 4));
             canvasCabana->Effects().SetCurrentEffect(0, *canvasCabana);
-            _canvases.push_back(std::move(canvasCabana));
+            _canvases.push_back(canvasCabana);
         }
         {
-            auto canvasCeiling = make_unique<Canvas>("Ceiling", 144 * 5 + 38, 1, 30);
-            auto featureCeiling = make_unique<LEDFeature>(
+            auto canvasCeiling = make_shared<Canvas>("Ceiling", 144 * 5 + 38, 1, 30);
+            auto featureCeiling = make_shared<LEDFeature>(
                 "192.168.8.60",      // Hostname
                 "Ceiling",           // Friendly Name
                 49152,               // Port
@@ -328,13 +330,13 @@ class Controller : public IController
                 500                  // Client Buffer Count
             );
             canvasCeiling->AddFeature(std::move(featureCeiling));
-            canvasCeiling->Effects().AddEffect(make_unique<FireworksEffect>("Fireworks"));
+            canvasCeiling->Effects().AddEffect(make_shared<BouncingBallEffect>("Bouncing Balls"));
             canvasCeiling->Effects().SetCurrentEffect(0, *canvasCeiling);
-            _canvases.push_back(std::move(canvasCeiling));
+            _canvases.push_back(canvasCeiling);
         }
         {
-            auto canvasTree = make_unique<Canvas>("Tree", 32, 1, 30);
-            auto featureTree = make_unique<LEDFeature>(
+            auto canvasTree = make_shared<Canvas>("Tree", 32, 1, 30);
+            auto featureTree = make_shared<LEDFeature>(
                 "192.168.8.167",  // Hostname
                 "Tree",           // Friendly Name
                 49152,            // Port
@@ -346,32 +348,35 @@ class Controller : public IController
                 180               // Client Buffer Count
             );
             canvasTree->AddFeature(std::move(featureTree));
-            canvasTree->Effects().AddEffect(make_unique<PaletteEffect>("Rainbow Scroll", StandardPalettes::Rainbow, 0.25, 0.0, 1, 1));
+            canvasTree->Effects().AddEffect(make_shared<PaletteEffect>("Rainbow Scroll", StandardPalettes::Rainbow, 0.25, 0.0, 1, 1));
             canvasTree->Effects().SetCurrentEffect(0, *canvasTree);
-            _canvases.push_back(std::move(canvasTree));
+            _canvases.push_back(canvasTree);
         }
     }
 
     void Connect() override
     {
+        lock_guard lock(_canvasMutex);
         logger->debug("Connecting canvases...");
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature.get().Socket().Start();
+                feature->Socket()->Start();
     }
 
     void Disconnect() override
     {
+        lock_guard lock(_canvasMutex);
         logger->debug("Disconnecting canvases...");
 
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                feature.get().Socket().Stop();
+                feature->Socket()->Stop();
     }
 
     void Start() override
     {
+        lock_guard lock(_canvasMutex);
         logger->debug("Starting canvases...");
 
         for (auto &canvas : _canvases)
@@ -380,100 +385,117 @@ class Controller : public IController
 
     void Stop() override
     {
+        lock_guard lock(_canvasMutex);
         logger->debug("Stopping canvases...");
 
         for (auto &canvas : _canvases)
             canvas->Effects().Stop();
     }
 
-    bool AddCanvas(unique_ptr<ICanvas> ptrCanvas) override
+    uint32_t AddCanvas(shared_ptr<ICanvas> ptrCanvas) override
     {
         logger->debug("Adding canvas {}...", ptrCanvas->Name());
 
         // This is a bit odd; we try get the current canvas with the ID specified by the new one,
         // and we only proceed in the exception case if the canvas doesn't exist, where we add it
 
+        lock_guard lock(_canvasMutex);
         try
         {
             GetCanvasById(ptrCanvas->Id());
             logger->error("Canvas with ID {} already exists.", ptrCanvas->Id());
-            return false;
+            return -1;
         }
         catch(const out_of_range &)               
         {
-            _canvases.push_back(std::move(ptrCanvas));    
-            return true;
+            auto newId = Canvas::NextId();
+            ptrCanvas->SetId(newId);
+            _canvases.push_back(ptrCanvas);    
+            return newId;
         }
     }
 
     bool DeleteCanvasById(uint32_t id) override
     {
         logger->debug("Deleting canvas {}...", id);
-        
-        try {
-            GetCanvasById(id); // Verify canvas exists
+
+        try 
+        {
+            lock_guard lock(_canvasMutex);
+
+            auto canvas = GetCanvasById(id);
+            canvas->Effects().Stop();
+            for (auto &feature : canvas->Features())
+                feature->Socket()->Stop();
+            
+            // Erase the canvas from _canvases
             _canvases.erase(
-                remove_if(_canvases.begin(), _canvases.end(),
-                    [id](const auto& canvas) { return canvas->Id() == id; }),
+                remove_if(_canvases.begin(), _canvases.end(), [id](const auto &canvas) { return canvas->Id() == id; }),
                 _canvases.end());
+
             return true;
         }
-        catch(const out_of_range&) {
+        catch(const out_of_range& e) 
+        {
             logger->error("Canvas with ID {} not found in DeleteCanvasById.", id);
-            return false;
+            throw e;
         }
     }
 
-    bool UpdateCanvas(unique_ptr<ICanvas> ptrCanvas) override
+    bool UpdateCanvas(shared_ptr<ICanvas> ptrCanvas) override
     {
         logger->debug("Updating canvas {}...", ptrCanvas->Name());
 
-        try {
+        lock_guard lock(_canvasMutex);
+        try 
+        {
             // Find index of canvas we want to update
             auto canvasId = ptrCanvas->Id();
             for (size_t i = 0; i < _canvases.size(); ++i) {
                 if (_canvases[i]->Id() == canvasId) {
-                    _canvases[i] = std::move(ptrCanvas);
+                    _canvases[i] = ptrCanvas;
                     return true;
                 }
             }
             throw out_of_range("Canvas not found");
         }
-        catch(const out_of_range&) {
+        catch(const out_of_range&) 
+        {
             logger->error("Canvas with ID {} not found in UpdateCanvas.", ptrCanvas->Id());
             return false;
         }
     }
 
-    ICanvas & GetCanvasById(uint16_t id) const override
+    // GetCanvasById - Return a reference to the canvas in _canvases with the specified ID.
+    //
+    // Note that you should already be holding the mutex BEFORE you call this function!
+    
+    shared_ptr<ICanvas> GetCanvasById(uint16_t id) const override
     {
-        // Find and return the canvas with the matching ID
-        for (auto &canvas : _canvases)
+        for (const auto &canvas : _canvases)
             if (canvas->Id() == id)
-                return *canvas.get();
-
-        logger->debug("Canvas with ID {} not found in GetCanvasById.", id);
-        throw out_of_range("Canvas not found");
+                return canvas;
+        throw out_of_range("Canvas not found: " + to_string(id));
     }
 
-    vector<reference_wrapper<ISocketChannel>> GetSockets() const override
+    vector<shared_ptr<ISocketChannel>> GetSockets() const override
     {
-        vector<reference_wrapper<ISocketChannel>> sockets;
+        std::lock_guard<std::mutex> lock(_canvasMutex);
+        vector<shared_ptr<ISocketChannel>> sockets;
         for (const auto &canvas : _canvases)
             for (const auto &feature : canvas->Features())
-                sockets.push_back(feature.get().Socket());
+                sockets.push_back(feature->Socket());
         return sockets;
     }
 
-    const ISocketChannel & GetSocketById(uint16_t id) const override
+    const shared_ptr<ISocketChannel> GetSocketById(uint16_t id) const override
     {
-        for (auto &canvas : _canvases)
-            for (auto &feature : canvas->Features())
-                if (feature.get().Socket().Id() == id)
-                    return feature.get().Socket();
-
-        logger->error("Socket with ID {} not found in GetSocketById.", id);                     
-        throw out_of_range("Socket not found by id");
+        lock_guard lock(_canvasMutex);
+        for (const auto &canvas : _canvases)
+            for (const auto &feature : canvas->Features())
+                if (feature->Id() == id)
+                    return feature->Socket();
+        throw out_of_range("Socket not found: " + to_string(id));
     }
 };
 
@@ -484,10 +506,8 @@ inline void to_json(nlohmann::json &j, const IController &controller)
     try
     {
         j["port"] = controller.GetPort();
-        j["canvases"] = nlohmann::json::array();
-        
-        for (const auto ptrCanvas : controller.Canvases())
-            j["canvases"].push_back(ptrCanvas);
+        for (const auto &canvas : controller.Canvases())
+            j["canvases"].push_back(*canvas);
     }
     catch (const exception &e)
     {
@@ -509,7 +529,7 @@ inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrContr
 
         // Extract canvases
         for (const auto &canvasJson : j.at("canvases"))
-            ptrController->AddCanvas(canvasJson.get<unique_ptr<ICanvas>>());
+            ptrController->AddCanvas(canvasJson.get<shared_ptr<ICanvas>>());
     } 
     catch (const exception &e) 
     {

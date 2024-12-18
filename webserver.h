@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <ranges>
+#include <shared_mutex>
 #include "json.hpp"
 #include "crow_all.h"
 #include "controller.h"
@@ -11,7 +12,8 @@ using namespace std;
 
 class WebServer
 {
-private:
+    mutable shared_mutex _apiMutex;
+
     struct HeaderMiddleware
     {
         struct context
@@ -49,10 +51,16 @@ public:
         CROW_ROUTE(_crowApp, "/api/controller")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
             {
-                nlohmann::json response;
-                response["controller"] = _controller;
-                return response.dump();
-
+                try
+                {
+                    shared_lock readLock(_apiMutex);
+                    return nlohmann::json{{"controller", _controller}}.dump();
+                }
+                catch(const std::exception& e)
+                {
+                    logger->error("Error in /api/controller: {}", e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
             });
 
         // Enumerate just the sockets
@@ -60,11 +68,16 @@ public:
         CROW_ROUTE(_crowApp, "/api/sockets")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
             {
-                auto socketsJson = nlohmann::json::array();
-                for (const auto &socket : _controller.GetSockets())
-                    socketsJson.push_back(socket); // Assumes `to_json` is defined for `socket`
-
-                return socketsJson.dump();
+                try
+                {
+                    shared_lock readLock(_apiMutex);
+                    return nlohmann::json{{"sockets", _controller.GetSockets()}}.dump();
+                }
+                catch(const std::exception& e)
+                {
+                    logger->error("Error in /api/sockets: {}", e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
             });
 
 
@@ -73,7 +86,16 @@ public:
         CROW_ROUTE(_crowApp, "/api/sockets/<int>") 
             .methods(crow::HTTPMethod::GET)([&](int socketId) -> crow::response
             {
-                return nlohmann::json(_controller.GetSocketById(socketId)).dump();
+                try
+                {
+                    shared_lock readLock(_apiMutex);
+                    return nlohmann::json{{"socket", _controller.GetSocketById(socketId)}}.dump();
+                }
+                catch(const std::exception& e)
+                {
+                    logger->error("Error in /api/sockets/{}: {}", socketId, e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
             });
 
         // Enumerate all the canvases
@@ -81,7 +103,16 @@ public:
         CROW_ROUTE(_crowApp, "/api/canvases")
             .methods(crow::HTTPMethod::GET)([&]() -> crow::response
             {
-                return nlohmann::json(_controller.Canvases()).dump();
+                try
+                {
+                    shared_lock readLock(_apiMutex);
+                    return nlohmann::json(_controller.Canvases()).dump();
+                }
+                catch(const std::exception& e)
+                {
+                    logger->error("Error in /api/canvases: {}", e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
             });
 
         // Detail a single canvas
@@ -89,11 +120,17 @@ public:
         CROW_ROUTE(_crowApp, "/api/canvases/<int>")
             .methods(crow::HTTPMethod::GET)([&](int id) -> crow::response
             {
-                auto allCanvases = _controller.Canvases();
-                if (id < 0 || id >= allCanvases.size())
-                    return {crow::NOT_FOUND, R"({"error": "Canvas not found"})"};
-
-                return nlohmann::json(allCanvases[id]).dump(); 
+                try
+                {
+                    shared_lock readLock(_apiMutex);
+                    return nlohmann::json(*_controller.GetCanvasById(id)).dump(); 
+                }
+                catch(const std::exception& e)
+                {
+                    logger->error("Error in /api/canvases/{}: {}", id, e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
+                
             });
             
             // Create new canvas
@@ -105,25 +142,20 @@ public:
                         // Parse and deserialize JSON payload
                         auto jsonPayload = nlohmann::json::parse(req.body);
 
-                        // Add the canvas to the controller
-                        if (!_controller.AddCanvas(jsonPayload.get<unique_ptr<ICanvas>>()))
-                            return {400, "Error, likely canvas with that ID already exists."};
-                        return {201, "Canvas added successfully."};
+                        unique_lock writeLock(_apiMutex);
+                        uint32_t newID = _controller.AddCanvas(jsonPayload.get<shared_ptr<ICanvas>>());
+                        writeLock.unlock();
+
+                        if (newID == -1)
+                            return {crow::BAD_REQUEST, "Error, likely canvas with that ID already exists."};
+
+                        return crow::response(201, nlohmann::json{{"id", newID}}.dump());                    
                     } 
                     catch (const exception& e) 
                     {
-                        return {400, string("Error: ") + e.what()};
+                        logger->error("Error in /api/canvases POST: {}", e.what());
+                        return {crow::BAD_REQUEST, string("Error: ") + e.what()};
                     }
-                });
-
-
-
-            // Delete canvas
-            CROW_ROUTE(_crowApp, "/api/canvases/<int>")
-                .methods(crow::HTTPMethod::DELETE)([&](int id)
-                {
-                    _controller.DeleteCanvasById(id);
-                    return crow::response(crow::OK);
                 });
 
             // Create feature and add to canvas
@@ -133,13 +165,19 @@ public:
                     try 
                     {
                         auto reqJson = nlohmann::json::parse(req.body);
-                        auto feature = reqJson.get<unique_ptr<ILEDFeature>>();
-                        auto newId = _controller.Canvases()[canvasId].get().AddFeature(std::move(feature));
+                        auto feature = reqJson.get<shared_ptr<ILEDFeature>>();
+
+                        unique_lock writeLock(_apiMutex);
+                        auto newId = _controller.GetCanvasById(canvasId)->AddFeature(feature);
+                        writeLock.unlock();
+
                         return nlohmann::json{{"id", newId}}.dump();
+
                     } 
                     catch (const exception& e) 
                     {
-                        return {400, string("Error: ") + e.what()};
+                        logger->error("Error in /api/canvases/{}/features POST: {}", canvasId, e.what());
+                        return {crow::BAD_REQUEST, string("Error: ") + e.what()};
                     }
                 });
 
@@ -148,12 +186,42 @@ public:
             CROW_ROUTE(_crowApp, "/api/canvases/<int>/features/<int>")
                 .methods(crow::HTTPMethod::DELETE)([&](int canvasId, int featureId)
                 {
-                    _controller.GetCanvasById(canvasId).RemoveFeatureById(featureId);
-                    auto canvas = _controller.Canvases()[canvasId];
-                    canvas.get().RemoveFeatureById(featureId);
-                    return crow::response(crow::OK);
+                    try
+                    {
+                        unique_lock writeLock(_apiMutex);
+                        auto canvas = _controller.GetCanvasById(canvasId);
+                        canvas->RemoveFeatureById(featureId);
+                        writeLock.unlock();
+                        
+                        return crow::response(crow::OK);
+                    }
+                    catch(const std::exception& e)
+                    {
+                        logger->error("Error in /api/canvases/{}/features/{} DELETE: {}", canvasId, featureId, e.what());
+                        return crow::response(crow::BAD_REQUEST, string("Error: ") + e.what());
+                    }
                 });
                 
+
+            // Delete canvas
+            CROW_ROUTE(_crowApp, "/api/canvases/<int>")
+                .methods(crow::HTTPMethod::DELETE)([&](int id)
+                {
+                    try
+                    {
+                        unique_lock writeLock(_apiMutex);
+                        _controller.DeleteCanvasById(id);
+                        writeLock.unlock();
+
+                        return crow::response(crow::OK);
+                    }
+                    catch(const std::exception& e)
+                    {
+                        logger->error("Error in /api/canvases/{} DELETE: {}", id, e.what());
+                        return crow::response(crow::BAD_REQUEST, string("Error: ") + e.what());
+                    }
+                });
+
         // Start the server
         _crowApp.port(_controller.GetPort()).multithreaded().run();
     }

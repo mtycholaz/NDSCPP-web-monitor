@@ -165,7 +165,7 @@ public:
     }
 
     friend inline void to_json(nlohmann::json &j, const FireworksEffect &effect);
-    friend inline void from_json(const nlohmann::json &j, unique_ptr<FireworksEffect> &effect);
+    friend inline void from_json(const nlohmann::json &j, shared_ptr<FireworksEffect> &effect);
    
 };
 
@@ -184,9 +184,9 @@ inline void to_json(nlohmann::json &j, const FireworksEffect &effect)
         };
 }
 
-inline void from_json(const nlohmann::json &j, unique_ptr<FireworksEffect> &effect)
+inline void from_json(const nlohmann::json &j, shared_ptr<FireworksEffect> &effect)
 {
-    effect = make_unique<FireworksEffect>(
+    effect = make_shared<FireworksEffect>(
             j.at("name").get<string>(),
             j.value("maxSpeed", 175.0),
             j.value("newParticleProbability", 1.0),
