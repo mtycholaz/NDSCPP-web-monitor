@@ -193,7 +193,7 @@ public:
     }
 
     friend inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect);
-    friend inline void from_json(const nlohmann::json& j, unique_ptr<MP4PlaybackEffect>& effect);
+    friend inline void from_json(const nlohmann::json& j, shared_ptr<MP4PlaybackEffect>& effect);
 };
 
 inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect) 
@@ -205,9 +205,9 @@ inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect)
     };
 }
 
-inline void from_json(const nlohmann::json& j, unique_ptr<MP4PlaybackEffect>& effect)
+inline void from_json(const nlohmann::json& j, shared_ptr<MP4PlaybackEffect>& effect)
 {
-    effect = make_unique<MP4PlaybackEffect>(
+    effect = make_shared<MP4PlaybackEffect>(
         j.at("name").get<string>(),
         j.at("filePath").get<string>()
     );

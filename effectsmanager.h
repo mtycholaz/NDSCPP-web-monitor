@@ -8,6 +8,7 @@ using namespace std::chrono;
 #include "effects/paletteeffect.h"
 #include "effects/starfield.h"
 #include "effects/videoeffect.h"
+#include "effects/bouncingballeffect.h"
 
 // EffectsManager
 //
@@ -17,14 +18,16 @@ using namespace std::chrono;
 
 #include "interfaces.h"
 #include <vector>
+#include <mutex>
 
 class EffectsManager : public IEffectsManager
 {
-    uint16_t _fps;
-    int _currentEffectIndex; // Index of the current effect
-    atomic<bool> _running;
-    vector<unique_ptr<ILEDEffect>> _effects;
-    thread _workerThread;
+    uint16_t      _fps;
+    int           _currentEffectIndex; // Index of the current effect
+    atomic<bool>  _running;
+    mutable mutex _effectsMutex;  // Add mutex as member
+    vector<shared_ptr<ILEDEffect>> _effects;
+    thread        _workerThread;
 
 public:
     EffectsManager(uint16_t fps = 30) : _fps(fps), _currentEffectIndex(-1), _running(false) // No effect selected initially
@@ -56,21 +59,20 @@ public:
         return _effects.size();
     }
 
-    vector<reference_wrapper<ILEDEffect>> Effects() const override
+    vector<shared_ptr<ILEDEffect>> Effects() const override
     {
-        vector<reference_wrapper<ILEDEffect>> effects;
-        effects.reserve(_effects.size());
-        for (auto &effect : _effects)
-            effects.push_back(*effect);
-        return effects;
+        lock_guard lock(_effectsMutex);
+        return _effects;
     }
 
     // Add an effect to the manager
-    void AddEffect(unique_ptr<ILEDEffect> effect) override
+    void AddEffect(shared_ptr<ILEDEffect> effect) override
     {
+        lock_guard lock(_effectsMutex);
+
         if (!effect)
             throw invalid_argument("Cannot add a null effect.");
-        _effects.push_back(std::move(effect));
+        _effects.push_back(effect);
 
         // Automatically set the first effect as current if none is selected
         if (_currentEffectIndex == -1)
@@ -78,8 +80,10 @@ public:
     }
 
     // Remove an effect from the manager
-    void RemoveEffect(unique_ptr<ILEDEffect> & effect) override
+    void RemoveEffect(shared_ptr<ILEDEffect> &effect) override
     {
+        lock_guard lock(_effectsMutex);
+
         if (!effect)
             throw invalid_argument("Cannot remove a null effect.");
 
@@ -100,13 +104,13 @@ public:
     }
 
     // Start the current effect
-    void StartCurrentEffect(ICanvas& canvas) override
+    void StartCurrentEffect(ICanvas &canvas) override
     {
         if (IsEffectSelected())
             _effects[_currentEffectIndex]->Start(canvas);
     }
 
-    void SetCurrentEffect(size_t index, ICanvas& canvas) override
+    void SetCurrentEffect(size_t index, ICanvas &canvas) override
     {
         if (index >= _effects.size())
             throw out_of_range("Effect index out of range.");
@@ -114,10 +118,10 @@ public:
         _currentEffectIndex = index;
 
         StartCurrentEffect(canvas);
-   }
+    }
 
     // Update the current effect and render it to the canvas
-    void UpdateCurrentEffect(ICanvas& canvas, milliseconds millisDelta) override
+    void UpdateCurrentEffect(ICanvas &canvas, milliseconds millisDelta) override
     {
         if (IsEffectSelected())
             _effects[_currentEffectIndex]->Update(canvas, millisDelta);
@@ -149,20 +153,21 @@ public:
 
     void ClearEffects() override
     {
+        lock_guard lock(_effectsMutex);
         _effects.clear();
         _currentEffectIndex = -1;
     }
 
     // Start the worker thread to update effects
-    
-    void Start(ICanvas& canvas) override
+
+    void Start(ICanvas &canvas) override
     {
         logger->debug("Starting effects manager with {} effects at {} FPS", _effects.size(), _fps);
 
         if (_running.exchange(true))
             return; // Already running
 
-        _workerThread = thread([this, &canvas]() 
+        _workerThread = thread([this, &canvas]()
         {
             auto frameDuration = 1000ms / _fps; // Target duration per frame
             auto nextFrameTime = steady_clock::now();
@@ -175,22 +180,26 @@ public:
 
             while (_running)
             {
-                // Update the effects and enqueue frames
-                UpdateCurrentEffect(canvas, frameDuration);
-                for (const auto &feature : canvas.Features())
                 {
-                    auto frame = feature.get().GetDataFrame();
-                    if (bUseCompression)
+                    lock_guard lock(_effectsMutex);
+
+                    // Update the effects and enqueue frames
+                    UpdateCurrentEffect(canvas, frameDuration);
+                    for (const auto &feature : canvas.Features())
                     {
-                        auto compressedFrame = feature.get().Socket().CompressFrame(frame);
-                        feature.get().Socket().EnqueueFrame(std::move(compressedFrame));
-                    }
-                    else
-                    {
-                        feature.get().Socket().EnqueueFrame(std::move(frame));
+                        auto frame = feature->GetDataFrame();
+                        if (bUseCompression)
+                        {
+                            auto compressedFrame = feature->Socket()->CompressFrame(frame);
+                            feature->Socket()->EnqueueFrame(std::move(compressedFrame));
+                        }
+                        else
+                        {
+                            feature->Socket()->EnqueueFrame(std::move(frame));
+                        }
                     }
                 }
-
+                
                 // We wait here while periodically checking _running
                 
                 auto now = steady_clock::now();
@@ -201,8 +210,7 @@ public:
 
                 // Set the next frame target
                 nextFrameTime += frameDuration;
-            }
-        });
+            } });
     }
 
     // Stop the worker thread
@@ -216,12 +224,13 @@ public:
             _workerThread.join();
     }
 
-    void SetEffects(vector<unique_ptr<ILEDEffect>> effects) override 
+    void SetEffects(vector<shared_ptr<ILEDEffect>> effects) override
     {
+        lock_guard lock(_effectsMutex);
         _effects = std::move(effects);
     }
 
-    void SetCurrentEffectIndex(int index) override 
+    void SetCurrentEffectIndex(int index) override
     {
         _currentEffectIndex = index;
     }
@@ -232,25 +241,26 @@ private:
         return _currentEffectIndex >= 0 && _currentEffectIndex < static_cast<int>(_effects.size());
     }
 
-    friend void to_json(nlohmann::json& j, const EffectsManager& manager);
-    friend void from_json(const nlohmann::json& j, EffectsManager& manager);
+    friend void to_json(nlohmann::json &j, const EffectsManager &manager);
+    friend void from_json(const nlohmann::json &j, EffectsManager &manager);
 };
 
 // Define type aliases for effect (de)serialization functions for legibility reasons
-using EffectSerializer = function<void(nlohmann::json&, const ILEDEffect&)>;
-using EffectDeserializer = function<unique_ptr<ILEDEffect>(const nlohmann::json&)>;
+using EffectSerializer = function<void(nlohmann::json &, const ILEDEffect &)>;
+using EffectDeserializer = function<shared_ptr<ILEDEffect>(const nlohmann::json &)>;
 
 // Factory function to create a pair of effect (de)serialization functions for a given type
-template<typename T> 
-pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair() 
+template <typename T>
+pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair()
 {
-    EffectSerializer serializer = [](nlohmann::json& j, const ILEDEffect& effect) { 
-        to_json(j, dynamic_cast<const T&>(effect)); 
+    EffectSerializer serializer = [](nlohmann::json &j, const ILEDEffect &effect)
+    {
+        to_json(j, dynamic_cast<const T &>(effect));
     };
 
-    EffectDeserializer deserializer = [](const nlohmann::json& j)
-    { 
-        return j.get<unique_ptr<T>>(); 
+    EffectDeserializer deserializer = [](const nlohmann::json &j)
+    {
+        return j.get<shared_ptr<T>>();
     };
 
     return make_pair(typeid(T).name(), make_pair(serializer, deserializer));
@@ -260,63 +270,71 @@ pair<string, pair<EffectSerializer, EffectDeserializer>> jsonPair()
 
 static const map<string, pair<EffectSerializer, EffectDeserializer>> to_from_json_map =
 {
-    jsonPair<ColorWaveEffect>(),
-    jsonPair<FireworksEffect>(),
-    jsonPair<SolidColorFill>(),
-    jsonPair<PaletteEffect>(),
-    jsonPair<StarfieldEffect>(),
-    jsonPair<MP4PlaybackEffect>()
+        jsonPair<BouncingBallEffect>(),
+        jsonPair<ColorWaveEffect>(),
+        jsonPair<FireworksEffect>(),
+        jsonPair<SolidColorFill>(),
+        jsonPair<PaletteEffect>(),
+        jsonPair<StarfieldEffect>(),
+        jsonPair<MP4PlaybackEffect>()
 };
 
 // Dynamically serialize an effect to JSON based on its actual type
 
-inline void to_json(nlohmann::json& j, const ILEDEffect& effect) 
+inline void to_json(nlohmann::json &j, const ILEDEffect &effect)
 {
     std::string type = typeid(effect).name();
     auto it = to_from_json_map.find(type);
     if (it == to_from_json_map.end())
     {
-        logger->error("Unknown effect type for serialization: {}, replacing with default fill", type);
+        logger->error("Unknown effect type for serialization: {}", type);
         throw runtime_error("Unknown effect type for serialization: " + type);
     }
     it->second.first(j, effect);
 }
 
-// Dynamically deserialize an effect from JSON based on its indicated type 
+// Dynamically deserialize an effect from JSON based on its indicated type
 // and return it on the unique pointer out reference
 
 // ILEDEffect <-- JSON
 
-inline void from_json(const nlohmann::json& j, unique_ptr<ILEDEffect>& effect) 
+inline void from_json(const nlohmann::json &j, shared_ptr<ILEDEffect> & effect)
 {
     auto it = to_from_json_map.find(j["type"]);
     if (it == to_from_json_map.end())
     {
         logger->error("Unknown effect type for deserialization: {}, replacing with magenta fill", j["type"].get<string>());
-        effect = std::move(make_unique<SolidColorFill>("Unknown Effect Type", CRGB::Magenta));
+        effect = make_shared<SolidColorFill>("Unknown Effect Type", CRGB::Magenta);
         return;
     }
-     
+
     effect = it->second.second(j);
 }
 
 // IEffectsManager <-- JSON
 
-inline void to_json(nlohmann::json& j, const IEffectsManager& manager) 
+inline void to_json(nlohmann::json &j, const IEffectsManager &manager)
 {
-    j = {
+    j = 
+    {
         {"type", "EffectsManager"},
         {"fps", manager.GetFPS()},
-        {"currentEffectIndex", manager.GetCurrentEffect()},
-        {"effects", manager.Effects()}
+        {"currentEffectIndex", manager.GetCurrentEffect()}
     };
-}
+        
+    for (const auto &effect : manager.Effects())
+    {
+        nlohmann::json effectJson;
+        to_json(effectJson, *effect);
+        j["effects"].push_back(effectJson);
+    }
+};
 
 // IEffectManager --> JSON
 
-inline void from_json(const nlohmann::json& j, IEffectsManager& manager) 
+inline void from_json(const nlohmann::json &j, IEffectsManager &manager)
 {
     manager.SetFPS(j.at("fps").get<uint16_t>());
-    manager.SetEffects(j.at("effects").get<vector<unique_ptr<ILEDEffect>>>());
+    manager.SetEffects(j.at("effects").get<vector<shared_ptr<ILEDEffect>>>());
     manager.SetCurrentEffectIndex(j.at("currentEffectIndex").get<int>());
 }

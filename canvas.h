@@ -11,6 +11,7 @@ using namespace std;
 #include "ledfeature.h"
 #include "effectsmanager.h"
 #include <vector>
+#include <mutex>
 
 class Canvas : public ICanvas
 {
@@ -19,15 +20,21 @@ class Canvas : public ICanvas
     BaseGraphics            _graphics;
     EffectsManager          _effects;
     string                  _name;
-    vector<unique_ptr<ILEDFeature>> _features;
+    vector<shared_ptr<ILEDFeature>> _features;
+    mutable mutex           _featuresMutex;
 
 public:
     Canvas(string name, uint32_t width, uint32_t height, uint16_t fps = 30) : 
-        _id(_nextId++),
+        _id(NextId()),
         _graphics(width, height), 
         _effects(fps),
         _name(name)
     {
+    }
+
+    static uint32_t NextId()
+    {
+        return ++_nextId;
     }
 
     string Name() const override
@@ -48,61 +55,60 @@ public:
 
     ILEDGraphics & Graphics() override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _graphics;
     }
     
     const ILEDGraphics& Graphics() const override 
     { 
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _graphics; 
     }
 
     IEffectsManager & Effects() override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _effects;
     }
 
     const IEffectsManager & Effects() const override
     {
+        std::lock_guard<std::mutex> lock(_featuresMutex);
         return _effects;
     }
 
-    vector<reference_wrapper<ILEDFeature>> Features() override
+    vector<shared_ptr<ILEDFeature>>  Features() override
     {
-        vector<reference_wrapper<ILEDFeature>> features;
-        features.reserve(_features.size());
-        for_each(_features.begin(), _features.end(),
-            [&features](const auto& feature) {
-                features.push_back(*feature);
-            });
-        return features;
+        lock_guard lock(_featuresMutex);
+        return _features;
     }
 
-    const vector<reference_wrapper<ILEDFeature>> Features() const override
+    const vector<shared_ptr<ILEDFeature>> Features() const override
     {
-        vector<reference_wrapper<ILEDFeature>> features;
-        for (auto &feature : _features)
-            features.push_back(*feature);
-        return features;
+        lock_guard lock(_featuresMutex);
+        return _features;
     }
 
-    uint32_t AddFeature(unique_ptr<ILEDFeature> feature) override
+    uint32_t AddFeature(shared_ptr<ILEDFeature> feature) override
     {
+        lock_guard lock(_featuresMutex);
         if (!feature)
             throw invalid_argument("Cannot add a null feature.");
 
         feature->SetCanvas(this);
-
         uint32_t id = feature->Id();
-        _features.push_back(std::move(feature));
+        _features.push_back(feature);
         return id;    
     }
 
     bool RemoveFeatureById(uint16_t featureId) override
     {
+        lock_guard lock(_featuresMutex);
         for (size_t i = 0; i < _features.size(); ++i)
         {
             if (_features[i]->Id() == featureId)
             {
+                _features[i]->Socket()->Stop();
                 _features.erase(_features.begin() + i);
                 return true;
             }
@@ -111,42 +117,61 @@ public:
     }
 
     friend void to_json(nlohmann::json& j, const ICanvas & canvas);
-    friend void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas);
+    friend void from_json(const nlohmann::json& j, shared_ptr<ICanvas>& canvas);
 };
 
 // ICanvas --> JSON
 
-inline void to_json(nlohmann::json& j, const ICanvas & canvas) 
+inline void to_json(nlohmann::json& j, const ICanvas& canvas) 
 {
-    j = 
-    {
-        {"name", canvas.Name()},
-        {"id", canvas.Id()},
-        {"width", canvas.Graphics().Width()},
-        {"height", canvas.Graphics().Height()},
-        {"fps", canvas.Effects().GetFPS()},
+    // Serialize the features
+    vector<nlohmann::json> serializedFeatures;
+    for (const auto& feature : canvas.Features()) {
+        if (feature) {
+            serializedFeatures.push_back(*feature); // Dereference the shared pointer
+        }
+    }
+
+    j = {
+        {"name",              canvas.Name()},
+        {"id",                canvas.Id()},
+        {"width",             canvas.Graphics().Width()},
+        {"height",            canvas.Graphics().Height()},
+        {"fps",               canvas.Effects().GetFPS()},
         {"currentEffectName", canvas.Effects().CurrentEffectName()},
-        {"features", canvas.Features()},
-        {"effectsManager", canvas.Effects()}
+        {"features",          serializedFeatures}, // Serialized feature data
+        {"effectsManager",    canvas.Effects()}    // EffectsManager must have a `to_json`
     };
+}
+
+inline void to_json(nlohmann::json& j, const std::shared_ptr<ICanvas>& canvasPtr) 
+{
+    if (canvasPtr) {
+        j = *canvasPtr; // Use the `to_json` function for ICanvas
+    } else {
+        j = nullptr; // Handle null pointers gracefully
+    }
 }
 
 // ICanvas <-- JSON
 
-inline void from_json(const nlohmann::json& j, unique_ptr<ICanvas>& canvas) 
+inline void from_json(const nlohmann::json& j, shared_ptr<ICanvas> & canvas) 
 {
     // Create canvas with required fields
-    canvas = make_unique<Canvas>(
-        j.at("name").get<string>(),
+    canvas = std::make_shared<Canvas>(
+        j.at("name").get<std::string>(),
         j.at("width").get<uint32_t>(),
         j.at("height").get<uint32_t>(),
-        j.value("fps", 30u) 
+        j.value("fps", 30u) // Default FPS to 30 if not provided
     );
 
     // Features()
     for (const auto& featureJson : j.value("features", nlohmann::json::array()))
-        canvas->AddFeature(featureJson.get<unique_ptr<ILEDFeature>>());
+        canvas->AddFeature(featureJson.get<shared_ptr<ILEDFeature>>());
 
-    // Effects()
-    from_json(j.at("effectsManager"), canvas->Effects());
+    // Validate and deserialize EffectsManager
+    if (j.contains("effectsManager")) 
+    {
+        from_json(j.at("effectsManager"), canvas->Effects());
+    }
 }
