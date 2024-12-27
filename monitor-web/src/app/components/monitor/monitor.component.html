@@ -107,7 +107,7 @@
         <th mat-header-cell *matHeaderCellDef>Queue</th>
         <td mat-cell *matCellDef="let element">
             <ng-container
-                *ngIf="element.isConnected"
+                *ngIf="element.isConnected && element.queueDepth !== null; else empty"
                 [ngTemplateOutlet]="queue"
                 [ngTemplateOutletContext]="{
                     $implicit: {
@@ -217,11 +217,11 @@
 </ng-template>
 
 <ng-template #queue let-data>
-    <span class="display-value">{{ data.value }} </span>
+    <span *ngIf="data.value > QUEUE_MAX_SIZE" class="display-value">{{ data.value }} </span>
     <progress
         [ngClass]="data.status"
         [value]="data.value"
-        [max]="data.max"
+        [max]="QUEUE_MAX_SIZE"
     ></progress>
 </ng-template>
 
