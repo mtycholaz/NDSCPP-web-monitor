@@ -1,10 +1,15 @@
 const ns = '[Monitor]';
 
-export class LoadControllerData {
-    static readonly type = `${ns} Load Controller Data`;
+export class UpdateAutoRefresh {
+    static readonly type = `${ns} Update Auto Refresh`;
+    constructor(public value: boolean) {}
 }
 
-export class LoadControllerDataFailure {
-    static readonly type = `${ns} Load Controller Data Failure`;
+export class LoadCanvases {
+    static readonly type = `${ns} Load Canvases`;
+}
+
+export class LoadCanvasesFailure {
+    static readonly type = `${ns} Load Canvases Failure`;
     constructor(public error: any) {}
 }

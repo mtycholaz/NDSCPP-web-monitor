@@ -15,10 +15,13 @@ export const appRoutes: Route[] = [
         component: MonitorContainerComponent,
         resolve: {
             data: (
-                route: ActivatedRouteSnapshot,
-                state: RouterStateSnapshot,
+                _route: ActivatedRouteSnapshot,
+                _state: RouterStateSnapshot,
                 store: Store = inject(Store)
-            ) => store.dispatch(new MonitorActions.LoadControllerData()),
+            ) => {
+                store.dispatch(new MonitorActions.LoadCanvases());
+
+            },
         },
     },
     { path: '**', redirectTo: '' },

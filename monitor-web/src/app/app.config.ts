@@ -20,6 +20,7 @@ export const appConfig: ApplicationConfig = {
         provideStore([MonitorState], {
             developmentMode: true,
         }),
+
         MonitorService,
     ],
 };

@@ -1,15 +1,7 @@
-import { CommonModule } from '@angular/common';
-import {
-    Component,
-    HostListener,
-    input,
-    OnChanges,
-    output,
-    SimpleChanges,
-} from '@angular/core';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
+import { Component, HostListener, input, OnChanges, output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
-import { filter, tap, timer } from 'rxjs';
+import { filter } from 'rxjs';
 
 import { FormatDeltaPipe, FormatSizePipe } from '../../pipes';
 import { Canvas, Feature } from '../../services';
@@ -57,9 +49,9 @@ interface RowData {
     styleUrls: ['./monitor.component.scss'],
     imports: [
         CommonModule,
+        NgTemplateOutlet,
         MatTableModule,
         MatButtonModule,
-        MatCardModule,
         MatIconModule,
         MatCheckboxModule,
         MatFormFieldModule,
@@ -69,22 +61,17 @@ interface RowData {
         FormatSizePipe,
         FormatDeltaPipe,
     ],
+    standalone: true,
 })
 export class MonitorComponent implements OnChanges {
     filter = '';
+    sortColumn: string | null = null;
+    sortDirection: 'asc' | 'desc' | '' = '';
+
     dataSource = new MatTableDataSource([] as RowData[]);
-    lastRefresh: Date = new Date();
-    autoRefresh = true;
-    refresh$ = timer(0, 300)
-        .pipe(
-            filter(() => this.autoRefresh),
-            tap(() => this.refresh.emit()),
-            tap(() => (this.lastRefresh = new Date()))
-        )
-        .subscribe();
 
     canvases = input<Canvas[]>([]);
-    refresh = output();
+    autoRefresh = output<boolean>();
 
     _displayedColumns = [
         'canvasName',
@@ -128,8 +115,35 @@ export class MonitorComponent implements OnChanges {
         this._displayedColumns = value;
     }
 
+    constructor() {
+        this.loadFilterFromStorage();
+    }
+
     onApplyFilter() {
         this.dataSource.filter = this.filter.toLocaleLowerCase();
+        this.saveFilterToStorage();
+    }
+
+    onSort(column: string) {
+        if (this.sortColumn === column) {
+            switch (this.sortDirection) {
+                case 'asc':
+                    this.sortDirection = 'desc';
+                    break;
+                case 'desc':
+                    this.sortColumn = null;
+                    this.sortDirection = '';
+                    break;
+                default:
+                    this.sortDirection = 'asc';
+                    break;
+            }
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+
+        this.saveFilterToStorage();
     }
 
     onClearFilter(): void {
@@ -148,6 +162,41 @@ export class MonitorComponent implements OnChanges {
 
     updateDisplayedColumns(event: MatSelectChange) {
         this._displayedColumns = event.value || [];
+        this.saveFilterToStorage();
+    }
+
+    loadFilterFromStorage() {
+        const filterOptions = localStorage.getItem('displayedColumns');
+        if (filterOptions) {
+            try {
+                let { columns, filter, sortColumn, sortDirection } = JSON.parse(filterOptions);
+                columns = columns || this._displayedColumns;
+                filter = filter || '';
+                sortColumn = sortColumn || null;
+                sortDirection = sortDirection || '';
+
+                this.sortColumn = sortColumn;
+                this.sortDirection = sortDirection;
+
+                // only set the columns if they are valid
+                this._displayedColumns = this.columns
+                    .filter((c) => columns.includes(c.value))
+                    .map((c) => c.value);
+                this.filter = filter;
+            } catch (e) {}
+        }
+    }
+
+    saveFilterToStorage() {
+        localStorage.setItem(
+            'displayedColumns',
+            JSON.stringify({
+                columns: this._displayedColumns,
+                filter: this.filter,
+                sortColumn: this.sortColumn,
+                sortDirection: this.sortDirection,
+            })
+        );
     }
 
     transformFeatureToRowData(canvas: Canvas, feature: Feature) {
@@ -253,16 +302,15 @@ export class MonitorComponent implements OnChanges {
     // listen for the control key and refresh the data when it is pressed
     @HostListener('document:keydown.control')
     onControlDown() {
-        this.autoRefresh = false;
+        this.autoRefresh.emit(false);
     }
 
     @HostListener('document:keyup.control')
     onControlUp() {
-        this.autoRefresh = true;
+        this.autoRefresh.emit(true);
     }
 
     update() {
-
         const data = this.canvases().reduce((acc, canvas) => {
             const features = canvas.features.map((feature) =>
                 this.transformFeatureToRowData(canvas, feature)
@@ -273,6 +321,22 @@ export class MonitorComponent implements OnChanges {
             return acc;
         }, [] as RowData[]);
 
+        if (this.sortColumn) {
+            data.sort((a: any, b: any) => {
+                if (!this.sortColumn) {
+                    return 0;
+                }
+                const aVal = (a[this.sortColumn] || '').toString().toLocaleLowerCase();
+                const bVal = (b[this.sortColumn] || '').toString().toLocaleLowerCase();
+
+                if (aVal === bVal) {
+                    return 0;
+                }
+
+                return this.sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+            });
+        }
+
         this.dataSource = new MatTableDataSource(data);
 
         this.dataSource.filterPredicate = this.onFilterRowData.bind(this);
@@ -281,11 +345,6 @@ export class MonitorComponent implements OnChanges {
 
     onFilterRowData(data: RowData, filter: string): boolean {
         return data.index.includes(this.filter.toLocaleLowerCase());
-    }
-
-    onRefreshClicked() {
-        this.refresh.emit();
-        this.lastRefresh = new Date();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
