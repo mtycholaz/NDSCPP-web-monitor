@@ -1,15 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import {
-    catchError,
-    finalize,
-    interval,
-    switchMap,
-    take,
-    tap,
-    timer,
-} from 'rxjs';
+import { catchError, finalize, switchMap, take, tap, timer } from 'rxjs';
 
 import {
     Action,

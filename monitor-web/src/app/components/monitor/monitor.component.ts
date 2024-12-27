@@ -333,7 +333,7 @@ export class MonitorComponent implements OnChanges {
                     return 0;
                 }
 
-                return this.sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+                return this.sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
             });
         }
 
