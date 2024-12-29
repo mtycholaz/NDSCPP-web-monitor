@@ -19,7 +19,7 @@
         <mat-select
             multiple="true"
             [(ngModel)]="displayedColumns"
-            (selectionChange)="updateDisplayedColumns($event)"
+            (selectionChange)="displayedColumnsSelectionChange($event)"
         >
             <mat-option *ngFor="let column of columns" [value]="column.value">
                 {{ column.key }}
@@ -27,6 +27,7 @@
         </mat-select>
         <mat-label> Display Columns </mat-label>
     </mat-form-field>
+    <button mat-button (click)="openReorderColumnsDialog()">Reorder Columns</button>
 </div>
 <table mat-table [dataSource]="dataSource" [trackBy]="trackByFn">
     <ng-container matColumnDef="canvasName">
