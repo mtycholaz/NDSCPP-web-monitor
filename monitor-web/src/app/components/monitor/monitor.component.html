@@ -27,7 +27,7 @@
         </mat-select>
         <mat-label> Display Columns </mat-label>
     </mat-form-field>
-    <button mat-button (click)="openReorderColumnsDialog()">Reorder Columns</button>
+    <button mat-raised-button (click)="openReorderColumnsDialog()">Reorder Columns</button>
 </div>
 <table mat-table [dataSource]="dataSource" [trackBy]="trackByFn">
     <ng-container matColumnDef="canvasName">

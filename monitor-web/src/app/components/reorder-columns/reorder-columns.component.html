@@ -1,7 +1,7 @@
 <mat-list cdkDropList (cdkDropListDropped)="drop($event)">
     @for (column of columns(); track column.value) {
     <mat-list-item cdkDragLockAxis="y" cdkDrag>
-        <mat-icon  cdkDragHandle matListItemIcon>drag_handle</mat-icon>
+        <mat-icon class="reorder" cdkDragHandle matListItemIcon>drag_handle</mat-icon>
         {{ column.key }}
     </mat-list-item>
     }

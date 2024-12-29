@@ -5,6 +5,7 @@ import {
     inject,
     input,
     OnChanges,
+    OnInit,
     output,
     SimpleChanges,
 } from '@angular/core';
@@ -24,6 +25,15 @@ import { ReorderColumnsDialogComponent } from '../../dialogs/reorder-columns-dia
 import { Column } from '../../models';
 import { FormatDeltaPipe, FormatSizePipe } from '../../pipes';
 import { Canvas, Feature } from '../../services';
+import { moveItemInArray } from '@angular/cdk/drag-drop';
+
+interface UserOptions {
+    filter: string;
+    columns: Column[];
+    displayedColumns: string[];
+    sortColumn: string | null;
+    sortDirection: 'asc' | 'desc' | '';
+}
 
 interface RowData {
     isConnected: boolean;
@@ -54,6 +64,8 @@ interface RowData {
     index: string;
 }
 
+const USER_SETTINGS_KEY = 'userOptions.v1';
+
 @Component({
     selector: 'app-monitor',
     templateUrl: './monitor.component.html',
@@ -76,6 +88,7 @@ interface RowData {
 })
 export class MonitorComponent implements OnChanges {
     readonly QUEUE_MAX_SIZE = 25;
+
     filter = '';
     sortColumn: string | null = null;
     sortDirection: 'asc' | 'desc' | '' = '';
@@ -84,7 +97,6 @@ export class MonitorComponent implements OnChanges {
 
     canvases = input<Canvas[]>([]);
     autoRefresh = output<boolean>();
-
     dialog = inject(MatDialog);
 
     _displayedColumns = [
@@ -129,13 +141,9 @@ export class MonitorComponent implements OnChanges {
         this._displayedColumns = value;
     }
 
-    constructor() {
-        this.loadFilterFromStorage();
-    }
-
     onApplyFilter() {
         this.dataSource.filter = this.filter.toLocaleLowerCase();
-        this.saveFilterToStorage();
+        this.saveSettingsToStorage();
     }
 
     onSort(column: string) {
@@ -157,7 +165,7 @@ export class MonitorComponent implements OnChanges {
             this.sortDirection = 'asc';
         }
 
-        this.saveFilterToStorage();
+        this.saveSettingsToStorage();
     }
 
     onClearFilter(): void {
@@ -175,45 +183,67 @@ export class MonitorComponent implements OnChanges {
     }
 
     displayedColumnsSelectionChange(event: MatSelectChange) {
-        this._displayedColumns = event.value;
-        this.updateDisplayedColumns();
-        this.saveFilterToStorage();
+        this.updateDisplayedColumns(event.value);
+        this.saveSettingsToStorage();
     }
 
-    updateDisplayedColumns(columns: Column[] = this.columns) {
-        this._displayedColumns = columns
-            .filter((c) => this._displayedColumns.includes(c.value))
+    updateDisplayedColumns(columnsToDisplay: string[]) {
+        this._displayedColumns = this.columns
+            .filter((c) => columnsToDisplay.includes(c.value))
             .map((c) => c.value);
     }
 
     loadFilterFromStorage() {
-        const filterOptions = localStorage.getItem('displayedColumns');
+        const filterOptions = localStorage.getItem(USER_SETTINGS_KEY);
         if (filterOptions) {
             try {
-                const options = JSON.parse(filterOptions);
-                const columns =
-                    options.columns || this.columns;
-                const displayedColumns =
-                    options.displayedColumns || this._displayedColumns;
+                const options = JSON.parse(filterOptions) as UserOptions;
+                const columns = options.columns;
+                const displayedColumns = options.displayedColumns;
 
                 this.filter = options.filter || '';
                 this.sortColumn = options.sortColumn || null;
                 this.sortDirection = options.sortDirection || '';
 
                 // only set the columns if they are valid
-                this.columns = columns;
-                this._displayedColumns = displayedColumns;
-
-                this.updateDisplayedColumns();
+                this.setColumnSortOrder(columns);
+                this.displayedColumns =
+                    this.normalizeDisplayColumns(displayedColumns);
             } catch (e) {}
         }
     }
 
-    saveFilterToStorage() {
+    setColumnSortOrder(columns: Column[]) {
+        columns.reduceRight((acc, column) => {
+            const existingIx = this.columns.findIndex(
+                (c) => c.value === column.value
+            );
+
+            if (existingIx !== -1) {
+                moveItemInArray(this.columns, existingIx, 0);
+            }
+
+            return acc;
+        }, []);
+    }
+
+    normalizeDisplayColumns(columnsToDisplay: string[]): string[] {
+        const columns = this.columns.reduce((acc, column) => {
+            if (columnsToDisplay.includes(column.value)) {
+                acc.push(column.value);
+            }
+
+            return acc;
+        }, [] as string[]);
+
+        return columns.length ? columns : this.columns.map((c) => c.value);
+    }
+
+    saveSettingsToStorage() {
         localStorage.setItem(
-            'displayedColumns',
+            USER_SETTINGS_KEY,
             JSON.stringify({
-                columns: this._displayedColumns,
+                columns: this.columns,
                 displayedColumns: this._displayedColumns,
                 filter: this.filter,
                 sortColumn: this.sortColumn,
@@ -355,8 +385,8 @@ export class MonitorComponent implements OnChanges {
                 tap((columns: Column[] | undefined) => {
                     if (columns) {
                         this.columns = columns;
-                        this.updateDisplayedColumns();
-                        this.saveFilterToStorage();
+                        this.updateDisplayedColumns(this.columns.map((c) => c.value));
+                        this.saveSettingsToStorage();
                     }
                 })
             )
@@ -407,7 +437,12 @@ export class MonitorComponent implements OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes['canvases']) {
+        const canvases = changes['canvases'];
+        if (canvases) {
+            if (canvases.isFirstChange()) {
+                this.loadFilterFromStorage();
+            }
+
             this.update();
         }
     }
