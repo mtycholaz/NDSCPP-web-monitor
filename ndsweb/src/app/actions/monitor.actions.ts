@@ -1,5 +1,3 @@
-import { Canvas } from '../services';
-
 const ns = '[Monitor]';
 
 export class UpdateAutoRefresh {
@@ -14,14 +12,4 @@ export class LoadCanvases {
 export class LoadCanvasesFailure {
     static readonly type = `${ns} Load Canvases Failure`;
     constructor(public error: any) {}
-}
-
-export class ActivateCanvases {
-    static readonly type = `${ns} Activate Canvases`;
-    constructor(public canvases: Canvas[]) {}
-}
-
-export class DeactivateCanvases {
-    static readonly type = `${ns} Deactivate Canvases`;
-    constructor(public canvases: Canvas[]) {}
 }

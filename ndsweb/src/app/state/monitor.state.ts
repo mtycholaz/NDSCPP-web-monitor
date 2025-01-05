@@ -114,30 +114,6 @@ export class MonitorState {
         );
     }
 
-    @Action(MonitorActions.ActivateCanvases)
-    activateCanvases(
-        ctx: StateContext<StateModel>,
-        { canvases }: MonitorActions.ActivateCanvases
-    ) {
-        if (canvases.length === 0) {
-            return;
-        }
-
-        return this.monitorService.activateCanvases(canvases);
-    }
-
-    @Action(MonitorActions.DeactivateCanvases)
-    deactivateCanvases(
-        ctx: StateContext<StateModel>,
-        { canvases }: MonitorActions.DeactivateCanvases
-    ) {
-        if (canvases.length === 0) {
-            return;
-        }
-
-        return this.monitorService.deactivateCanvases(canvases);
-    }
-
     @Action([MonitorActions.LoadCanvasesFailure])
     handleError(
         { patchState }: StateContext<StateModel>,
