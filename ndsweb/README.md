@@ -1,10 +1,23 @@
-# MonitorWeb
+# NDSWeb
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
 ✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
 
 [Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/tutorials/angular-standalone-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+
+## Requirements
+Node LTS (Long Term Support)
+
+This app was initially built on v22.11.0 (LTS), but the current Node LTS version should suffice.
+
+You can download and install Node from https://nodejs.org/
+
+## Setup
+Navigate to the directory and install the required node packages by running the following command:
+````
+npm install
+````
 
 ## Run tasks
 
@@ -13,6 +26,12 @@ To run the dev server for your app, use:
 ```sh
 npx nx serve monitor-web
 ```
+
+After the application builds successfully, you should see an output simular to this:
+
+![Successful compile](readme-compile.png)
+
+You can then navigate in your browser to http://localhost:4200 to view the application
 
 To create a production bundle:
 
