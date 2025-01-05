@@ -8,6 +8,7 @@ import { MonitorState } from 'src/app/state';
 import { MonitorActions } from '../../actions';
 import { MonitorComponent } from '../../components';
 import { MatIcon } from '@angular/material/icon';
+import { Canvas } from 'src/app/services';
 
 @Component({
     templateUrl: './monitor-container.component.html',
@@ -18,13 +19,19 @@ import { MatIcon } from '@angular/material/icon';
 })
 export class MonitorContainerComponent {
     canvases = this.store.selectSignal(MonitorState.getCanvases());
-    connectionError = this.store.selectSignal(
-        MonitorState.connectionError()
-    );
+    connectionError = this.store.selectSignal(MonitorState.connectionError());
 
     constructor(private store: Store) {}
 
     onAutoRefresh(value: boolean) {
         this.store.dispatch(new MonitorActions.UpdateAutoRefresh(value));
+    }
+
+    onActivateCanvases(canvases: Canvas[]) {
+        this.store.dispatch(new MonitorActions.ActivateCanvases(canvases));
+    }
+
+    onDeactivateCanvases(canvases: Canvas[]) {
+        this.store.dispatch(new MonitorActions.DeactivateCanvases(canvases));
     }
 }

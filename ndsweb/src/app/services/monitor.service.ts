@@ -8,6 +8,14 @@ export class MonitorService {
     getCanvases() {
         return this.http.get<Canvas[]>('http://localhost:7777/api/canvases');
     }
+
+    activateCanvases(canvases: Canvas[]) {
+        return this.http.post('http://localhost:7777/api/canvases/activate', canvases.map(c => c.id));
+    }
+
+    deactivateCanvases(canvases: Canvas[]) {
+        return this.http.post('http://localhost:7777/api/canvases/deactivate', canvases.map(c => c.id));
+    }
 }
 
 export interface Canvas {

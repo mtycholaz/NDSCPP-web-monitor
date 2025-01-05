@@ -1,3 +1,4 @@
+import { moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import {
     Component,
@@ -5,18 +6,25 @@ import {
     inject,
     input,
     OnChanges,
-    OnInit,
     output,
     SimpleChanges,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import {
+    MatCheckboxChange,
+    MatCheckboxModule,
+} from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
+import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import {
+    MatSelectChange,
+    MatSelect,
+    MatOption,
+} from '@angular/material/select';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { filter, tap } from 'rxjs';
@@ -25,7 +33,7 @@ import { ReorderColumnsDialogComponent } from '../../dialogs/reorder-columns-dia
 import { Column } from '../../models';
 import { FormatDeltaPipe, FormatSizePipe } from '../../pipes';
 import { Canvas, Feature } from '../../services';
-import { moveItemInArray } from '@angular/cdk/drag-drop';
+import { SelectionModel } from '@angular/cdk/collections';
 
 interface UserOptions {
     filter: string;
@@ -36,6 +44,7 @@ interface UserOptions {
 }
 
 interface RowData {
+    id: number;
     isConnected: boolean;
     canvasName: string;
     featureName: string;
@@ -75,12 +84,17 @@ const USER_SETTINGS_KEY = 'userOptions.v1';
         NgTemplateOutlet,
         MatTableModule,
         MatButtonModule,
-        MatIconModule,
+        MatIcon,
         MatCheckboxModule,
-        MatFormFieldModule,
-        MatInputModule,
+        MatFormField,
+        MatInput,
+        MatSelect,
+        MatMenuItem,
+        MatMenuTrigger,
+        MatMenu,
+        MatLabel,
+        MatOption,
         FormsModule,
-        MatSelectModule,
         FormatSizePipe,
         FormatDeltaPipe,
     ],
@@ -93,13 +107,18 @@ export class MonitorComponent implements OnChanges {
     sortColumn: string | null = null;
     sortDirection: 'asc' | 'desc' | '' = '';
 
+    selection = new SelectionModel<number>(true, []);
     dataSource = new MatTableDataSource([] as RowData[]);
 
     canvases = input<Canvas[]>([]);
     autoRefresh = output<boolean>();
+    activateCanvases = output<Canvas[]>();
+    deactivateCanvases = output<Canvas[]>();
+
     dialog = inject(MatDialog);
 
     _displayedColumns = [
+        'select',
         'canvasName',
         'featureName',
         'host',
@@ -114,6 +133,7 @@ export class MonitorComponent implements OnChanges {
         'flash',
         'status',
         'effect',
+        'actions'
     ];
 
     columns: { key: string; value: string }[] = [
@@ -168,6 +188,54 @@ export class MonitorComponent implements OnChanges {
         this.saveSettingsToStorage();
     }
 
+    onActivateCanvases(canvasIds: number[]) {
+        const canvases = this.canvases().filter((d) =>
+            canvasIds.includes(d.id)
+        );
+
+        if (canvases.length === 0) {
+            return;
+        }
+
+        this.activateCanvases.emit(canvases);
+    }
+
+    onDeactivateCanvases(canvasIds: number[]) {
+        const canvases = this.canvases().filter((d) =>
+            canvasIds.includes(d.id)
+        );
+
+        if (canvases.length === 0) {
+            return;
+        }
+
+        this.deactivateCanvases.emit(canvases);
+    }
+
+    onSelectAllChange(event: MatCheckboxChange): void {
+        this.dataSource.filteredData.forEach((r) => {
+            if (event.checked) {
+                this.selection.select(r.id);
+            } else {
+                this.selection.deselect(r.id);
+            }
+        });
+    }
+
+    areAllSelected(): boolean {
+        return this.dataSource.filteredData.every((r) =>
+            this.selection.isSelected(r.id)
+        );
+    }
+
+    areAnySelected(): boolean {
+        return (
+            this.dataSource.filteredData.some((r) =>
+                this.selection.isSelected(r.id)
+            ) && !this.areAllSelected()
+        );
+    }
+
     onClearFilter(): void {
         this.filter = '';
         this.dataSource.filter = '';
@@ -188,9 +256,11 @@ export class MonitorComponent implements OnChanges {
     }
 
     updateDisplayedColumns(columnsToDisplay: string[]) {
-        this._displayedColumns = this.columns
-            .filter((c) => columnsToDisplay.includes(c.value))
-            .map((c) => c.value);
+        this._displayedColumns = ['select'].concat(
+            this.columns
+                .filter((c) => columnsToDisplay.includes(c.value))
+                .map((c) => c.value)
+        ).concat(['actions']);
     }
 
     loadFilterFromStorage() {
@@ -236,7 +306,11 @@ export class MonitorComponent implements OnChanges {
             return acc;
         }, [] as string[]);
 
-        return columns.length ? columns : this.columns.map((c) => c.value);
+        if (columns.length) {
+            return ['select', ...columns.filter((c) => c !== 'select' && c !== 'actions'), 'actions'];
+        }
+
+        return ['select', ...this.columns.map((c) => c.value), 'actions'];
     }
 
     saveSettingsToStorage() {
@@ -262,6 +336,7 @@ export class MonitorComponent implements OnChanges {
 
         const data = {
             isConnected,
+            id: canvas.id,
             canvasName: canvas.name,
             featureName: feature.friendlyName,
             hostName: feature.hostName,
@@ -385,7 +460,9 @@ export class MonitorComponent implements OnChanges {
                 tap((columns: Column[] | undefined) => {
                     if (columns) {
                         this.columns = columns;
-                        this.updateDisplayedColumns(this.columns.map((c) => c.value));
+                        this.updateDisplayedColumns(
+                            this.columns.map((c) => c.value)
+                        );
                         this.saveSettingsToStorage();
                     }
                 })
