@@ -21,13 +21,13 @@ import { MatIcon } from '@angular/material/icon';
             </p>
         </mat-dialog-content>
         <mat-dialog-actions>
-            <button mat-button mat-dialog-close>
+            <button [ngClass]="cancelClass" mat-button mat-dialog-close>
                 <mat-icon *ngIf="cancelIcon as icon">{{ icon }}</mat-icon
                 >{{ cancelText }}
             </button>
             <button
+                [ngClass]="confirmClass"
                 class="confirm-action"
-                [ngClass]="confirmType"
                 mat-raised-button
                 cdkFocusInitial
                 [mat-dialog-close]="true"
@@ -37,13 +37,7 @@ import { MatIcon } from '@angular/material/icon';
             </button>
         </mat-dialog-actions>
     `,
-    styles: [
-        `
-            .confirm-action.warn {
-
-            }
-        `,
-    ],
+    styles: [``],
     imports: [
         MatButton,
         MatDialogClose,
@@ -52,7 +46,7 @@ import { MatIcon } from '@angular/material/icon';
         MatDialogTitle,
         MatIcon,
         NgClass,
-        NgIf
+        NgIf,
     ],
     standalone: true,
 })
@@ -73,6 +67,10 @@ export class ConfirmDialogComponent {
         return this.data.cancelIcon || null;
     }
 
+    get cancelClass() {
+        return this.data.cancelClass || null;
+    }
+
     get confirmText() {
         return this.data.confirmText || 'Confirm';
     }
@@ -81,8 +79,8 @@ export class ConfirmDialogComponent {
         return this.data.confirmIcon || null;
     }
 
-    get confirmType() {
-        return this.data.confirmType || null;
+    get confirmClass() {
+        return this.data.confirmClass || null;
     }
 
     data = inject(MAT_DIALOG_DATA);

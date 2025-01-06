@@ -187,6 +187,8 @@ export class MonitorState {
                     message: 'Are you certain you want to delete this canvas?',
                     cancelText: 'No',
                     confirmText: 'Yes',
+                    confirmIcon: 'delete',
+                    confirmClass: 'warn'
                 },
             })
             .afterClosed()
@@ -212,6 +214,8 @@ export class MonitorState {
                     message: 'Are you certain you want to delete this feature?',
                     cancelText: 'No',
                     confirmText: 'Yes',
+                    confirmIcon: 'delete',
+                    confirmClass: 'warn'
                 },
             })
             .afterClosed()

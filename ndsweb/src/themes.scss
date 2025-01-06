@@ -1,0 +1,25 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$mat-confirm: #00d824;
+$mat-warn: #ce2c21;
+$mat-white: #fff;
+
+button.warn {
+    @include mat.button-overrides(
+        (
+            protected-container-color: $mat-warn,
+            protected-label-text-color: $mat-white,
+        )
+    );
+}
+
+button.confirm {
+    @include mat.button-overrides(
+        (
+            protected-container-color: $mat-confirm,
+            protected-label-text-color: $mat-white,
+        )
+    );
+}
