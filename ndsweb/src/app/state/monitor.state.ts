@@ -188,7 +188,7 @@ export class MonitorState {
                     cancelText: 'No',
                     confirmText: 'Yes',
                     confirmIcon: 'delete',
-                    confirmClass: 'warn'
+                    confirmClass: 'warn',
                 },
             })
             .afterClosed()
@@ -215,7 +215,7 @@ export class MonitorState {
                     cancelText: 'No',
                     confirmText: 'Yes',
                     confirmIcon: 'delete',
-                    confirmClass: 'warn'
+                    confirmClass: 'warn',
                 },
             })
             .afterClosed()
@@ -233,7 +233,11 @@ export class MonitorState {
             );
     }
 
-    @Action([MonitorActions.LoadCanvasesFailure])
+    @Action([
+        MonitorActions.LoadCanvasesFailure,
+        MonitorActions.DeleteCanvasFailure,
+        MonitorActions.DeleteFeatureFailure,
+    ])
     handleError(
         { patchState }: StateContext<StateModel>,
         { error }: MonitorActions.LoadCanvasesFailure
