@@ -29,7 +29,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { filter, tap } from 'rxjs';
 
-import { ReorderColumnsDialogComponent } from '../../dialogs/reorder-columns-dialog.componet';
+import { ReorderColumnsDialogComponent } from '../../dialogs/reorder-columns-dialog.component';
 import { Column } from '../../models';
 import { FormatDeltaPipe, FormatSizePipe } from '../../pipes';
 import { Canvas, Feature } from '../../services';
@@ -44,7 +44,9 @@ interface UserOptions {
 }
 
 interface RowData {
-    id: number;
+    id: string;
+    canvasId: number;
+    featureId: number;
     isConnected: boolean;
     canvasName: string;
     featureName: string;
@@ -107,7 +109,7 @@ export class MonitorComponent implements OnChanges {
     sortColumn: string | null = null;
     sortDirection: 'asc' | 'desc' | '' = '';
 
-    selection = new SelectionModel<number>(true, []);
+    selection = new SelectionModel<string>(true, []);
     dataSource = new MatTableDataSource([] as RowData[]);
 
     canvases = input<Canvas[]>([]);
@@ -115,7 +117,7 @@ export class MonitorComponent implements OnChanges {
     activateCanvases = output<Canvas[]>();
     deactivateCanvases = output<Canvas[]>();
     deleteCanvas = output<Canvas>();
-    deleteFeature = output<{ canvas: Canvas; feature: Feature }>();
+    viewFeatures = output<Canvas>();
 
     dialog = inject(MatDialog);
 
@@ -190,7 +192,11 @@ export class MonitorComponent implements OnChanges {
         this.saveSettingsToStorage();
     }
 
-    onActivateCanvases(canvasIds: number[]) {
+    onActivateCanvases(rowIds: string[]) {
+        const canvasIds = this.dataSource.filteredData
+            .filter((r) => rowIds.includes(r.id))
+            .map((r) => r.canvasId);
+
         const canvases = this.canvases().filter((d) =>
             canvasIds.includes(d.id)
         );
@@ -202,7 +208,11 @@ export class MonitorComponent implements OnChanges {
         this.activateCanvases.emit(canvases);
     }
 
-    onDeactivateCanvases(canvasIds: number[]) {
+    onDeactivateCanvases(rowIds: string[]) {
+        const canvasIds = this.dataSource.filteredData
+            .filter((r) => rowIds.includes(r.id))
+            .map((r) => r.canvasId);
+
         const canvases = this.canvases().filter((d) =>
             canvasIds.includes(d.id)
         );
@@ -225,8 +235,11 @@ export class MonitorComponent implements OnChanges {
     }
 
     areAllSelected(): boolean {
-        return this.dataSource.filteredData.every((r) =>
-            this.selection.isSelected(r.id)
+        return (
+            this.dataSource.filteredData.length > 0 &&
+            this.dataSource.filteredData.every((r) =>
+                this.selection.isSelected(r.id)
+            )
         );
     }
 
@@ -248,8 +261,16 @@ export class MonitorComponent implements OnChanges {
         this.dataSource.filter = filter || '';
     }
 
+    onViewFeatures(row: RowData) {
+        const canvas = this.canvases().find((c) => c.id === row.canvasId);
+
+        if (canvas) {
+            this.viewFeatures.emit(canvas);
+        }
+    }
+
     trackByFn(index: number, item: RowData) {
-        return item.hostName;
+        return item.id;
     }
 
     displayedColumnsSelectionChange(event: MatSelectChange) {
@@ -342,9 +363,11 @@ export class MonitorComponent implements OnChanges {
                 ? feature.reconnectCount
                 : null;
 
-        const data = {
+        const data: RowData = {
             isConnected,
-            id: canvas.id,
+            id: `${canvas.id}-${feature.id}`,
+            canvasId: canvas.id,
+            featureId: feature.id,
             canvasName: canvas.name,
             featureName: feature.friendlyName,
             hostName: feature.hostName,
@@ -367,7 +390,7 @@ export class MonitorComponent implements OnChanges {
             currentTime: null,
             flashVersion: null,
             status: 'disconnected',
-            currentEffectName: canvas.currentEffectName || null,
+            currentEffectName: canvas.currentEffectName,
         } as RowData;
 
         if (isConnected && feature.lastClientResponse) {
@@ -517,12 +540,12 @@ export class MonitorComponent implements OnChanges {
         this.dataSource.filter = this.filter + '.';
     }
 
-    onDeleteCanvas(canvas: Canvas) {
-        this.deleteCanvas.emit(canvas);
-    }
+    onDeleteCanvas(row: RowData) {
+        const canvas = this.canvases().find((c) => c.id === row.canvasId);
 
-    onDeleteFeature(canvas: Canvas, feature: Feature) {
-        this.deleteFeature.emit({ canvas, feature });
+        if (canvas) {
+            this.deleteCanvas.emit(canvas);
+        }
     }
 
     onFilterRowData(data: RowData, filter: string): boolean {

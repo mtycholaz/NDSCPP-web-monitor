@@ -101,7 +101,9 @@
             ></ng-container>
         </th>
         <td mat-cell *matCellDef="let element">
-            {{ element.featureName }}
+            <button mat-button (click)="onViewFeatures(element)">
+                {{ element.featureName }}<mat-icon>settings</mat-icon>
+            </button>
         </td>
     </ng-container>
     <ng-container matColumnDef="host">
@@ -249,10 +251,16 @@
         <th mat-header-cell *matHeaderCellDef>Actions</th>
         <td mat-cell *matCellDef="let data">
             <mat-menu #parentMenu="matMenu">
-                <button mat-menu-item (click)="onActivateCanvases([data.id])">
+                <button
+                    mat-menu-item
+                    (click)="onActivateCanvases([data.id])"
+                >
                     Activate
                 </button>
-                <button mat-menu-item (click)="onDeactivateCanvases([data.id])">
+                <button
+                    mat-menu-item
+                    (click)="onDeactivateCanvases([data.id])"
+                >
                     Deactivate
                 </button>
                 <button mat-menu-item (click)="onDeleteCanvas(data)">

@@ -7,7 +7,7 @@ import { Store } from '@ngxs/store';
 
 import { MonitorActions } from '../../actions';
 import { MonitorComponent } from '../../components';
-import { Canvas, Feature } from '../../services';
+import { Canvas } from '../../services';
 import { MonitorState } from '../../state';
 
 @Component({
@@ -39,7 +39,7 @@ export class MonitorContainerComponent {
         this.store.dispatch(new MonitorActions.ConfirmDeleteCanvas(canvas));
     }
 
-    onDeleteFeature(model: { canvas: Canvas; feature: Feature }) {
-        this.store.dispatch(new MonitorActions.ConfirmDeleteFeature(model));
+    onViewFeatures(canvas: Canvas) {
+        this.store.dispatch(new MonitorActions.ViewFeatures(canvas));
     }
 }

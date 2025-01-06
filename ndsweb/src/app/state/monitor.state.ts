@@ -16,6 +16,7 @@ import { Canvas, MonitorService } from '../services/monitor.service';
 import { ToastrService } from 'ngx-toastr';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../dialogs/confirm-dialog.component';
+import { ViewFeaturesDialogComponent } from '../dialogs/view-features-dialog.component';
 
 const REFRESH_INTERVAL_IN_MS = 80;
 
@@ -24,6 +25,8 @@ export interface StateModel {
     isLoading: boolean;
     canvases: Canvas[];
     connectionError: HttpErrorResponse | null;
+    selectedCanvas: Canvas | null;
+    updateSelectedCanvas: boolean;
 }
 
 @State<StateModel>({
@@ -33,6 +36,8 @@ export interface StateModel {
         isLoading: false,
         connectionError: null,
         canvases: [],
+        selectedCanvas: null,
+        updateSelectedCanvas: false,
     },
 })
 @Injectable()
@@ -62,6 +67,13 @@ export class MonitorState {
         return createSelector(
             [MonitorState],
             (state: StateModel) => state.connectionError
+        );
+    }
+
+    static getSelectedCanvas() {
+        return createSelector(
+            [MonitorState],
+            (state: StateModel) => state.selectedCanvas
         );
     }
 
@@ -100,6 +112,16 @@ export class MonitorState {
             switchMap(() => this.monitorService.getCanvases()),
             tap((canvases) => {
                 patchState({ canvases, connectionError: null });
+                const { updateSelectedCanvas, selectedCanvas: current } =
+                    getState();
+
+                if (updateSelectedCanvas && current) {
+                    const selectedCanvas = canvases.find(
+                        (c) => c.id === current.id
+                    );
+
+                    patchState({ selectedCanvas, updateSelectedCanvas: false });
+                }
             }),
             catchError((error) =>
                 dispatch(new MonitorActions.LoadCanvasesFailure(error))
@@ -120,6 +142,19 @@ export class MonitorState {
         );
     }
 
+    @Action(MonitorActions.ViewFeatures)
+    viewFeatures(
+        { patchState }: StateContext<StateModel>,
+        { canvas }: MonitorActions.ViewFeatures
+    ) {
+        patchState({ selectedCanvas: canvas });
+
+        return this.dialog
+            .open(ViewFeaturesDialogComponent)
+            .afterClosed()
+            .pipe(tap(() => patchState({ selectedCanvas: null })));
+    }
+
     @Action(MonitorActions.ActivateCanvases)
     activateCanvases(
         { dispatch }: StateContext<StateModel>,
@@ -133,7 +168,7 @@ export class MonitorState {
             .activateCanvases(canvases)
             .pipe(
                 catchError((error) =>
-                    dispatch(new MonitorActions.DeleteCanvasFailure(error))
+                    dispatch(new MonitorActions.ActivateCanvasesFailure(error))
                 )
             );
     }
@@ -151,7 +186,7 @@ export class MonitorState {
             .deactivateCanvases(canvases)
             .pipe(
                 catchError((error) =>
-                    dispatch(new MonitorActions.DeleteCanvasFailure(error))
+                    dispatch(new MonitorActions.DeactivateCanvasesFailure(error))
                 )
             );
     }
@@ -173,15 +208,17 @@ export class MonitorState {
 
     @Action(MonitorActions.DeleteFeature)
     deleteFeature(
-        { dispatch }: StateContext<StateModel>,
+        { dispatch, patchState }: StateContext<StateModel>,
         { canvas, feature }: MonitorActions.DeleteFeature
     ) {
         return this.monitorService.deleteFeature(canvas.id, feature.id).pipe(
             tap(() => {
                 this.toastr.success('Feature deleted successfully');
+
+                patchState({ updateSelectedCanvas: true });
             }),
             catchError((error) =>
-                dispatch(new MonitorActions.DeleteCanvasFailure(error))
+                dispatch(new MonitorActions.DeleteFeatureFailure(error))
             )
         );
     }

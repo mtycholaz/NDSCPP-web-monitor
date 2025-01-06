@@ -65,3 +65,8 @@ export class ConfirmDeleteFeature {
     static readonly type = `${ns} Confirm Delete Feature`;
     constructor(public model: { canvas: Canvas; feature: Feature }) {}
 }
+
+export class ViewFeatures {
+    static readonly type = `${ns} View Features`;
+    constructor(public canvas: Canvas) {}
+}

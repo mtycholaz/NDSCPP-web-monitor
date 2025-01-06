@@ -9,8 +9,7 @@
             (activateCanvases)="onActivateCanvases($event)"
             (deactivateCanvases)="onDeactivateCanvases($event)"
             (deleteCanvas)="onDeleteCanvas($event)"
-            (deleteFeature)="onDeleteFeature($event)"
-
+            (viewFeatures)="onViewFeatures($event)"
         ></app-monitor>
         <div class="error" *ngIf="connectionError() as error">
             <mat-icon class="warn">warning</mat-icon> Connection error with server.
