@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, finalize, switchMap, take, tap, timer } from 'rxjs';
 
@@ -13,6 +13,9 @@ import {
 
 import { MonitorActions } from '../actions';
 import { Canvas, MonitorService } from '../services/monitor.service';
+import { ToastrService } from 'ngx-toastr';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../dialogs/confirm-dialog.component';
 
 const REFRESH_INTERVAL_IN_MS = 80;
 
@@ -62,7 +65,10 @@ export class MonitorState {
         );
     }
 
-    constructor(private monitorService: MonitorService, private store: Store) {}
+    monitorService = inject(MonitorService);
+    store = inject(Store);
+    toastr = inject(ToastrService);
+    dialog = inject(MatDialog);
 
     @Action(MonitorActions.UpdateAutoRefresh)
     updateAutoRefresh(
@@ -114,13 +120,133 @@ export class MonitorState {
         );
     }
 
+    @Action(MonitorActions.ActivateCanvases)
+    activateCanvases(
+        ctx: StateContext<StateModel>,
+        { canvases }: MonitorActions.ActivateCanvases
+    ) {
+        if (canvases.length === 0) {
+            return;
+        }
+
+        return this.monitorService.activateCanvases(canvases);
+    }
+
+    @Action(MonitorActions.DeactivateCanvases)
+    deactivateCanvases(
+        ctx: StateContext<StateModel>,
+        { canvases }: MonitorActions.DeactivateCanvases
+    ) {
+        if (canvases.length === 0) {
+            return;
+        }
+
+        return this.monitorService.deactivateCanvases(canvases);
+    }
+
+    @Action(MonitorActions.DeleteCanvas)
+    deleteCanvas(
+        { dispatch }: StateContext<StateModel>,
+        { canvas }: MonitorActions.DeleteCanvas
+    ) {
+        return this.monitorService.deleteCanvas(canvas.id).pipe(
+            tap(() => {
+                this.toastr.success('Canvas deleted successfully');
+            }),
+            catchError((error) =>
+                dispatch(new MonitorActions.DeleteCanvasFailure(error))
+            )
+        );
+    }
+
+    @Action(MonitorActions.DeleteFeature)
+    deleteFeature(
+        { dispatch }: StateContext<StateModel>,
+        { canvas, feature }: MonitorActions.DeleteFeature
+    ) {
+        return this.monitorService.deleteFeature(canvas.id, feature.id).pipe(
+            tap(() => {
+                this.toastr.success('Feature deleted successfully');
+            }),
+            catchError((error) =>
+                dispatch(new MonitorActions.DeleteCanvasFailure(error))
+            )
+        );
+    }
+
+    @Action(MonitorActions.ConfirmDeleteCanvas)
+    confirmDeleteCanvas(
+        { dispatch }: StateContext<StateModel>,
+        { canvas }: MonitorActions.ConfirmDeleteCanvas
+    ) {
+        return this.dialog
+            .open(ConfirmDialogComponent, {
+                disableClose: true,
+                data: {
+                    title: 'Confirm Delete',
+                    message: 'Are you certain you want to delete this canvas?',
+                    cancelText: 'No',
+                    confirmText: 'Yes',
+                },
+            })
+            .afterClosed()
+            .pipe(
+                tap((result) => {
+                    if (result) {
+                        dispatch(new MonitorActions.DeleteCanvas(canvas));
+                    }
+                })
+            );
+    }
+
+    @Action(MonitorActions.ConfirmDeleteFeature)
+    confirmDeleteFeature(
+        { dispatch }: StateContext<StateModel>,
+        { model }: MonitorActions.ConfirmDeleteFeature
+    ) {
+        return this.dialog
+            .open(ConfirmDialogComponent, {
+                disableClose: true,
+                data: {
+                    title: 'Confirm Delete',
+                    message: 'Are you certain you want to delete this feature?',
+                    cancelText: 'No',
+                    confirmText: 'Yes',
+                },
+            })
+            .afterClosed()
+            .pipe(
+                tap((result) => {
+                    if (result) {
+                        dispatch(
+                            new MonitorActions.DeleteFeature(
+                                model.canvas,
+                                model.feature
+                            )
+                        );
+                    }
+                })
+            );
+    }
+
     @Action([MonitorActions.LoadCanvasesFailure])
     handleError(
         { patchState }: StateContext<StateModel>,
         { error }: MonitorActions.LoadCanvasesFailure
     ) {
-        if (error instanceof HttpErrorResponse) {
-            patchState({ connectionError: error });
+        switch (true) {
+            case error instanceof HttpErrorResponse:
+                patchState({ connectionError: error });
+                break;
+            case error instanceof MonitorActions.DeleteCanvasFailure:
+                this.toastr.error(error.error.message, 'Error deleting canvas');
+                break;
+            case error instanceof MonitorActions.DeleteFeatureFailure:
+                this.toastr.error(
+                    error.error.message,
+                    'Error deleting feature'
+                );
+                break;
         }
     }
 }

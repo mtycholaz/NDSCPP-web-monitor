@@ -6,9 +6,14 @@
         <app-monitor
             [canvases]="canvases()"
             (autoRefresh)="onAutoRefresh($event)"
+            (activateCanvases)="onActivateCanvases($event)"
+            (deactivateCanvases)="onDeactivateCanvases($event)"
+            (deleteCanvas)="onDeleteCanvas($event)"
+            (deleteFeature)="onDeleteFeature($event)"
         ></app-monitor>
         <div class="error" *ngIf="connectionError() as error">
-            <mat-icon >warning</mat-icon> Connection error with server. {{error.statusText}} ({{ error.status }})
+            <mat-icon>warning</mat-icon> Connection error with server.
+            {{ error.statusText }} ({{ error.status }})
         </div>
     </mat-card-content>
 </mat-card>
