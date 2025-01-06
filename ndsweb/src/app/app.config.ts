@@ -18,7 +18,12 @@ export const appConfig: ApplicationConfig = {
         provideHttpClient(),
         provideAnimationsAsync(),
         provideZoneChangeDetection({ eventCoalescing: true }),
-        provideToastr(),
+        provideToastr({
+            countDuplicates: true,
+            preventDuplicates: true,
+            resetTimeoutOnDuplicate: true,
+            maxOpened: 5,
+        }),
         provideRouter(appRoutes),
         provideStore([MonitorState], {
             developmentMode: true,

@@ -2,9 +2,22 @@
 
 @include mat.core();
 
-$mat-confirm: #00d824;
-$mat-warn: #ce2c21;
+$mat-confirm: #00b61e;
+$mat-warn: #ba1a1a;
 $mat-white: #fff;
+
+$error-theme: mat.define-theme(
+    (
+        color: (
+            theme-type: light,
+            primary: mat.$red-palette,
+        ),
+    )
+);
+
+mat-icon.warn {
+    @include mat.icon-color($error-theme, $color-variant: error);
+}
 
 button.warn {
     @include mat.button-overrides(

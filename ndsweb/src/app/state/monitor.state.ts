@@ -122,26 +122,38 @@ export class MonitorState {
 
     @Action(MonitorActions.ActivateCanvases)
     activateCanvases(
-        ctx: StateContext<StateModel>,
+        { dispatch }: StateContext<StateModel>,
         { canvases }: MonitorActions.ActivateCanvases
     ) {
         if (canvases.length === 0) {
             return;
         }
 
-        return this.monitorService.activateCanvases(canvases);
+        return this.monitorService
+            .activateCanvases(canvases)
+            .pipe(
+                catchError((error) =>
+                    dispatch(new MonitorActions.DeleteCanvasFailure(error))
+                )
+            );
     }
 
     @Action(MonitorActions.DeactivateCanvases)
     deactivateCanvases(
-        ctx: StateContext<StateModel>,
+        { dispatch }: StateContext<StateModel>,
         { canvases }: MonitorActions.DeactivateCanvases
     ) {
         if (canvases.length === 0) {
             return;
         }
 
-        return this.monitorService.deactivateCanvases(canvases);
+        return this.monitorService
+            .deactivateCanvases(canvases)
+            .pipe(
+                catchError((error) =>
+                    dispatch(new MonitorActions.DeleteCanvasFailure(error))
+                )
+            );
     }
 
     @Action(MonitorActions.DeleteCanvas)
@@ -237,24 +249,53 @@ export class MonitorState {
         MonitorActions.LoadCanvasesFailure,
         MonitorActions.DeleteCanvasFailure,
         MonitorActions.DeleteFeatureFailure,
+        MonitorActions.ActivateCanvasesFailure,
+        MonitorActions.DeactivateCanvasesFailure,
     ])
-    handleError(
-        { patchState }: StateContext<StateModel>,
-        { error }: MonitorActions.LoadCanvasesFailure
-    ) {
+    handleError({ patchState }: StateContext<StateModel>, action: ErrorType) {
         switch (true) {
-            case error instanceof HttpErrorResponse:
-                patchState({ connectionError: error });
-                break;
-            case error instanceof MonitorActions.DeleteCanvasFailure:
-                this.toastr.error(error.error.message, 'Error deleting canvas');
-                break;
-            case error instanceof MonitorActions.DeleteFeatureFailure:
+            case action instanceof MonitorActions.LoadCanvasesFailure:
                 this.toastr.error(
-                    error.error.message,
-                    'Error deleting feature'
+                    action.error.message,
+                    'Error loading canvases',
+                    { disableTimeOut: true }
+                );
+                break;
+            case action instanceof MonitorActions.ActivateCanvasesFailure:
+                this.toastr.error(
+                    action.error.message,
+                    'Error activating canvas',
+                    { disableTimeOut: true }
+                );
+                break;
+            case action instanceof MonitorActions.DeactivateCanvasesFailure:
+                this.toastr.error(
+                    action.error.message,
+                    'Error deactivating canvas',
+                    { disableTimeOut: true }
+                );
+                break;
+            case action instanceof MonitorActions.DeleteCanvasFailure:
+                this.toastr.error(
+                    action.error.message,
+                    'Error deleting canvas',
+                    { disableTimeOut: true }
+                );
+                break;
+            case action instanceof MonitorActions.DeleteFeatureFailure:
+                this.toastr.error(
+                    action.error.message,
+                    'Error deleting feature',
+                    { disableTimeOut: true }
                 );
                 break;
         }
     }
 }
+
+type ErrorType =
+    | MonitorActions.LoadCanvasesFailure
+    | MonitorActions.DeleteCanvasFailure
+    | MonitorActions.DeleteFeatureFailure
+    | MonitorActions.ActivateCanvasesFailure
+    | MonitorActions.DeactivateCanvasesFailure;

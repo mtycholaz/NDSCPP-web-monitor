@@ -21,9 +21,19 @@ export class ActivateCanvases {
     constructor(public canvases: Canvas[]) {}
 }
 
+export class ActivateCanvasesFailure {
+    static readonly type = `${ns} Activate Canvases Failure`;
+    constructor(public error: Error) {}
+}
+
 export class DeactivateCanvases {
     static readonly type = `${ns} Deactivate Canvases`;
     constructor(public canvases: Canvas[]) {}
+}
+
+export class DeactivateCanvasesFailure {
+    static readonly type = `${ns} Deactivate Canvases Failure`;
+    constructor(public error: Error) {}
 }
 
 export class DeleteCanvas {
