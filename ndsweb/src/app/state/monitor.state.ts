@@ -112,6 +112,7 @@ export class MonitorState {
             switchMap(() => this.monitorService.getCanvases()),
             tap((canvases) => {
                 patchState({ canvases, connectionError: null });
+
                 const { updateSelectedCanvas, selectedCanvas: current } =
                     getState();
 
@@ -135,7 +136,7 @@ export class MonitorState {
                     // and if so, we dispatch a new action to load the controller data.
                     // This is a more reactive approach, and allows the user to control the refresh rate
                     // Also prevents multiple requests from being fired off to the server if the request
-                    // takes longer than the interval
+                    // takes longer than the timer interval
                     dispatch(new MonitorActions.LoadCanvases());
                 }
             })
@@ -155,38 +156,38 @@ export class MonitorState {
             .pipe(tap(() => patchState({ selectedCanvas: null })));
     }
 
-    @Action(MonitorActions.ActivateCanvases)
-    activateCanvases(
+    @Action(MonitorActions.StartCanvases)
+    startCanvases(
         { dispatch }: StateContext<StateModel>,
-        { canvases }: MonitorActions.ActivateCanvases
+        { canvases }: MonitorActions.StartCanvases
     ) {
         if (canvases.length === 0) {
             return;
         }
 
         return this.monitorService
-            .activateCanvases(canvases)
+            .startCanvases(canvases)
             .pipe(
                 catchError((error) =>
-                    dispatch(new MonitorActions.ActivateCanvasesFailure(error))
+                    dispatch(new MonitorActions.StartCanvasesFailure(error))
                 )
             );
     }
 
-    @Action(MonitorActions.DeactivateCanvases)
-    deactivateCanvases(
+    @Action(MonitorActions.StopCanvases)
+    stopCanvases(
         { dispatch }: StateContext<StateModel>,
-        { canvases }: MonitorActions.DeactivateCanvases
+        { canvases }: MonitorActions.StopCanvases
     ) {
         if (canvases.length === 0) {
             return;
         }
 
         return this.monitorService
-            .deactivateCanvases(canvases)
+            .stopCanvases(canvases)
             .pipe(
                 catchError((error) =>
-                    dispatch(new MonitorActions.DeactivateCanvasesFailure(error))
+                    dispatch(new MonitorActions.StopCanvasesFailure(error))
                 )
             );
     }
@@ -233,7 +234,7 @@ export class MonitorState {
                 disableClose: true,
                 data: {
                     title: 'Confirm Delete',
-                    message: 'Are you certain you want to delete this canvas?',
+                    message: `Are you certain you want to delete this canvas? This will remove (${canvas.features.length}) features.`,
                     cancelText: 'No',
                     confirmText: 'Yes',
                     confirmIcon: 'delete',
@@ -286,8 +287,8 @@ export class MonitorState {
         MonitorActions.LoadCanvasesFailure,
         MonitorActions.DeleteCanvasFailure,
         MonitorActions.DeleteFeatureFailure,
-        MonitorActions.ActivateCanvasesFailure,
-        MonitorActions.DeactivateCanvasesFailure,
+        MonitorActions.StartCanvasesFailure,
+        MonitorActions.StopCanvasesFailure,
     ])
     handleError({ patchState }: StateContext<StateModel>, action: ErrorType) {
         switch (true) {
@@ -298,14 +299,14 @@ export class MonitorState {
                     { disableTimeOut: true }
                 );
                 break;
-            case action instanceof MonitorActions.ActivateCanvasesFailure:
+            case action instanceof MonitorActions.StartCanvasesFailure:
                 this.toastr.error(
                     action.error.message,
                     'Error activating canvas',
                     { disableTimeOut: true }
                 );
                 break;
-            case action instanceof MonitorActions.DeactivateCanvasesFailure:
+            case action instanceof MonitorActions.StopCanvasesFailure:
                 this.toastr.error(
                     action.error.message,
                     'Error deactivating canvas',
@@ -334,5 +335,5 @@ type ErrorType =
     | MonitorActions.LoadCanvasesFailure
     | MonitorActions.DeleteCanvasFailure
     | MonitorActions.DeleteFeatureFailure
-    | MonitorActions.ActivateCanvasesFailure
-    | MonitorActions.DeactivateCanvasesFailure;
+    | MonitorActions.StartCanvasesFailure
+    | MonitorActions.StopCanvasesFailure;

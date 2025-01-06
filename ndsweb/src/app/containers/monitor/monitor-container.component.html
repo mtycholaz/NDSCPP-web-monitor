@@ -6,8 +6,8 @@
         <app-monitor
             [canvases]="canvases()"
             (autoRefresh)="onAutoRefresh($event)"
-            (activateCanvases)="onActivateCanvases($event)"
-            (deactivateCanvases)="onDeactivateCanvases($event)"
+            (startCanvases)="onStartCanvases($event)"
+            (stopCanvases)="onStopCanvases($event)"
             (deleteCanvas)="onDeleteCanvas($event)"
             (viewFeatures)="onViewFeatures($event)"
         ></app-monitor>

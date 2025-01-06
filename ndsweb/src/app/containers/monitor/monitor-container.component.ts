@@ -27,12 +27,12 @@ export class MonitorContainerComponent {
         this.store.dispatch(new MonitorActions.UpdateAutoRefresh(value));
     }
 
-    onActivateCanvases(canvases: Canvas[]) {
-        this.store.dispatch(new MonitorActions.ActivateCanvases(canvases));
+    onStartCanvases(canvases: Canvas[]) {
+        this.store.dispatch(new MonitorActions.StartCanvases(canvases));
     }
 
-    onDeactivateCanvases(canvases: Canvas[]) {
-        this.store.dispatch(new MonitorActions.DeactivateCanvases(canvases));
+    onStopCanvases(canvases: Canvas[]) {
+        this.store.dispatch(new MonitorActions.StopCanvases(canvases));
     }
 
     onDeleteCanvas(canvas: Canvas) {

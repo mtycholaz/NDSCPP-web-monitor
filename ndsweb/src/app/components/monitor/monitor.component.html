@@ -37,15 +37,15 @@
             <mat-menu #actions="matMenu">
                 <button
                     mat-menu-item
-                    (click)="onActivateCanvases(selection.selected)"
+                    (click)="onStartCanvases(selection.selected)"
                 >
-                    Activate Canvas ({{ selection.selected.length }})
+                    Start Canvases ({{ selection.selected.length }})
                 </button>
                 <button
                     mat-menu-item
-                    (click)="onDeactivateCanvases(selection.selected)"
+                    (click)="onStopCanvases(selection.selected)"
                 >
-                    Deactivate Canvas ({{ selection.selected.length }})
+                    Stop Canvas ({{ selection.selected.length }})
                 </button>
             </mat-menu>
             <div class="select">
@@ -253,15 +253,15 @@
             <mat-menu #parentMenu="matMenu">
                 <button
                     mat-menu-item
-                    (click)="onActivateCanvases([data.id])"
+                    (click)="onStartCanvases([data.id])"
                 >
-                    Activate
+                    Start
                 </button>
                 <button
                     mat-menu-item
-                    (click)="onDeactivateCanvases([data.id])"
+                    (click)="onStopCanvases([data.id])"
                 >
-                    Deactivate
+                    Stop
                 </button>
                 <button mat-menu-item (click)="onDeleteCanvas(data)">
                     Delete

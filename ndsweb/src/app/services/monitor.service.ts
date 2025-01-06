@@ -19,16 +19,16 @@ export class MonitorService {
         return this.http.delete(`${this.serverUrl}/canvases/${canvasId}/features/${featureId}`)
     }
 
-    activateCanvases(canvases: Canvas[]) {
+    startCanvases(canvases: Canvas[]) {
         const canvasIds = canvases.map((c) => c.id);
-        return this.http.post(`${this.serverUrl}/canvases/activate`, {
+        return this.http.post(`${this.serverUrl}/canvases/start`, {
             canvasIds,
         });
     }
 
-    deactivateCanvases(canvases: Canvas[]) {
+    stopCanvases(canvases: Canvas[]) {
         const canvasIds = canvases.map((c) => c.id);
-        return this.http.post(`${this.serverUrl}/canvases/deactivate`, {
+        return this.http.post(`${this.serverUrl}/canvases/stop`, {
             canvasIds,
         });
     }

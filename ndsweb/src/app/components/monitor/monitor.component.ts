@@ -1,30 +1,16 @@
+import { SelectionModel } from '@angular/cdk/collections';
 import { moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
-import {
-    Component,
-    HostListener,
-    inject,
-    input,
-    OnChanges,
-    output,
-    SimpleChanges,
-} from '@angular/core';
+import { Component, HostListener, inject, input, OnChanges, output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import {
-    MatCheckboxChange,
-    MatCheckboxModule,
-} from '@angular/material/checkbox';
+import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import {
-    MatSelectChange,
-    MatSelect,
-    MatOption,
-} from '@angular/material/select';
+import { MatOption, MatSelect, MatSelectChange } from '@angular/material/select';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { filter, tap } from 'rxjs';
@@ -33,7 +19,6 @@ import { ReorderColumnsDialogComponent } from '../../dialogs/reorder-columns-dia
 import { Column } from '../../models';
 import { FormatDeltaPipe, FormatSizePipe } from '../../pipes';
 import { Canvas, Feature } from '../../services';
-import { SelectionModel } from '@angular/cdk/collections';
 
 interface UserOptions {
     filter: string;
@@ -114,8 +99,8 @@ export class MonitorComponent implements OnChanges {
 
     canvases = input<Canvas[]>([]);
     autoRefresh = output<boolean>();
-    activateCanvases = output<Canvas[]>();
-    deactivateCanvases = output<Canvas[]>();
+    startCanvases = output<Canvas[]>();
+    stopCanvases = output<Canvas[]>();
     deleteCanvas = output<Canvas>();
     viewFeatures = output<Canvas>();
 
@@ -192,7 +177,7 @@ export class MonitorComponent implements OnChanges {
         this.saveSettingsToStorage();
     }
 
-    onActivateCanvases(rowIds: string[]) {
+    onStartCanvases(rowIds: string[]) {
         const canvasIds = this.dataSource.filteredData
             .filter((r) => rowIds.includes(r.id))
             .map((r) => r.canvasId);
@@ -205,10 +190,10 @@ export class MonitorComponent implements OnChanges {
             return;
         }
 
-        this.activateCanvases.emit(canvases);
+        this.startCanvases.emit(canvases);
     }
 
-    onDeactivateCanvases(rowIds: string[]) {
+    onStopCanvases(rowIds: string[]) {
         const canvasIds = this.dataSource.filteredData
             .filter((r) => rowIds.includes(r.id))
             .map((r) => r.canvasId);
@@ -221,7 +206,7 @@ export class MonitorComponent implements OnChanges {
             return;
         }
 
-        this.deactivateCanvases.emit(canvases);
+        this.stopCanvases.emit(canvases);
     }
 
     onSelectAllChange(event: MatCheckboxChange): void {

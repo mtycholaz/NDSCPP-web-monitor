@@ -16,23 +16,23 @@ export class LoadCanvasesFailure {
     constructor(public error: any) {}
 }
 
-export class ActivateCanvases {
-    static readonly type = `${ns} Activate Canvases`;
+export class StartCanvases {
+    static readonly type = `${ns} Start Canvases`;
     constructor(public canvases: Canvas[]) {}
 }
 
-export class ActivateCanvasesFailure {
-    static readonly type = `${ns} Activate Canvases Failure`;
+export class StartCanvasesFailure {
+    static readonly type = `${ns} Start Canvases Failure`;
     constructor(public error: Error) {}
 }
 
-export class DeactivateCanvases {
-    static readonly type = `${ns} Deactivate Canvases`;
+export class StopCanvases {
+    static readonly type = `${ns} Stop Canvases`;
     constructor(public canvases: Canvas[]) {}
 }
 
-export class DeactivateCanvasesFailure {
-    static readonly type = `${ns} Deactivate Canvases Failure`;
+export class StopCanvasesFailure {
+    static readonly type = `${ns} Stop Canvases Failure`;
     constructor(public error: Error) {}
 }
 
