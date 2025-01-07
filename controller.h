@@ -23,6 +23,7 @@ using namespace std;
 #include <mutex>
 
 class Controller;
+inline void to_json(nlohmann::json &j, const IController &controller);
 inline void from_json(const nlohmann::json &j, unique_ptr<Controller> & ptrController);
 
 class Controller : public IController
@@ -63,7 +64,7 @@ class Controller : public IController
         return jsonData.get<unique_ptr<Controller>>();
     }
 
-    void WriteToFile(const string& filePath) const
+    void WriteToFile(const string& filePath) const override
     {
         // Open the file and write the JSON
         ofstream file(filePath);
