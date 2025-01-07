@@ -204,11 +204,16 @@ public:
 
                     unique_lock writeLock(_apiMutex);
                     uint32_t newID = _controller.AddCanvas(canvas);
-                    PersistController(req);
-                    writeLock.unlock();
 
                     if (newID == -1)
                         return {crow::BAD_REQUEST, "Error, likely canvas with that ID already exists."};
+
+                    PersistController(req);
+                    writeLock.unlock();
+
+                    // Start the effects manager of the new canvas if it wants to run
+                    if (canvas->Effects().WantsToRun())
+                        canvas->Effects().Start(*canvas);
 
                     return crow::response(201, nlohmann::json{{"id", newID}}.dump());                    
                 } 

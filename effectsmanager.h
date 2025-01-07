@@ -165,7 +165,7 @@ public:
         return _wantsToRun;
     }
 
-    void WantsToRun(bool wantsToRun) override
+    void WantToRun(bool wantsToRun) override
     {
         _wantsToRun = wantsToRun;
     }
@@ -359,5 +359,5 @@ inline void from_json(const nlohmann::json &j, IEffectsManager &manager)
     // We deserialize the running state to a running *preference*. Directly starting the manager after
     // deserialization could create problems, and without having the canvas we can't start it anyway.
     if (j.contains("running"))
-        manager.WantsToRun(j.at("running").get<bool>());
+        manager.WantToRun(j.at("running").get<bool>());
 }

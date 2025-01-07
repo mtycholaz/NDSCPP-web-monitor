@@ -96,7 +96,7 @@ public:
     virtual string CurrentEffectName() const = 0;
     virtual void ClearEffects() = 0;
     virtual bool WantsToRun() const = 0;
-    virtual void WantsToRun(bool wantsToRun) = 0;
+    virtual void WantToRun(bool wantsToRun) = 0;
     virtual bool IsRunning() const = 0;
     virtual void Start(ICanvas& canvas) = 0;
     virtual void Stop() = 0;
