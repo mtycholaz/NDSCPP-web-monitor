@@ -308,6 +308,7 @@ inline void to_json(nlohmann::json &j, const ILEDEffect &effect)
         throw runtime_error("Unknown effect type for serialization: " + type);
     }
     it->second.first(j, effect);
+    j["type"] = type;
 }
 
 // Dynamically deserialize an effect from JSON based on its indicated type

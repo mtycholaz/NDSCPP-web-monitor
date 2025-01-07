@@ -114,11 +114,6 @@ private:
 
 public:
 
-    inline static string EffectTypeName() 
-    { 
-        return typeid(MP4PlaybackEffect).name();
-    }
-
     MP4PlaybackEffect(const string& name, const string& filePath)
         : LEDEffectBase(name), _filePath(filePath) {}
 
@@ -199,7 +194,6 @@ public:
 inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect) 
 {
     j = {
-        {"type", MP4PlaybackEffect::EffectTypeName()},
         {"name", effect.Name()},
         {"filePath", effect._filePath}
     };

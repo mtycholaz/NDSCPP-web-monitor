@@ -21,11 +21,6 @@ public:
     {
     }
 
-    inline static string EffectTypeName() 
-    { 
-        return typeid(SolidColorFill).name();
-    }
-
     void Start(ICanvas& canvas) override
     {
     }
@@ -42,7 +37,6 @@ public:
 inline void to_json(nlohmann::json& j, const SolidColorFill & effect) 
 {
     j = {
-        {"type", SolidColorFill::EffectTypeName()},
         {"name", effect.Name()},
         {"color", effect._color} // Assumes `to_json` for CRGB is already defined
     };
