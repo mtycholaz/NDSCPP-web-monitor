@@ -176,7 +176,6 @@ TEST_F(APITest, CanvasFeatureOperations)
 
     // Create feature with all required fields
     json featureData = {
-        {"type", "LEDFeature"},
         {"hostName", "example-host"},
         {"friendlyName", "Test Feature"},
         {"port", 1234},
@@ -320,7 +319,6 @@ TEST_F(APITest, MultipleFeatureOperations)
         featureFutures.push_back(std::async(std::launch::async, [i, canvasId]()
         {
             json featureData = {
-                {"type", "LEDFeature"},
                 {"hostName", "stress-host-" + std::to_string(i)},
                 {"friendlyName", "Stress Feature " + std::to_string(i)},
                 {"port", 1234 + i},
@@ -404,7 +402,6 @@ TEST_F(APITest, RapidCreationDeletion)
 
             // Add a feature to each canvas
             json featureData = {
-                {"type", "LEDFeature"},
                 {"hostName", "cycle-host"},
                 {"friendlyName", "Cycle Feature"},
                 {"port", 1234},
