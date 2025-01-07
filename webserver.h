@@ -211,9 +211,10 @@ public:
                     PersistController(req);
                     writeLock.unlock();
 
-                    // Start the effects manager of the new canvas if it wants to run
-                    if (canvas->Effects().WantsToRun())
-                        canvas->Effects().Start(*canvas);
+                    auto& effectsManager = canvas->Effects();
+                    // Start the effects manager of the new canvas if it wants to run and has effects
+                    if (effectsManager.WantsToRun() && effectsManager.EffectCount() > 0)
+                        effectsManager.Start(*canvas);
 
                     return crow::response(201, nlohmann::json{{"id", newID}}.dump());                    
                 } 
