@@ -60,11 +60,19 @@ class Controller : public IController
         nlohmann::json jsonData;
         file >> jsonData;
 
-        // Deserialize the JSON into a unique_ptr<Controller>
-        unique_ptr<Controller> ptrController;
-        from_json(jsonData, ptrController);  // Explicitly use your from_json function
+        return jsonData.get<unique_ptr<Controller>>();
+    }
 
-        return ptrController;
+    void WriteToFile(const string& filePath) const
+    {
+        // Open the file and write the JSON
+        ofstream file(filePath);
+        if (!file.is_open()) {
+            throw runtime_error("Unable to open file: " + filePath);
+        }
+
+        nlohmann::json jsonData = *this;
+        file << jsonData.dump(2);
     }
 
     uint16_t GetPort() const override
@@ -374,13 +382,16 @@ class Controller : public IController
                 feature->Socket()->Stop();
     }
 
-    void Start() override
+    void Start(bool respectWantsToRun) override
     {
         lock_guard lock(_canvasMutex);
         logger->debug("Starting canvases...");
 
-        for (auto &canvas : _canvases)
-            canvas->Effects().Start(*canvas);
+        for (auto &canvas : _canvases) 
+        {
+            if (!respectWantsToRun || canvas->Effects().WantsToRun())    
+                canvas->Effects().Start(*canvas);
+        }
     }
 
     void Stop() override

@@ -13,6 +13,7 @@ using namespace std;
 class WebServer
 {
     mutable shared_mutex _apiMutex;
+    string _controllerFileName;
 
     struct HeaderMiddleware
     {
@@ -35,8 +36,36 @@ class WebServer
     IController & _controller; // Reference to all canvases
     crow::App<HeaderMiddleware> _crowApp;
 
+    void PersistController(const crow::request& req)
+    {
+        if (req.url_params.get("nopersist") != nullptr)
+            return;
+
+        _controller.WriteToFile(_controllerFileName);
+    }
+
+    void ApplyCanvasesRequest(const crow::request& req, function<void(shared_ptr<ICanvas>)> func)
+    {
+        auto reqJson = nlohmann::json::parse(req.body);
+
+        unique_lock writeLock(_apiMutex);
+        
+        if (reqJson.contains("canvasIds"))
+        {
+            for (auto& canvasId : reqJson["canvasIds"])
+                func(_controller.GetCanvasById(canvasId));
+        }
+        else
+        {
+            for (auto& canvas : _controller.Canvases())
+                func(canvas);
+        }
+
+        PersistController(req);
+    }
+
 public:
-    WebServer(IController & controller) : _controller(controller)
+    WebServer(IController & controller, string controllerFileName) : _controller(controller), _controllerFileName(controllerFileName)
     {
     }
 
@@ -133,30 +162,62 @@ public:
                 
             });
             
-            // Create new canvas
-            CROW_ROUTE(_crowApp, "/api/canvases")
-                .methods(crow::HTTPMethod::POST)([&](const crow::request& req) -> crow::response
+        CROW_ROUTE(_crowApp, "/api/canvases/start")
+            .methods(crow::HTTPMethod::POST)([&](const crow::request& req) -> crow::response
+            {
+                try
                 {
-                    try 
-                    {
-                        // Parse and deserialize JSON payload
-                        auto jsonPayload = nlohmann::json::parse(req.body);
+                    ApplyCanvasesRequest(req, [](shared_ptr<ICanvas> canvas) { canvas->Effects().Start(*canvas); });
+                    return crow::response(crow::OK);
+                }
+                catch(const std::exception& e)
+                {
+                    logger->error("Error in /api/canvases/start: {}", e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
+            });
 
-                        unique_lock writeLock(_apiMutex);
-                        uint32_t newID = _controller.AddCanvas(jsonPayload.get<shared_ptr<ICanvas>>());
-                        writeLock.unlock();
+        CROW_ROUTE(_crowApp, "/api/canvases/stop")
+            .methods(crow::HTTPMethod::POST)([&](const crow::request& req) -> crow::response
+            {
+                try
+                {
+                    ApplyCanvasesRequest(req, [](shared_ptr<ICanvas> canvas) { canvas->Effects().Stop(); });
+                    return crow::response(crow::OK);
+                }
+                catch(const std::exception& e)
+                {
+                    logger->error("Error in /api/canvases/stop: {}", e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
+            });
 
-                        if (newID == -1)
-                            return {crow::BAD_REQUEST, "Error, likely canvas with that ID already exists."};
+        // Create new canvas
+        CROW_ROUTE(_crowApp, "/api/canvases")
+            .methods(crow::HTTPMethod::POST)([&](const crow::request& req) -> crow::response
+            {
+                try 
+                {
+                    // Parse and deserialize JSON payload
+                    auto reqJson = nlohmann::json::parse(req.body);
+                    auto canvas = reqJson.get<shared_ptr<ICanvas>>();
 
-                        return crow::response(201, nlohmann::json{{"id", newID}}.dump());                    
-                    } 
-                    catch (const exception& e) 
-                    {
-                        logger->error("Error in /api/canvases POST: {}", e.what());
-                        return {crow::BAD_REQUEST, string("Error: ") + e.what()};
-                    }
-                });
+                    unique_lock writeLock(_apiMutex);
+                    uint32_t newID = _controller.AddCanvas(canvas);
+                    PersistController(req);
+                    writeLock.unlock();
+
+                    if (newID == -1)
+                        return {crow::BAD_REQUEST, "Error, likely canvas with that ID already exists."};
+
+                    return crow::response(201, nlohmann::json{{"id", newID}}.dump());                    
+                } 
+                catch (const exception& e) 
+                {
+                    logger->error("Error in /api/canvases POST: {}", e.what());
+                    return {crow::BAD_REQUEST, string("Error: ") + e.what()};
+                }
+            });
 
             // Create feature and add to canvas
             CROW_ROUTE(_crowApp, "/api/canvases/<int>/features")
@@ -169,6 +230,7 @@ public:
 
                         unique_lock writeLock(_apiMutex);
                         auto newId = _controller.GetCanvasById(canvasId)->AddFeature(feature);
+                        PersistController(req);
                         writeLock.unlock();
 
                         return nlohmann::json{{"id", newId}}.dump();
@@ -184,13 +246,14 @@ public:
 
             // Delete feature from canvas
             CROW_ROUTE(_crowApp, "/api/canvases/<int>/features/<int>")
-                .methods(crow::HTTPMethod::DELETE)([&](int canvasId, int featureId)
+                .methods(crow::HTTPMethod::DELETE)([&](const crow::request& req, int canvasId, int featureId)
                 {
                     try
                     {
                         unique_lock writeLock(_apiMutex);
                         auto canvas = _controller.GetCanvasById(canvasId);
                         canvas->RemoveFeatureById(featureId);
+                        PersistController(req);
                         writeLock.unlock();
                         
                         return crow::response(crow::OK);
@@ -205,12 +268,13 @@ public:
 
             // Delete canvas
             CROW_ROUTE(_crowApp, "/api/canvases/<int>")
-                .methods(crow::HTTPMethod::DELETE)([&](int id)
+                .methods(crow::HTTPMethod::DELETE)([&](const crow::request& req, int id)
                 {
                     try
                     {
                         unique_lock writeLock(_apiMutex);
                         _controller.DeleteCanvasById(id);
+                        PersistController(req);
                         writeLock.unlock();
 
                         return crow::response(crow::OK);
