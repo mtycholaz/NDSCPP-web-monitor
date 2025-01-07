@@ -334,18 +334,13 @@ inline void to_json(nlohmann::json &j, const IEffectsManager &manager)
 {
     j = 
     {
-        {"type", "EffectsManager"},
         {"fps", manager.GetFPS()},
         {"currentEffectIndex", manager.GetCurrentEffect()},
         {"running", manager.IsRunning()}
     };
         
     for (const auto &effect : manager.Effects())
-    {
-        nlohmann::json effectJson;
-        to_json(effectJson, *effect);
-        j["effects"].push_back(effectJson);
-    }
+        j["effects"].push_back(*effect);
 };
 
 // IEffectManager --> JSON

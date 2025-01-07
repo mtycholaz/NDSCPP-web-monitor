@@ -11,8 +11,7 @@
               "type": "17MP4PlaybackEffect"
             }
           ],
-          "fps": 24,
-          "type": "EffectsManager"
+          "fps": 24
         },
         "features": [
           {
@@ -28,7 +27,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 7.2,
-            "type": "LEDFeature",
             "width": 64
           }
         ],
@@ -49,8 +47,7 @@
               "type": "15StarfieldEffect"
             }
           ],
-          "fps": 24,
-          "type": "EffectsManager"
+          "fps": 24
         },
         "features": [
           {
@@ -85,7 +82,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 16.6666666666667,
-            "type": "LEDFeature",
             "width": 512
           }
         ],
@@ -110,8 +106,7 @@
               "type": "14SolidColorFill"
             }
           ],
-          "fps": 3,
-          "type": "EffectsManager"
+          "fps": 3
         },
         "features": [
           {
@@ -146,7 +141,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 5.6,
-            "type": "LEDFeature",
             "width": 100
           }
         ],
@@ -171,8 +165,7 @@
               "type": "14SolidColorFill"
             }
           ],
-          "fps": 3,
-          "type": "EffectsManager"
+          "fps": 3
         },
         "features": [
           {
@@ -207,7 +200,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 5.6,
-            "type": "LEDFeature",
             "width": 100
           }
         ],
@@ -232,8 +224,7 @@
               "type": "14SolidColorFill"
             }
           ],
-          "fps": 3,
-          "type": "EffectsManager"
+          "fps": 3
         },
         "features": [
           {
@@ -268,7 +259,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 5.6,
-            "type": "LEDFeature",
             "width": 100
           }
         ],
@@ -341,8 +331,7 @@
               "type": "13PaletteEffect"
             }
           ],
-          "fps": 20,
-          "type": "EffectsManager"
+          "fps": 20
         },
         "features": [
           {
@@ -377,7 +366,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 7.2,
-            "type": "LEDFeature",
             "width": 500
           },
           {
@@ -412,7 +400,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 7.2,
-            "type": "LEDFeature",
             "width": 600
           },
           {
@@ -447,7 +434,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 7.2,
-            "type": "LEDFeature",
             "width": 144
           },
           {
@@ -482,7 +468,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 7.2,
-            "type": "LEDFeature",
             "width": 144
           }
         ],
@@ -535,8 +520,7 @@
               "type": "13PaletteEffect"
             }
           ],
-          "fps": 24,
-          "type": "EffectsManager"
+          "fps": 24
         },
         "features": [
           {
@@ -571,7 +555,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 6,
-            "type": "LEDFeature",
             "width": 1151
           },
           {
@@ -606,7 +589,6 @@
             "redGreenSwap": false,
             "reversed": true,
             "timeOffset": 6,
-            "type": "LEDFeature",
             "width": 775
           },
           {
@@ -641,7 +623,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 6,
-            "type": "LEDFeature",
             "width": 926
           },
           {
@@ -676,7 +657,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 6,
-            "type": "LEDFeature",
             "width": 1129
           }
         ],
@@ -700,8 +680,7 @@
               "type": "18BouncingBallEffect"
             }
           ],
-          "fps": 30,
-          "type": "EffectsManager"
+          "fps": 30
         },
         "features": [
           {
@@ -736,7 +715,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 13.3333333333333,
-            "type": "LEDFeature",
             "width": 758
           }
         ],
@@ -809,8 +787,7 @@
               "type": "13PaletteEffect"
             }
           ],
-          "fps": 30,
-          "type": "EffectsManager"
+          "fps": 30
         },
         "features": [
           {
@@ -845,7 +822,6 @@
             "redGreenSwap": false,
             "reversed": false,
             "timeOffset": 4.8,
-            "type": "LEDFeature",
             "width": 32
           }
         ],
