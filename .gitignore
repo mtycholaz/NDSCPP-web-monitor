@@ -2,6 +2,7 @@ secrets.h
 config.led
 .deps
 *.o
+*.tmp
 ndscpp
 monitor/ledmon
 tests/tests
