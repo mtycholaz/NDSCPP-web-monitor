@@ -30,6 +30,7 @@ class WebServer
             res.set_header("Content-Type", "application/json");
             res.add_header("Access-Control-Allow-Origin", "*");
             res.add_header("Access-Control-Allow-Methods", "GET, OPTIONS, POST, DELETE");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type");
         }
     };
 
@@ -46,7 +47,10 @@ class WebServer
 
     void ApplyCanvasesRequest(const crow::request& req, function<void(shared_ptr<ICanvas>)> func)
     {
-        auto reqJson = nlohmann::json::parse(req.body);
+        nlohmann::json reqJson;
+
+        if (!req.body.empty())
+            reqJson = nlohmann::json::parse(req.body);
 
         unique_lock writeLock(_apiMutex);
         

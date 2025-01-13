@@ -107,7 +107,7 @@ public:
     // Start the current effect
     void StartCurrentEffect(ICanvas &canvas) override
     {
-        if (IsEffectSelected())
+        if (_running && IsEffectSelected())
             _effects[_currentEffectIndex]->Start(canvas);
     }
 
@@ -124,7 +124,7 @@ public:
     // Update the current effect and render it to the canvas
     void UpdateCurrentEffect(ICanvas &canvas, milliseconds millisDelta) override
     {
-        if (IsEffectSelected())
+        if (_running && IsEffectSelected())
             _effects[_currentEffectIndex]->Update(canvas, millisDelta);
     }
 

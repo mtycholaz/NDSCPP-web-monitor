@@ -19,13 +19,15 @@ extern "C"
 class MP4PlaybackEffect : public LEDEffectBase
 {
 private:
-    string _filePath;
+    string           _filePath;
     AVFormatContext* _formatCtx = nullptr;
-    AVCodecContext* _codecCtx = nullptr;
-    AVFrame* _frame = nullptr;
-    AVPacket* _packet = nullptr;
-    SwsContext* _swsCtx = nullptr;
-    int _videoStreamIndex = -1;
+    AVCodecContext*  _codecCtx = nullptr;
+    AVFrame*         _frame = nullptr;
+    AVPacket*        _packet = nullptr;
+    SwsContext*      _swsCtx = nullptr;
+    int              _videoStreamIndex = -1;
+    bool             _initialized = false;
+    mutable mutex    _ffmpegMutex;
 
     bool InitializeFFmpeg()
     {
@@ -119,11 +121,21 @@ public:
 
     ~MP4PlaybackEffect()
     {
-        CleanupFFmpeg();
+        lock_guard lock(_ffmpegMutex);
+
+        if (_initialized)
+            CleanupFFmpeg();
+
+        _initialized = false;
     }
 
     void Start(ICanvas& canvas) override
     {
+        lock_guard lock(_ffmpegMutex);
+
+        if (_initialized)
+            return;
+
         if (!InitializeFFmpeg())
         {
             logger->error("Failed to initialize FFmpeg for MP4 playback.");
@@ -138,11 +150,13 @@ public:
             _codecCtx->width, _codecCtx->height, _codecCtx->pix_fmt,
             canvasWidth, canvasHeight, AV_PIX_FMT_RGB24,
             SWS_BILINEAR, nullptr, nullptr, nullptr);
+    
+        _initialized = true;
     }
 
     void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
-        if (!_formatCtx || !_codecCtx || !_swsCtx) 
+        if (!_initialized) 
             return;
 
         while (av_read_frame(_formatCtx, _packet) >= 0)
