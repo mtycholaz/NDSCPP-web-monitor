@@ -19,29 +19,37 @@ extern "C"
 class MP4PlaybackEffect : public LEDEffectBase
 {
 private:
-    string _filePath;
-    AVFormatContext* _formatCtx = nullptr;
-    AVCodecContext* _codecCtx = nullptr;
-    AVFrame* _frame = nullptr;
-    AVPacket* _packet = nullptr;
-    SwsContext* _swsCtx = nullptr;
-    int _videoStreamIndex = -1;
+    string                  _filePath;
+    AVFormatContext*        _formatCtx = nullptr;
+    AVCodecContext*         _codecCtx = nullptr;
+    AVFrame*                _frame = nullptr;
+    AVPacket*               _packet = nullptr;
+    SwsContext*             _swsCtx = nullptr;
+    int                     _videoStreamIndex = -1;
+    atomic<bool>            _initialized = false;
+    mutable recursive_mutex _ffmpegMutex; // recursive_mutex to allow multiple locks by the same thread
+
+    bool AfterInitError(const string& message)
+    {
+        logger->error(message);
+        CleanupFFmpeg();
+        return false;
+    }
 
     bool InitializeFFmpeg()
     {
+        lock_guard lock(_ffmpegMutex);
+
+        if (_initialized)
+            return true;
+
         // Open the input file
         if (avformat_open_input(&_formatCtx, _filePath.c_str(), nullptr, nullptr) != 0)
-        {
-            logger->error("Failed to open video file: {}", _filePath);
-            return false;
-        }
-
+            return AfterInitError("Failed to open video file: " + _filePath);
+ 
         // Retrieve stream information
         if (avformat_find_stream_info(_formatCtx, nullptr) < 0)
-        {
-            logger->error("Failed to retrieve stream info.");
-            return false;
-        }
+            return AfterInitError("Failed to retrieve stream info.");
 
         // Find the video stream
         for (unsigned i = 0; i < _formatCtx->nb_streams; i++)
@@ -54,48 +62,37 @@ private:
         }
 
         if (_videoStreamIndex == -1)
-        {
-            logger->error("No video stream found.");
-            return false;
-        }
+            return AfterInitError("No video stream found.");
 
         // Find the decoder for the video stream
         const AVCodec* codec = avcodec_find_decoder(_formatCtx->streams[_videoStreamIndex]->codecpar->codec_id);
         if (!codec)
-        {
-            logger->error("Codec not found.");
-            return false;
-        }
+            return AfterInitError("Codec not found.");
 
         // Allocate the codec context
         _codecCtx = avcodec_alloc_context3(codec);
         if (!_codecCtx)
-        {
-            logger->error("Failed to allocate codec context.");
-            return false;
-        }
+            return AfterInitError("Failed to allocate codec context.");
 
         if (avcodec_parameters_to_context(_codecCtx, _formatCtx->streams[_videoStreamIndex]->codecpar) < 0)
-        {
-            logger->error("Failed to copy codec parameters to context.");
-            return false;
-        }
+            return AfterInitError("Failed to copy codec parameters to context.");
 
         // Open the codec
         if (avcodec_open2(_codecCtx, codec, nullptr) < 0)
-        {
-            logger->error("Failed to open codec.");
-            return false;
-        }
+            return AfterInitError("Failed to open codec.");
 
         // Allocate frames and packets
         _frame = av_frame_alloc();
         _packet = av_packet_alloc();
+
+        _initialized = true;
         return true;
     }
 
     void CleanupFFmpeg()
     {
+        lock_guard lock(_ffmpegMutex);
+
         if (_swsCtx) 
             sws_freeContext(_swsCtx);
 
@@ -110,14 +107,11 @@ private:
 
         if (_formatCtx) 
             avformat_close_input(&_formatCtx);
+
+        _initialized = false;
     }
 
 public:
-
-    inline static string EffectTypeName() 
-    { 
-        return typeid(MP4PlaybackEffect).name();
-    }
 
     MP4PlaybackEffect(const string& name, const string& filePath)
         : LEDEffectBase(name), _filePath(filePath) {}
@@ -139,6 +133,9 @@ public:
         int canvasWidth = graphics.Width();
         int canvasHeight = graphics.Height();
 
+        if (_swsCtx)
+            sws_freeContext(_swsCtx);
+
         _swsCtx = sws_getContext(
             _codecCtx->width, _codecCtx->height, _codecCtx->pix_fmt,
             canvasWidth, canvasHeight, AV_PIX_FMT_RGB24,
@@ -147,7 +144,7 @@ public:
 
     void Update(ICanvas& canvas, milliseconds deltaTime) override 
     {
-        if (!_formatCtx || !_codecCtx || !_swsCtx) 
+        if (!_initialized) 
             return;
 
         while (av_read_frame(_formatCtx, _packet) >= 0)
@@ -199,7 +196,6 @@ public:
 inline void to_json(nlohmann::json& j, const MP4PlaybackEffect & effect) 
 {
     j = {
-        {"type", MP4PlaybackEffect::EffectTypeName()},
         {"name", effect.Name()},
         {"filePath", effect._filePath}
     };

@@ -25,12 +25,13 @@ class EffectsManager : public IEffectsManager
     uint16_t      _fps;
     int           _currentEffectIndex; // Index of the current effect
     atomic<bool>  _running;
+    bool          _wantsToRun;
     mutable mutex _effectsMutex;  // Add mutex as member
     vector<shared_ptr<ILEDEffect>> _effects;
     thread        _workerThread;
 
 public:
-    EffectsManager(uint16_t fps = 30) : _fps(fps), _currentEffectIndex(-1), _running(false) // No effect selected initially
+    EffectsManager(uint16_t fps = 30) : _fps(fps), _currentEffectIndex(-1), _wantsToRun(true), _running(false) // No effect selected initially
     {
     }
 
@@ -106,7 +107,7 @@ public:
     // Start the current effect
     void StartCurrentEffect(ICanvas &canvas) override
     {
-        if (IsEffectSelected())
+        if (_running && IsEffectSelected())
             _effects[_currentEffectIndex]->Start(canvas);
     }
 
@@ -123,7 +124,7 @@ public:
     // Update the current effect and render it to the canvas
     void UpdateCurrentEffect(ICanvas &canvas, milliseconds millisDelta) override
     {
-        if (IsEffectSelected())
+        if (_running && IsEffectSelected())
             _effects[_currentEffectIndex]->Update(canvas, millisDelta);
     }
 
@@ -156,6 +157,22 @@ public:
         lock_guard lock(_effectsMutex);
         _effects.clear();
         _currentEffectIndex = -1;
+    }
+
+
+    bool WantsToRun() const override
+    {
+        return _wantsToRun;
+    }
+
+    void WantToRun(bool wantsToRun) override
+    {
+        _wantsToRun = wantsToRun;
+    }
+
+    bool IsRunning() const override
+    {
+        return _running;
     }
 
     // Start the worker thread to update effects
@@ -291,6 +308,7 @@ inline void to_json(nlohmann::json &j, const ILEDEffect &effect)
         throw runtime_error("Unknown effect type for serialization: " + type);
     }
     it->second.first(j, effect);
+    j["type"] = type;
 }
 
 // Dynamically deserialize an effect from JSON based on its indicated type
@@ -317,17 +335,13 @@ inline void to_json(nlohmann::json &j, const IEffectsManager &manager)
 {
     j = 
     {
-        {"type", "EffectsManager"},
         {"fps", manager.GetFPS()},
-        {"currentEffectIndex", manager.GetCurrentEffect()}
+        {"currentEffectIndex", manager.GetCurrentEffect()},
+        {"running", manager.IsRunning()}
     };
         
     for (const auto &effect : manager.Effects())
-    {
-        nlohmann::json effectJson;
-        to_json(effectJson, *effect);
-        j["effects"].push_back(effectJson);
-    }
+        j["effects"].push_back(*effect);
 };
 
 // IEffectManager --> JSON
@@ -337,4 +351,9 @@ inline void from_json(const nlohmann::json &j, IEffectsManager &manager)
     manager.SetFPS(j.at("fps").get<uint16_t>());
     manager.SetEffects(j.at("effects").get<vector<shared_ptr<ILEDEffect>>>());
     manager.SetCurrentEffectIndex(j.at("currentEffectIndex").get<int>());
+    
+    // We deserialize the running state to a running *preference*. Directly starting the manager after
+    // deserialization could create problems, and without having the canvas we can't start it anyway.
+    if (j.contains("running"))
+        manager.WantToRun(j.at("running").get<bool>());
 }

@@ -42,11 +42,6 @@ public:
     {
     }
 
-    inline static string EffectTypeName() 
-    { 
-        return typeid(StarfieldEffect).name();
-    }
-
     void Start(ICanvas& canvas) override
     {
         _centerX = canvas.Graphics().Width() / 2;
@@ -139,9 +134,7 @@ private:
 
 inline void to_json(nlohmann::json& j, const StarfieldEffect & effect)
 {   
-    j = 
-    {
-        {"type", StarfieldEffect::EffectTypeName()},
+    j = {
         {"name", effect.Name()},
         {"starCount", effect._starCount}
     };

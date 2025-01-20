@@ -88,11 +88,11 @@ int main(int argc, char *argv[])
     
     ptrController->SetPort(port);
     ptrController->Connect();
-    ptrController->Start();
+    ptrController->Start(true); // Consider if effect managers want to run
 
     // Start the web server
     crow::logger::setLogLevel(crow::LogLevel::WARNING);
-    WebServer webServer(*ptrController.get());
+    WebServer webServer(*ptrController.get(), filename);
     webServer.Start();
 
     cout << "Shutting down..." << endl;

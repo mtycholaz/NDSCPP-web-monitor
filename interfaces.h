@@ -95,6 +95,9 @@ public:
     virtual void PreviousEffect() = 0;
     virtual string CurrentEffectName() const = 0;
     virtual void ClearEffects() = 0;
+    virtual bool WantsToRun() const = 0;
+    virtual void WantToRun(bool wantsToRun) = 0;
+    virtual bool IsRunning() const = 0;
     virtual void Start(ICanvas& canvas) = 0;
     virtual void Stop() = 0;
     virtual void SetFPS(uint16_t fps) = 0;
@@ -202,8 +205,10 @@ public:
 
     virtual void Connect() = 0;
     virtual void Disconnect() = 0;
-    virtual void Start() = 0;
+    virtual void Start(bool respectWantsToRun = false) = 0;
     virtual void Stop() = 0;
+
+    virtual void WriteToFile(const string& filePath) const = 0;
 
     virtual uint16_t GetPort() const = 0;
     virtual void     SetPort(uint16_t port) = 0;

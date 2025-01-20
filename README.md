@@ -69,11 +69,11 @@ On the Mac, you can install the required packages using:
 brew install googletest cpr
 ```
 
-For Ubuntu, unfortunately a distribution package is not available at the time of writing. The commands to build and install are as follows:
+For Ubuntu, unfortunately a distribution package for cpr is not available at the time of writing. The commands to build and install are as follows:
 
 ```shell
 sudo apt update
-sudo apt install cmake
+sudo apt install libgtest-dev cmake
 git clone https://github.com/libcpr/cpr.git
 cd cpr && mkdir build && cd build
 cmake .. -DCPR_USE_SYSTEM_CURL=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_CXX_STANDARD=20

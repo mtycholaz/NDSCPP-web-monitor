@@ -39,11 +39,6 @@ public:
     {
     }
 
-    inline static string EffectTypeName() 
-    { 
-        return typeid(BouncingBallEffect).name();
-    }
-
     void Start(ICanvas& canvas) override
     {
         size_t length = canvas.Graphics().Width(); // Assuming 1D for simplicity; adapt for 2D if needed
@@ -118,7 +113,6 @@ public:
 inline void to_json(nlohmann::json& j, const BouncingBallEffect& effect) 
 {
     j = {
-        {"type", BouncingBallEffect::EffectTypeName()},
         {"name", effect.Name()},
         {"ballCount", effect._ballCount},
         {"ballSize", effect._ballSize},
