@@ -125,12 +125,9 @@ public:
 inline void to_json(nlohmann::json& j, const ICanvas& canvas) 
 {
     // Serialize the features
-    vector<nlohmann::json> serializedFeatures;
-    for (const auto& feature : canvas.Features()) {
-        if (feature) {
-            serializedFeatures.push_back(*feature); // Dereference the shared pointer
-        }
-    }
+    vector<nlohmann::json> jsonFeatures;
+    for (const auto& feature : canvas.Features())
+        jsonFeatures.push_back(*feature); // Dereference the shared pointer
 
     j = {
         {"name",              canvas.Name()},
@@ -139,7 +136,7 @@ inline void to_json(nlohmann::json& j, const ICanvas& canvas)
         {"height",            canvas.Graphics().Height()},
         {"fps",               canvas.Effects().GetFPS()},
         {"currentEffectName", canvas.Effects().CurrentEffectName()},
-        {"features",          serializedFeatures}, // Serialized feature data
+        {"features",          jsonFeatures}, // Serialized feature data
         {"effectsManager",    canvas.Effects()}    // EffectsManager must have a `to_json`
     };
 }
@@ -171,7 +168,5 @@ inline void from_json(const nlohmann::json& j, shared_ptr<ICanvas> & canvas)
 
     // Validate and deserialize EffectsManager
     if (j.contains("effectsManager")) 
-    {
         from_json(j.at("effectsManager"), canvas->Effects());
-    }
 }

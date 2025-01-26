@@ -187,7 +187,6 @@ public:
 inline void to_json(nlohmann::json& j, const ILEDFeature & feature) 
 {
     j = {
-            {"type",              "LEDFeature"},
             {"id",                feature.Id()},
             {"hostName",          feature.Socket()->HostName()},
             {"friendlyName",      feature.Socket()->FriendlyName()},
@@ -215,12 +214,6 @@ inline void to_json(nlohmann::json& j, const ILEDFeature & feature)
 
 inline void from_json(const nlohmann::json& j, shared_ptr<ILEDFeature> & feature) 
 {
-    // Ensure the type matches
-    if (j.at("type").get<std::string>() != "LEDFeature") 
-    {
-        throw std::runtime_error("Invalid feature type in JSON");
-    }
-
     // Use `at` for all fields since they are mandatory
     feature = std::make_shared<LEDFeature>(
         j.at("hostName").get<std::string>(),
